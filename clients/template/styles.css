@@ -593,6 +593,7 @@ html.cart-open {
     top: 0;
     width: 400px;
     height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile browsers */
     background: white;
     box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
     transition: right 0.3s ease;
@@ -689,6 +690,7 @@ html.cart-open {
     display: flex;
     flex-direction: column;
     height: calc(100vh - 80px);
+    height: calc(100dvh - 80px); /* Dynamic viewport height for mobile browsers */
     overflow: hidden;
 }
 
@@ -1059,6 +1061,8 @@ html.cart-open {
         width: 100%;
         right: -100%;
         box-shadow: none;
+        height: 100vh;
+        height: 100dvh; /* Dynamic viewport height for mobile browsers */
     }
     
     .cart-header {
@@ -1169,6 +1173,7 @@ html.cart-open {
     
     .cart-step {
         height: calc(100vh - 80px);
+        height: calc(100dvh - 80px); /* Dynamic viewport height for mobile browsers */
     }
     
     .cart-step-content {
@@ -1236,6 +1241,7 @@ html.cart-open {
     
     .cart-step {
         height: calc(100vh - 70px);
+        height: calc(100dvh - 70px); /* Dynamic viewport height for mobile browsers */
     }
     
     .cart-step-content {
