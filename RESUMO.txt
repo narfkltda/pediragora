@@ -1,0 +1,606 @@
+================================================================================
+                    RESUMO DO PROJETO MENU MVP - ATUALIZADO
+================================================================================
+
+Data de Criação: 2024
+Última Atualização: Fase 3 - Busca de Itens em Tempo Real
+Plataforma: Cardápio Digital para Pequenos Negócios
+Tecnologias: HTML, CSS, JavaScript Vanilla (sem frameworks)
+
+================================================================================
+                            ESTRUTURA DO PROJETO
+================================================================================
+
+/menu/
+│
+├── index.html                      # Página inicial/landing page
+├── styles.css                      # Estilos globais da landing page
+├── main.js                         # JavaScript principal da landing page
+├── README.md                       # Documentação do projeto
+├── RESUMO.txt                      # Este arquivo
+│
+├── /clients/                       # Páginas dos clientes
+│   └── /template/                  # Template base para novos clientes
+│       ├── index.html              # Estrutura HTML completa do cardápio
+│       ├── styles.css              # Estilos do template (responsivo)
+│       └── script.js               # Lógica da página (renderização, carrinho, busca)
+│
+├── /assets/
+│   └── /images/                    # Pasta para imagens dos produtos
+│
+└── /core/                          # Módulos JavaScript core
+    ├── cart.js                     # Gerenciamento do carrinho + localStorage
+    └── whatsapp.js                 # Integração com WhatsApp
+
+================================================================================
+                            ARQUIVOS CRIADOS
+================================================================================
+
+1. LANDING PAGE (menu/)
+   - index.html: Página inicial com informações do projeto
+   - styles.css: Estilos globais (mobile-first, design minimalista)
+   - main.js: Script de inicialização básico
+   - README.md: Documentação completa do projeto
+
+2. TEMPLATE DO CLIENTE (menu/clients/template/)
+   - index.html: 
+     * Header com logo e nome do restaurante
+     * Barra de busca em tempo real
+     * Filtro de categorias
+     * Grid de itens do menu
+     * Sidebar do carrinho (lateral)
+     * Campos de nome e observações do cliente
+     * Botão flutuante do carrinho
+   
+   - styles.css:
+     * Design responsivo (mobile-first)
+     * Estilos para barra de busca
+     * Cards de produtos com hover effects
+     * Sidebar do carrinho com animação
+     * Estilos para campos de input e textarea
+     * Botões grandes e acessíveis
+     * Cores: Verde (#27ae60) para ações principais
+   
+   - script.js:
+     * Configuração do restaurante (nome, WhatsApp)
+     * Dados de exemplo (3 hambúrgueres)
+     * Renderização dinâmica de categorias e itens
+     * Sistema de busca em tempo real
+     * Gerenciamento da UI do carrinho
+     * Gerenciamento de campos do cliente
+     * Integração com módulos core
+     * Persistência automática de dados
+
+3. MÓDULOS CORE (menu/core/)
+   - cart.js:
+     * addItem(item) - Adiciona item ao carrinho
+     * removeItem(id) - Remove item do carrinho
+     * getCart() - Retorna todos os itens
+     * clearCart() - Limpa o carrinho
+     * getTotal() - Calcula total do pedido
+     * getItemCount() - Conta total de itens
+     * increaseItemQuantity(id) - Aumenta quantidade
+     * decreaseItemQuantity(id) - Diminui quantidade
+     * updateItemQuantity(id, qty) - Atualiza quantidade
+     * saveCart() - Salva carrinho no localStorage
+     * loadCartFromStorage() - Carrega carrinho do localStorage
+     * saveCustomerData(name, notes) - Salva dados do cliente
+     * loadCustomerData() - Carrega dados do cliente
+     * clearStorage() - Limpa todos os dados salvos
+     * Armazenamento: localStorage (persiste entre sessões)
+   
+   - whatsapp.js:
+     * sendToWhatsApp(phoneNumber, orderObject)
+     * Formata mensagem do pedido
+     * Inclui nome do cliente e observações (se preenchidos)
+     * Codifica URL para WhatsApp
+     * Abre WhatsApp Web/App com mensagem pré-preenchida
+     * Formato: https://wa.me/55DDDNUMERO?text=MENSAGEM
+
+================================================================================
+                            FUNCIONALIDADES IMPLEMENTADAS
+================================================================================
+
+FASE 1 - MVP BASE:
+✓ Página inicial com informações do projeto
+✓ Template de cardápio completo e funcional
+✓ Sistema de categorias (filtro de itens)
+✓ Cards de produtos com imagem, nome, descrição e preço
+✓ Botão "Adicionar ao Carrinho" em cada item
+✓ Carrinho lateral (sidebar) com animação
+✓ Contador de itens no botão flutuante
+✓ Aumentar/diminuir quantidade no carrinho
+✓ Remover itens do carrinho
+✓ Cálculo automático do total
+✓ Botão de checkout que abre WhatsApp
+✓ Mensagem formatada com todos os detalhes do pedido
+✓ Design responsivo (mobile-first)
+✓ Tratamento de imagens ausentes (placeholder SVG)
+
+FASE 2 - MELHORIAS:
+✓ Campos do cliente no carrinho (nome e observações)
+✓ Persistência do carrinho com localStorage
+✓ Persistência de nome e observações do cliente
+✓ Restauração automática ao recarregar a página
+✓ Salvamento automático ao digitar nos campos
+✓ Nome e observações incluídos na mensagem do WhatsApp
+✓ Documentação atualizada
+
+FASE 3 - BUSCA DE ITENS:
+✓ Barra de busca em tempo real
+✓ Busca case-insensitive
+✓ Busca em nome, descrição e categoria
+✓ Botão de limpar busca (×)
+✓ Integração com filtros de categoria (AND logic)
+✓ Atualização instantânea dos resultados
+✓ Mensagens contextuais quando não há resultados
+✓ Design responsivo para busca
+
+================================================================================
+                            BUSCA DE ITENS (FASE 3)
+================================================================================
+
+Localização: Acima dos filtros de categoria, no topo da página principal
+
+Características:
+- Barra de busca com input de texto
+- Placeholder: "Buscar item..."
+- Botão de limpar (×) que aparece quando há texto
+- Busca em tempo real (atualiza enquanto digita)
+- Case-insensitive (não diferencia maiúsculas/minúsculas)
+
+Campos de Busca:
+A busca verifica os seguintes campos de cada item:
+1. Nome do item
+2. Descrição do item
+3. Categoria do item
+
+Integração com Categorias:
+- A busca funciona em conjunto com os filtros de categoria
+- Se uma categoria estiver selecionada, a busca filtra apenas itens dessa categoria
+- Se "Todos" estiver selecionado, a busca filtra todos os itens
+- Os dois filtros funcionam simultaneamente (lógica AND)
+
+Exemplo de Uso:
+1. Usuário seleciona categoria "Burgers"
+2. Usuário digita "bacon" na busca
+3. Sistema mostra apenas itens da categoria "Burgers" que contenham "bacon"
+   no nome, descrição ou categoria
+
+Comportamento:
+- Resultados atualizam instantaneamente ao digitar
+- Botão de limpar aparece automaticamente quando há texto
+- Mensagem "Nenhum item encontrado com essa busca" quando não há resultados
+- Ao limpar a busca, todos os itens (filtrados pela categoria) são exibidos
+
+================================================================================
+                            CAMPOS DO CLIENTE
+================================================================================
+
+Localização: Dentro do carrinho (sidebar), acima do botão "Finalizar Pedido"
+
+Campos disponíveis:
+1. Nome (opcional)
+   - Tipo: Input de texto
+   - Placeholder: "Seu nome"
+   - Persistido automaticamente no localStorage
+
+2. Observações (opcional)
+   - Tipo: Textarea
+   - Placeholder: "Observações sobre o pedido"
+   - Persistido automaticamente no localStorage
+
+Comportamento:
+- Campos são salvos automaticamente ao digitar
+- Dados são restaurados ao recarregar a página
+- Se preenchidos, são incluídos na mensagem do WhatsApp
+- Nome aparece como "👤 Cliente: [nome]"
+- Observações aparecem como "📝 OBSERVAÇÕES: [texto]"
+
+================================================================================
+                            PERSISTÊNCIA DE DADOS
+================================================================================
+
+Tecnologia: localStorage do navegador
+
+Dados persistidos:
+1. Carrinho (menu_cart)
+   - Todos os itens adicionados
+   - Quantidades de cada item
+   - Restaurado automaticamente ao recarregar
+
+2. Nome do Cliente (menu_customer_name)
+   - Valor do campo de nome
+   - Restaurado automaticamente ao recarregar
+
+3. Observações (menu_customer_notes)
+   - Valor do campo de observações
+   - Restaurado automaticamente ao recarregar
+
+Como funciona:
+- Dados são salvos automaticamente após cada modificação
+- Dados são carregados automaticamente na inicialização
+- Persistência funciona apenas no mesmo navegador/dispositivo
+- Não sincroniza entre diferentes navegadores ou dispositivos
+
+Desabilitar persistência:
+Para desabilitar, edite core/cart.js:
+- Remova chamadas para saveCart() e saveCustomerData()
+- Comente a linha loadCartFromStorage() na inicialização
+
+================================================================================
+                            DADOS DE TESTE INCLUÍDOS
+================================================================================
+
+Categoria: "Burgers"
+
+1. X-Salada
+   - Preço: R$ 18.00
+   - Descrição: Hambúrguer com alface, tomate, cebola e maionese
+
+2. X-Bacon
+   - Preço: R$ 22.00
+   - Descrição: Hambúrguer com bacon crocante, alface, tomate e maionese
+
+3. X-Tudo
+   - Preço: R$ 28.00
+   - Descrição: Hambúrguer completo com bacon, ovo, presunto, queijo, 
+                alface, tomate e maionese
+
+================================================================================
+                            CONFIGURAÇÃO NECESSÁRIA
+================================================================================
+
+Para criar uma nova página de cliente:
+
+1. Copiar a pasta /clients/template
+2. Renomear para o nome do cliente (ex: /clients/temperoesabor)
+3. Editar script.js e alterar:
+   - CONFIG.restaurantName: Nome do restaurante
+   - CONFIG.whatsappNumber: Número do WhatsApp (formato: DDD + número)
+4. Editar index.html e alterar:
+   - Título da página
+   - Nome do restaurante no header
+5. Adicionar itens em MENU_DATA.items
+6. Adicionar imagens em /assets/images/
+
+Os campos de nome, observações e busca já estão configurados e funcionando.
+
+================================================================================
+                            CARACTERÍSTICAS TÉCNICAS
+================================================================================
+
+- 100% estático (sem backend)
+- Sem banco de dados
+- Sem frameworks (HTML/CSS/JS puro)
+- Sem dependências externas
+- Armazenamento: localStorage (persiste entre sessões)
+- Integração gratuita com WhatsApp via URL
+- Design mobile-first
+- Compatível com todos os navegadores modernos
+- Salvamento automático de dados
+- Restauração automática ao recarregar
+- Busca em tempo real sem requisições ao servidor
+
+================================================================================
+                            ESTRUTURA DE UM ITEM
+================================================================================
+
+{
+    id: 'unique-id',              // ID único (string)
+    name: 'Nome do Produto',      // Nome do item
+    description: 'Descrição',     // Descrição do produto
+    price: 18.00,                 // Preço (number)
+    category: 'Burgers',         // Categoria
+    image: 'path/to/image.jpg'   // Caminho da imagem
+}
+
+Campos utilizados na busca:
+- name: Busca no nome do item
+- description: Busca na descrição
+- category: Busca na categoria
+
+================================================================================
+                            MENSAGEM DO WHATSAPP
+================================================================================
+
+A mensagem gerada contém (em ordem):
+1. Título "🍽️ *NOVO PEDIDO*"
+2. Nome do cliente (se preenchido): "👤 Cliente: [nome]"
+3. Lista de itens com:
+   * Número do item
+   * Nome do item
+   * Quantidade x Preço = Subtotal
+4. Total do pedido: "💰 *TOTAL: R$ [valor]*"
+5. Observações (se preenchidas): "📝 *OBSERVAÇÕES:* [texto]"
+6. Mensagem de agradecimento: "Obrigado pelo pedido! 🎉"
+
+Formato da URL:
+https://wa.me/55DDDNUMERO?text=MENSAGEM_ENCODED
+
+Exemplo de mensagem completa:
+🍽️ *NOVO PEDIDO*
+
+👤 Cliente: João Silva
+
+📋 *ITENS:*
+──────────────────────────────
+1. X-Salada
+   Qtd: 2 x R$ 18.00 = R$ 36.00
+2. X-Bacon
+   Qtd: 1 x R$ 22.00 = R$ 22.00
+──────────────────────────────
+💰 *TOTAL: R$ 58.00*
+
+📝 *OBSERVAÇÕES:*
+Sem cebola no X-Salada
+
+──────────────────────────────
+Obrigado pelo pedido! 🎉
+
+================================================================================
+                            FUNÇÕES DO MÓDULO CART.JS
+================================================================================
+
+Gerenciamento do Carrinho:
+- addItem(item) - Adiciona item (salva automaticamente)
+- removeItem(id) - Remove item (salva automaticamente)
+- getCart() - Retorna cópia do carrinho
+- clearCart() - Limpa carrinho (salva automaticamente)
+- getTotal() - Calcula total
+- getItemCount() - Conta total de itens
+- increaseItemQuantity(id) - Aumenta quantidade (salva automaticamente)
+- decreaseItemQuantity(id) - Diminui quantidade (salva automaticamente)
+- updateItemQuantity(id, qty) - Atualiza quantidade (salva automaticamente)
+
+Persistência:
+- saveCart() - Salva carrinho no localStorage
+- loadCartFromStorage() - Carrega carrinho do localStorage
+- saveCustomerData(name, notes) - Salva dados do cliente
+- loadCustomerData() - Retorna {name, notes}
+- clearStorage() - Limpa todos os dados
+
+Inicialização:
+- loadCartFromStorage() é chamado automaticamente ao carregar o módulo
+
+================================================================================
+                            FUNÇÕES DE BUSCA (SCRIPT.JS)
+================================================================================
+
+Busca de Itens:
+- setupSearchListeners() - Configura event listeners da busca
+- updateSearchClearButton() - Mostra/esconde botão de limpar
+- renderItems() - Renderiza itens filtrados por categoria + busca
+
+Lógica de Filtro:
+1. Primeiro filtra por categoria selecionada
+2. Depois filtra por termo de busca (se houver)
+3. Busca case-insensitive em: nome, descrição, categoria
+4. Retorna itens que correspondem a AMBOS os filtros (AND)
+
+Estado:
+- searchTerm: String que armazena o termo de busca atual
+- Atualizado em tempo real via event listener 'input'
+
+================================================================================
+                            FLUXO DE DADOS
+================================================================================
+
+1. USUÁRIO ADICIONA ITEM:
+   addItem() → Modifica cart[] → saveCart() → localStorage
+
+2. USUÁRIO DIGITA NOME/OBSERVAÇÕES:
+   Event listener → saveCustomerDataToStorage() → saveCustomerData() → localStorage
+
+3. USUÁRIO DIGITA NA BUSCA:
+   Event listener 'input' → Atualiza searchTerm → renderItems() → Filtra e exibe
+
+4. USUÁRIO SELECIONA CATEGORIA:
+   Event listener 'click' → Atualiza currentCategory → renderItems() → Filtra e exibe
+
+5. PÁGINA É RECARREGADA:
+   loadCartFromStorage() → Restaura cart[]
+   loadCustomerData() → Restaura nome e observações
+   updateCartUI() → Atualiza interface
+   (Busca não persiste - resetada ao recarregar)
+
+6. USUÁRIO FINALIZA PEDIDO:
+   handleCheckout() → Coleta dados → sendToWhatsApp() → Abre WhatsApp
+
+================================================================================
+                            INTERAÇÃO ENTRE FILTROS
+================================================================================
+
+Sistema de Filtros Duplos:
+
+1. FILTRO DE CATEGORIA:
+   - Selecionado via botões (Todos, Burgers, etc.)
+   - Armazenado em: currentCategory
+   - Aplicado primeiro na função renderItems()
+
+2. FILTRO DE BUSCA:
+   - Digitado na barra de busca
+   - Armazenado em: searchTerm
+   - Aplicado segundo na função renderItems()
+
+Lógica de Combinação:
+- Se categoria = "Todos" e busca vazia → Mostra todos os itens
+- Se categoria = "Burgers" e busca vazia → Mostra apenas Burgers
+- Se categoria = "Todos" e busca = "bacon" → Mostra itens com "bacon"
+- Se categoria = "Burgers" e busca = "bacon" → Mostra Burgers COM "bacon"
+
+Resultado: Apenas itens que correspondem a AMBOS os critérios são exibidos.
+
+================================================================================
+                            PRÓXIMOS PASSOS SUGERIDOS
+================================================================================
+
+- [x] Implementar localStorage para persistir carrinho (CONCLUÍDO - FASE 2)
+- [x] Adicionar campo de observações no checkout (CONCLUÍDO - FASE 2)
+- [x] Adicionar campo de nome do cliente no checkout (CONCLUÍDO - FASE 2)
+- [x] Implementar busca de itens (CONCLUÍDO - FASE 3)
+- [ ] Criar mais templates de exemplo
+- [ ] Adicionar mais categorias e itens de exemplo
+- [ ] Adicionar animações de transição
+- [ ] Criar sistema de temas/cores personalizáveis
+- [ ] Adicionar validação de formulários
+- [ ] Implementar modo escuro
+- [ ] Adicionar suporte a múltiplos idiomas
+- [ ] Adicionar filtros avançados (preço, etc.)
+- [ ] Implementar ordenação de itens
+
+================================================================================
+                            NOTAS IMPORTANTES
+================================================================================
+
+Persistência:
+- O carrinho persiste entre recarregamentos da página
+- Nome e observações também persistem
+- A busca NÃO persiste (resetada ao recarregar)
+- Dados são salvos apenas no navegador atual
+- Não há sincronização entre dispositivos
+
+Imagens:
+- Imagens devem ser adicionadas manualmente em /assets/images/
+- Placeholder SVG é exibido se imagem não for encontrada
+
+WhatsApp:
+- Número deve estar no formato: DDD + número (sem espaços)
+- O sistema adiciona automaticamente o código do país (55 para Brasil)
+- Mensagem é codificada automaticamente para URL
+
+Busca:
+- Busca funciona apenas no lado do cliente (client-side)
+- Não requer conexão com servidor
+- Performance instantânea mesmo com muitos itens
+- Busca é case-insensitive por padrão
+
+Arquivos:
+- Todos os caminhos de arquivos são relativos
+- O template está pronto para ser copiado e personalizado
+- Não requer instalação de dependências
+
+Compatibilidade:
+- Funciona em todos os navegadores modernos
+- Requer JavaScript habilitado
+- Requer suporte a localStorage (todos os navegadores modernos)
+- Funciona offline (após carregar a página)
+
+================================================================================
+                            ARQUIVOS TOTAIS CRIADOS
+================================================================================
+
+Total: 9 arquivos
+- 4 arquivos na raiz (index.html, styles.css, main.js, README.md)
+- 3 arquivos no template (index.html, styles.css, script.js)
+- 2 arquivos core (cart.js, whatsapp.js)
+- 1 arquivo de resumo (RESUMO.txt)
+
+Pastas criadas: 5
+- /menu
+- /menu/clients
+- /menu/clients/template
+- /menu/assets/images
+- /menu/core
+
+================================================================================
+                            STATUS DO PROJETO
+================================================================================
+
+FASE 1 - MVP BASE:
+✅ Estrutura completa criada
+✅ Template funcional implementado
+✅ Módulos core implementados
+✅ Dados de teste incluídos
+✅ Design responsivo aplicado
+✅ Integração WhatsApp funcionando
+✅ Documentação criada
+
+FASE 2 - MELHORIAS:
+✅ Campos do cliente implementados
+✅ Persistência com localStorage implementada
+✅ Salvamento automático funcionando
+✅ Restauração automática funcionando
+✅ Integração completa com WhatsApp
+✅ Documentação atualizada
+
+FASE 3 - BUSCA DE ITENS:
+✅ Barra de busca implementada
+✅ Busca em tempo real funcionando
+✅ Integração com filtros de categoria
+✅ Botão de limpar busca
+✅ Busca case-insensitive
+✅ Busca em múltiplos campos
+✅ Documentação atualizada
+
+PROJETO COMPLETO E PRONTO PARA USO!
+
+================================================================================
+                            CHANGELOG
+================================================================================
+
+FASE 3 (Última Atualização):
+- Adicionada barra de busca acima dos filtros de categoria
+- Implementada busca em tempo real (event listener 'input')
+- Adicionada função setupSearchListeners() no script.js
+- Adicionada função updateSearchClearButton() para gerenciar botão de limpar
+- Modificada função renderItems() para aplicar filtros de categoria + busca
+- Adicionado estado searchTerm para armazenar termo de busca
+- Adicionados estilos CSS para barra de busca e botão de limpar
+- Busca verifica nome, descrição e categoria dos itens
+- Busca case-insensitive implementada
+- Integração com filtros de categoria (lógica AND)
+- Mensagens contextuais quando não há resultados
+- Documentação atualizada no README.md
+
+FASE 2 (Persistência e Campos do Cliente):
+- Adicionados campos de nome e observações no carrinho
+- Implementada persistência com localStorage
+- Adicionadas funções de salvamento/carregamento no cart.js
+- Atualizado script.js para gerenciar campos do cliente
+- Adicionados estilos CSS para campos de input
+- Atualizado whatsapp.js para incluir nome e observações
+- Documentação atualizada no README.md
+
+FASE 1 (Criação Inicial):
+- Estrutura base do projeto
+- Template de cardápio funcional
+- Sistema de carrinho em memória
+- Integração com WhatsApp
+- Design responsivo
+- Documentação inicial
+
+================================================================================
+                            COMO TESTAR AS FUNCIONALIDADES
+================================================================================
+
+1. ABRIR O TEMPLATE:
+   Navegue até: /menu/clients/template/index.html
+   Abra no navegador
+
+2. TESTAR BUSCA (FASE 3):
+   - Digite "salada" → Deve mostrar apenas X-Salada
+   - Digite "bacon" → Deve mostrar X-Bacon e X-Tudo
+   - Digite "burgers" → Deve mostrar todos os itens
+   - Selecione categoria "Burgers" e digite "bacon" → Deve mostrar apenas itens de Burgers com "bacon"
+   - Clique no botão (×) → Deve limpar a busca
+
+3. TESTAR CARRINHO:
+   - Clique em "Adicionar ao Carrinho" em qualquer item
+   - Abra o carrinho (botão flutuante)
+   - Aumente/diminua quantidades
+   - Remova itens
+   - Recarregue a página → Carrinho deve ser restaurado
+
+4. TESTAR CAMPOS DO CLIENTE:
+   - Digite nome e observações no carrinho
+   - Recarregue a página → Dados devem ser restaurados
+   - Finalize pedido → Dados devem aparecer no WhatsApp
+
+5. TESTAR WHATSAPP:
+   - Adicione itens ao carrinho
+   - Preencha nome e observações (opcional)
+   - Clique em "Finalizar Pedido"
+   - WhatsApp deve abrir com mensagem formatada
+
+================================================================================
