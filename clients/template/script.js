@@ -907,35 +907,33 @@ function renderOpeningHours() {
         dayName.textContent = day.name;
         card.appendChild(dayName);
         
-        // Status (hidden, only for styling purposes)
-        const status = document.createElement('div');
-        status.className = 'opening-hours-day-status';
-        
-        if (!dayHours || !dayHours.open || !dayHours.close) {
-            status.classList.add('closed');
-        } else {
-            if (isCurrentDay && isCurrentlyOpen(day.key, dayHours.open, dayHours.close)) {
-                status.classList.add('open');
-            } else {
-                status.classList.add('closed');
-            }
-        }
-        card.appendChild(status);
-        
-        // Time (compact format)
-        const time = document.createElement('div');
-        time.className = 'opening-hours-day-time';
-        if (dayHours && dayHours.open && dayHours.close) {
-            const openTime = formatTimeCompact(dayHours.open);
-            const closeTime = formatTimeCompact(dayHours.close);
-            time.textContent = `${openTime}-${closeTime}`;
-        } else {
-            time.textContent = 'Fec';
-            time.classList.add('closed-text');
-        }
-        card.appendChild(time);
-        
         openingHoursContainer.appendChild(card);
     });
+    
+    // Render current day hours below cards
+    renderCurrentDayHours();
+}
+
+/**
+ * Render current day hours below the cards
+ */
+function renderCurrentDayHours() {
+    const currentTimeElement = document.getElementById('opening-hours-current-time');
+    if (!currentTimeElement) {
+        return;
+    }
+    
+    const currentDay = getCurrentDayInPortuguese();
+    const dayHours = CONFIG.openingHours[currentDay.key];
+    
+    if (dayHours && dayHours.open && dayHours.close) {
+        const openTime = formatTimeCompact(dayHours.open);
+        const closeTime = formatTimeCompact(dayHours.close);
+        currentTimeElement.textContent = `Horário: ${openTime} às ${closeTime}`;
+        currentTimeElement.style.display = 'block';
+    } else {
+        currentTimeElement.textContent = '';
+        currentTimeElement.style.display = 'none';
+    }
 }
 
