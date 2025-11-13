@@ -89,8 +89,6 @@ const cartStep2 = document.getElementById('cart-step-2');
 const cartStep3 = document.getElementById('cart-step-3');
 const btnContinueStep1 = document.getElementById('btn-continue-step1');
 const btnContinueStep2 = document.getElementById('btn-continue-step2');
-const btnBackStep2 = document.getElementById('btn-back-step2');
-const btnBackStep3 = document.getElementById('btn-back-step3');
 const deliveryMethodInputs = document.querySelectorAll('input[name="delivery-method"]');
 const deliveryAddressField = document.getElementById('delivery-address-field');
 const deliveryAddressInput = document.getElementById('delivery-address');
@@ -100,6 +98,7 @@ const cartTotalStep3 = document.getElementById('cart-total-step3');
 
 // Cart step state
 let currentCartStep = 1;
+let scrollPosition = 0;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -339,14 +338,22 @@ function prevCartStep() {
  * Open cart
  */
 function openCart() {
+    // Save current scroll position
+    scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    
     cartSidebar.classList.add('open');
     if (cartOverlay) {
         cartOverlay.classList.add('active');
     }
     // Reset to step 1
     goToCartStep(1);
-    // Prevent body scroll when cart is open on mobile
+    
+    // Prevent body and html scroll completely
     document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollPosition}px`;
+    document.body.style.width = '100%';
+    document.documentElement.style.overflow = 'hidden';
 }
 
 /**
@@ -359,8 +366,16 @@ function closeCart() {
     }
     // Reset to step 1
     goToCartStep(1);
-    // Restore body scroll
+    
+    // Restore body and html scroll
     document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    document.documentElement.style.overflow = '';
+    
+    // Restore scroll position
+    window.scrollTo(0, scrollPosition);
 }
 
 /**
@@ -447,18 +462,6 @@ function setupCartToggleListeners() {
     if (btnContinueStep2) {
         btnContinueStep2.addEventListener('click', () => {
             nextCartStep();
-        });
-    }
-    
-    if (btnBackStep2) {
-        btnBackStep2.addEventListener('click', () => {
-            prevCartStep();
-        });
-    }
-    
-    if (btnBackStep3) {
-        btnBackStep3.addEventListener('click', () => {
-            prevCartStep();
         });
     }
     
