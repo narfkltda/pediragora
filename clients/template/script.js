@@ -14,7 +14,16 @@
 const CONFIG = {
     restaurantName: 'Nome do Restaurante',
     whatsappNumber: '67982077085', // Format: DDD + number (no spaces or special chars)
-    logoPath: '../../assets/images/logo-placeholder.png'
+    logoPath: '../../assets/images/logo-placeholder.png',
+    openingHours: {
+        segunda: null, // Fechado na segunda-feira
+        terca: { open: '19:00', close: '23:00' },
+        quarta: { open: '19:00', close: '23:00' },
+        quinta: { open: '19:00', close: '23:00' },
+        sexta: { open: '19:00', close: '23:00' },
+        sabado: { open: '19:00', close: '23:00' },
+        domingo: { open: '19:00', close: '23:00' }
+    }
 };
 
 // Menu data
@@ -71,6 +80,7 @@ const changeField = document.getElementById('change-field');
 const changeAmountInput = document.getElementById('change-amount');
 const changeResult = document.getElementById('change-result');
 const changeValue = document.getElementById('change-value');
+const openingHoursContainer = document.getElementById('opening-hours-container');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -110,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupCartToggleListeners();
     setupCustomerFieldListeners();
     setupPaymentMethodListeners();
+    renderOpeningHours();
 });
 
 /**
@@ -471,5 +482,119 @@ function handleCheckout() {
     };
     
     sendToWhatsApp(CONFIG.whatsappNumber, order);
+}
+
+/**
+ * Get all days of week in Portuguese
+ */
+function getAllDaysInPortuguese() {
+    return [
+        { key: 'domingo', name: 'Domingo' },
+        { key: 'segunda', name: 'Segunda' },
+        { key: 'terca', name: 'Terça' },
+        { key: 'quarta', name: 'Quarta' },
+        { key: 'quinta', name: 'Quinta' },
+        { key: 'sexta', name: 'Sexta' },
+        { key: 'sabado', name: 'Sábado' }
+    ];
+}
+
+/**
+ * Get current day of week in Portuguese
+ */
+function getCurrentDayInPortuguese() {
+    const days = getAllDaysInPortuguese();
+    const today = new Date().getDay();
+    return days[today];
+}
+
+/**
+ * Check if restaurant is currently open
+ */
+function isCurrentlyOpen(dayKey, openTime, closeTime) {
+    if (!openTime || !closeTime) {
+        return false;
+    }
+    
+    const now = new Date();
+    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    
+    const [openHour, openMin] = openTime.split(':').map(Number);
+    const [closeHour, closeMin] = closeTime.split(':').map(Number);
+    const [currentHour, currentMin] = currentTime.split(':').map(Number);
+    
+    const openMinutes = openHour * 60 + openMin;
+    const closeMinutes = closeHour * 60 + closeMin;
+    const currentMinutes = currentHour * 60 + currentMin;
+    
+    return currentMinutes >= openMinutes && currentMinutes < closeMinutes;
+}
+
+/**
+ * Render opening hours for all days
+ */
+function renderOpeningHours() {
+    if (!openingHoursContainer) {
+        return;
+    }
+    
+    openingHoursContainer.innerHTML = '';
+    const allDays = getAllDaysInPortuguese();
+    const currentDay = getCurrentDayInPortuguese();
+    
+    allDays.forEach(day => {
+        const dayHours = CONFIG.openingHours[day.key];
+        const isCurrentDay = day.key === currentDay.key;
+        
+        // Create card element
+        const card = document.createElement('div');
+        card.className = 'opening-hours-day-card';
+        
+        if (isCurrentDay) {
+            card.classList.add('current-day');
+        }
+        
+        // Check if day is closed
+        if (!dayHours || !dayHours.open || !dayHours.close) {
+            card.classList.add('closed-day');
+        }
+        
+        // Day name
+        const dayName = document.createElement('div');
+        dayName.className = 'opening-hours-day-name';
+        dayName.textContent = day.name;
+        card.appendChild(dayName);
+        
+        // Status
+        const status = document.createElement('div');
+        status.className = 'opening-hours-day-status';
+        
+        if (!dayHours || !dayHours.open || !dayHours.close) {
+            status.textContent = 'Fechado!';
+            status.classList.add('closed');
+        } else {
+            // Check if currently open (only for current day)
+            if (isCurrentDay && isCurrentlyOpen(day.key, dayHours.open, dayHours.close)) {
+                status.textContent = 'Aberto';
+                status.classList.add('open');
+            } else {
+                status.textContent = 'Fechado!';
+                status.classList.add('closed');
+            }
+        }
+        card.appendChild(status);
+        
+        // Time
+        const time = document.createElement('div');
+        time.className = 'opening-hours-day-time';
+        if (dayHours && dayHours.open && dayHours.close) {
+            time.textContent = `${dayHours.open} - ${dayHours.close}`;
+        } else {
+            time.textContent = 'Fechado';
+        }
+        card.appendChild(time);
+        
+        openingHoursContainer.appendChild(card);
+    });
 }
 
