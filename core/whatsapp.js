@@ -19,7 +19,11 @@
  * @param {Array} orderObject.items - Array of items with name, quantity, and price
  * @param {number} orderObject.total - Total price of the order
  * @param {string} orderObject.customerName - Customer name (optional)
+ * @param {string} orderObject.customerPhone - Customer phone (optional)
  * @param {string} orderObject.notes - Additional notes/observations (optional)
+ * @param {string} orderObject.deliveryMethod - Delivery method (Retirar no local / Entrega) (optional)
+ * @param {string} orderObject.deliveryAddress - Delivery address (if Entrega) (optional)
+ * @param {string} orderObject.deliveryComplement - Delivery address complement (optional)
  * @param {string} orderObject.paymentMethod - Payment method (optional)
  * @param {string} orderObject.changeAmount - Amount paid for change calculation (optional)
  * @param {number} orderObject.change - Change amount (troco) (optional)
@@ -46,9 +50,15 @@ function sendToWhatsApp(phoneNumber, orderObject) {
     const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     message += `📅 Data: ${date} às ${time}\n\n`;
     
-    // Add customer name if provided
+    // Add customer information if provided
     if (orderObject.customerName) {
-        message += `👤 Cliente: ${orderObject.customerName}\n\n`;
+        message += `👤 *Cliente:* ${orderObject.customerName}\n`;
+    }
+    if (orderObject.customerPhone) {
+        message += `📱 *Telefone:* ${orderObject.customerPhone}\n`;
+    }
+    if (orderObject.customerName || orderObject.customerPhone) {
+        message += '\n';
     }
     
     // Add items list
@@ -65,6 +75,20 @@ function sendToWhatsApp(phoneNumber, orderObject) {
     
     // Add total
     message += `💰 *TOTAL: R$ ${orderObject.total.toFixed(2)}*\n\n`;
+    
+    // Add delivery method if provided
+    if (orderObject.deliveryMethod && orderObject.deliveryMethod.trim()) {
+        message += '🚚 *FORMA DE ENTREGA:*\n';
+        message += `${orderObject.deliveryMethod}\n`;
+        
+        if (orderObject.deliveryMethod === 'Entrega' && orderObject.deliveryAddress) {
+            message += `📍 *Endereço:* ${orderObject.deliveryAddress}\n`;
+            if (orderObject.deliveryComplement && orderObject.deliveryComplement.trim()) {
+                message += `   Complemento: ${orderObject.deliveryComplement}\n`;
+            }
+        }
+        message += '\n';
+    }
     
     // Add notes if provided
     if (orderObject.notes && orderObject.notes.trim()) {

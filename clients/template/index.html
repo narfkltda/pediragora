@@ -64,17 +64,67 @@
     <!-- Cart Sidebar -->
     <aside class="cart-sidebar" id="cart-sidebar">
         <div class="cart-header">
-            <h2>Carrinho</h2>
+            <button class="cart-back-btn" id="cart-back-btn" style="display: none;">←</button>
+            <h2 id="cart-header-title">Carrinho</h2>
             <button class="close-cart" id="close-cart">&times;</button>
         </div>
-        <div class="cart-items" id="cart-items">
-            <!-- Cart items will be dynamically generated -->
+        
+        <!-- Step 1: Cart Items -->
+        <div class="cart-step cart-step-1" id="cart-step-1">
+            <div class="cart-items" id="cart-items">
+                <!-- Cart items will be dynamically generated -->
+            </div>
+            <div class="cart-step-footer">
+                <div class="cart-total">
+                    <strong>Total: R$ <span id="cart-total">0.00</span></strong>
+                </div>
+                <button class="btn-continue" id="btn-continue-step1">Continuar</button>
+            </div>
         </div>
-        <div class="cart-footer">
-            <div class="cart-customer-fields">
+        
+        <!-- Step 2: Delivery Method -->
+        <div class="cart-step cart-step-2" id="cart-step-2" style="display: none;">
+            <div class="cart-step-content">
+                <div class="field-group">
+                    <label>Forma de Entrega</label>
+                    <div class="delivery-methods">
+                        <label class="delivery-option">
+                            <input type="radio" name="delivery-method" value="Retirar no local" id="delivery-retirar">
+                            <span>Retirar no local</span>
+                        </label>
+                        <label class="delivery-option">
+                            <input type="radio" name="delivery-method" value="Entrega" id="delivery-entrega">
+                            <span>Entrega</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="delivery-address-field" id="delivery-address-field" style="display: none;">
+                    <div class="field-group">
+                        <label for="delivery-address">Endereço</label>
+                        <input type="text" id="delivery-address" class="customer-input" placeholder="Rua, número, bairro">
+                    </div>
+                    <div class="field-group">
+                        <label for="delivery-complement">Complemento</label>
+                        <input type="text" id="delivery-complement" class="customer-input" placeholder="Apto, bloco, referência (opcional)">
+                    </div>
+                </div>
+            </div>
+            <div class="cart-step-footer">
+                <button class="btn-back" id="btn-back-step2">Voltar</button>
+                <button class="btn-continue" id="btn-continue-step2">Continuar</button>
+            </div>
+        </div>
+        
+        <!-- Step 3: Identification and Payment -->
+        <div class="cart-step cart-step-3" id="cart-step-3" style="display: none;">
+            <div class="cart-step-content">
                 <div class="field-group">
                     <label for="customer-name">Nome</label>
                     <input type="text" id="customer-name" class="customer-input" placeholder="Seu nome">
+                </div>
+                <div class="field-group">
+                    <label for="customer-phone">Telefone</label>
+                    <input type="tel" id="customer-phone" class="customer-input" placeholder="(00) 00000-0000" inputmode="tel">
                 </div>
                 <div class="field-group">
                     <label for="customer-notes">Observações</label>
@@ -106,10 +156,15 @@
                     </div>
                 </div>
             </div>
-            <div class="cart-total">
-                <strong>Total: R$ <span id="cart-total">0.00</span></strong>
+            <div class="cart-step-footer">
+                <div class="cart-total">
+                    <strong>Total: R$ <span id="cart-total-step3">0.00</span></strong>
+                </div>
+                <div class="cart-step-buttons">
+                    <button class="btn-back" id="btn-back-step3">Voltar</button>
+                    <button class="btn-checkout" id="btn-checkout">Finalizar Pedido</button>
+                </div>
             </div>
-            <button class="btn-checkout" id="btn-checkout">Finalizar Pedido</button>
         </div>
     </aside>
 

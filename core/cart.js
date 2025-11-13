@@ -20,9 +20,13 @@
 const STORAGE_KEYS = {
     CART: 'pediragora_cart',
     CUSTOMER_NAME: 'pediragora_customer_name',
+    CUSTOMER_PHONE: 'pediragora_customer_phone',
     CUSTOMER_NOTES: 'pediragora_customer_notes',
     PAYMENT_METHOD: 'pediragora_payment_method',
-    CHANGE_AMOUNT: 'pediragora_change_amount'
+    CHANGE_AMOUNT: 'pediragora_change_amount',
+    DELIVERY_METHOD: 'pediragora_delivery_method',
+    DELIVERY_ADDRESS: 'pediragora_delivery_address',
+    DELIVERY_COMPLEMENT: 'pediragora_delivery_complement'
 };
 
 // In-memory cart storage
@@ -164,15 +168,131 @@ function loadChangeAmount() {
 }
 
 /**
+ * Save customer phone
+ */
+function saveCustomerPhone(phone) {
+    try {
+        if (phone) {
+            localStorage.setItem(STORAGE_KEYS.CUSTOMER_PHONE, phone);
+        } else {
+            localStorage.removeItem(STORAGE_KEYS.CUSTOMER_PHONE);
+        }
+        console.log('Customer phone saved to localStorage');
+    } catch (error) {
+        console.error('Error saving customer phone to localStorage:', error);
+    }
+}
+
+/**
+ * Load customer phone
+ */
+function loadCustomerPhone() {
+    try {
+        return localStorage.getItem(STORAGE_KEYS.CUSTOMER_PHONE) || '';
+    } catch (error) {
+        console.error('Error loading customer phone from localStorage:', error);
+        return '';
+    }
+}
+
+/**
+ * Save delivery method
+ */
+function saveDeliveryMethod(method) {
+    try {
+        if (method) {
+            localStorage.setItem(STORAGE_KEYS.DELIVERY_METHOD, method);
+        } else {
+            localStorage.removeItem(STORAGE_KEYS.DELIVERY_METHOD);
+        }
+        console.log('Delivery method saved to localStorage');
+    } catch (error) {
+        console.error('Error saving delivery method to localStorage:', error);
+    }
+}
+
+/**
+ * Load delivery method
+ */
+function loadDeliveryMethod() {
+    try {
+        return localStorage.getItem(STORAGE_KEYS.DELIVERY_METHOD) || '';
+    } catch (error) {
+        console.error('Error loading delivery method from localStorage:', error);
+        return '';
+    }
+}
+
+/**
+ * Save delivery address
+ */
+function saveDeliveryAddress(address) {
+    try {
+        if (address) {
+            localStorage.setItem(STORAGE_KEYS.DELIVERY_ADDRESS, address);
+        } else {
+            localStorage.removeItem(STORAGE_KEYS.DELIVERY_ADDRESS);
+        }
+        console.log('Delivery address saved to localStorage');
+    } catch (error) {
+        console.error('Error saving delivery address to localStorage:', error);
+    }
+}
+
+/**
+ * Load delivery address
+ */
+function loadDeliveryAddress() {
+    try {
+        return localStorage.getItem(STORAGE_KEYS.DELIVERY_ADDRESS) || '';
+    } catch (error) {
+        console.error('Error loading delivery address from localStorage:', error);
+        return '';
+    }
+}
+
+/**
+ * Save delivery complement
+ */
+function saveDeliveryComplement(complement) {
+    try {
+        if (complement) {
+            localStorage.setItem(STORAGE_KEYS.DELIVERY_COMPLEMENT, complement);
+        } else {
+            localStorage.removeItem(STORAGE_KEYS.DELIVERY_COMPLEMENT);
+        }
+        console.log('Delivery complement saved to localStorage');
+    } catch (error) {
+        console.error('Error saving delivery complement to localStorage:', error);
+    }
+}
+
+/**
+ * Load delivery complement
+ */
+function loadDeliveryComplement() {
+    try {
+        return localStorage.getItem(STORAGE_KEYS.DELIVERY_COMPLEMENT) || '';
+    } catch (error) {
+        console.error('Error loading delivery complement from localStorage:', error);
+        return '';
+    }
+}
+
+/**
  * Clear all cart and customer data from localStorage
  */
 function clearStorage() {
     try {
         localStorage.removeItem(STORAGE_KEYS.CART);
         localStorage.removeItem(STORAGE_KEYS.CUSTOMER_NAME);
+        localStorage.removeItem(STORAGE_KEYS.CUSTOMER_PHONE);
         localStorage.removeItem(STORAGE_KEYS.CUSTOMER_NOTES);
         localStorage.removeItem(STORAGE_KEYS.PAYMENT_METHOD);
         localStorage.removeItem(STORAGE_KEYS.CHANGE_AMOUNT);
+        localStorage.removeItem(STORAGE_KEYS.DELIVERY_METHOD);
+        localStorage.removeItem(STORAGE_KEYS.DELIVERY_ADDRESS);
+        localStorage.removeItem(STORAGE_KEYS.DELIVERY_COMPLEMENT);
         console.log('All cart data cleared from localStorage');
     } catch (error) {
         console.error('Error clearing localStorage:', error);

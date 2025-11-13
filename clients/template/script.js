@@ -82,6 +82,24 @@ const changeResult = document.getElementById('change-result');
 const changeValue = document.getElementById('change-value');
 const openingHoursContainer = document.getElementById('opening-hours-container');
 const cartOverlay = document.getElementById('cart-overlay');
+const cartBackBtn = document.getElementById('cart-back-btn');
+const cartHeaderTitle = document.getElementById('cart-header-title');
+const cartStep1 = document.getElementById('cart-step-1');
+const cartStep2 = document.getElementById('cart-step-2');
+const cartStep3 = document.getElementById('cart-step-3');
+const btnContinueStep1 = document.getElementById('btn-continue-step1');
+const btnContinueStep2 = document.getElementById('btn-continue-step2');
+const btnBackStep2 = document.getElementById('btn-back-step2');
+const btnBackStep3 = document.getElementById('btn-back-step3');
+const deliveryMethodInputs = document.querySelectorAll('input[name="delivery-method"]');
+const deliveryAddressField = document.getElementById('delivery-address-field');
+const deliveryAddressInput = document.getElementById('delivery-address');
+const deliveryComplementInput = document.getElementById('delivery-complement');
+const customerPhoneInput = document.getElementById('customer-phone');
+const cartTotalStep3 = document.getElementById('cart-total-step3');
+
+// Cart step state
+let currentCartStep = 1;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -97,6 +115,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     customerNameInput.value = customerData.name || '';
     customerNotesInput.value = customerData.notes || '';
+    
+    const customerPhone = loadCustomerPhone();
+    if (customerPhoneInput && customerPhone) {
+        customerPhoneInput.value = customerPhone;
+    }
     
     if (paymentMethod) {
         const selectedInput = document.querySelector(`input[name="payment-method"][value="${paymentMethod}"]`);
@@ -121,7 +144,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setupCartToggleListeners();
     setupCustomerFieldListeners();
     setupPaymentMethodListeners();
+    setupDeliveryMethodListeners();
     renderOpeningHours();
+    
+    // Initialize cart to step 1
+    goToCartStep(1);
 });
 
 /**
@@ -241,6 +268,74 @@ function updateSearchClearButton() {
 }
 
 /**
+ * Go to specific cart step
+ */
+function goToCartStep(step) {
+    // Hide all steps
+    cartStep1.style.display = 'none';
+    cartStep2.style.display = 'none';
+    cartStep3.style.display = 'none';
+    
+    // Show selected step
+    if (step === 1) {
+        cartStep1.style.display = 'flex';
+        cartHeaderTitle.textContent = 'Carrinho';
+        cartBackBtn.style.display = 'none';
+        currentCartStep = 1;
+    } else if (step === 2) {
+        cartStep2.style.display = 'flex';
+        cartHeaderTitle.textContent = 'Forma de Entrega';
+        cartBackBtn.style.display = 'flex';
+        currentCartStep = 2;
+    } else if (step === 3) {
+        cartStep3.style.display = 'flex';
+        cartHeaderTitle.textContent = 'Finalizar Pedido';
+        cartBackBtn.style.display = 'flex';
+        currentCartStep = 3;
+        // Update total in step 3
+        cartTotalStep3.textContent = getTotal().toFixed(2);
+    }
+}
+
+/**
+ * Next step
+ */
+function nextCartStep() {
+    if (currentCartStep === 1) {
+        const cart = getCart();
+        if (cart.length === 0) {
+            alert('Adicione itens ao carrinho antes de continuar');
+            return;
+        }
+        goToCartStep(2);
+    } else if (currentCartStep === 2) {
+        const selectedDelivery = document.querySelector('input[name="delivery-method"]:checked');
+        if (!selectedDelivery) {
+            alert('Selecione uma forma de entrega');
+            return;
+        }
+        if (selectedDelivery.value === 'Entrega') {
+            if (!deliveryAddressInput.value.trim()) {
+                alert('Informe o endereço de entrega');
+                return;
+            }
+        }
+        goToCartStep(3);
+    }
+}
+
+/**
+ * Previous step
+ */
+function prevCartStep() {
+    if (currentCartStep === 2) {
+        goToCartStep(1);
+    } else if (currentCartStep === 3) {
+        goToCartStep(2);
+    }
+}
+
+/**
  * Open cart
  */
 function openCart() {
@@ -248,6 +343,8 @@ function openCart() {
     if (cartOverlay) {
         cartOverlay.classList.add('active');
     }
+    // Reset to step 1
+    goToCartStep(1);
     // Prevent body scroll when cart is open on mobile
     document.body.style.overflow = 'hidden';
 }
@@ -260,8 +357,65 @@ function closeCart() {
     if (cartOverlay) {
         cartOverlay.classList.remove('active');
     }
+    // Reset to step 1
+    goToCartStep(1);
     // Restore body scroll
     document.body.style.overflow = '';
+}
+
+/**
+ * Setup delivery method listeners
+ */
+function setupDeliveryMethodListeners() {
+    deliveryMethodInputs.forEach(input => {
+        input.addEventListener('change', () => {
+            if (input.checked) {
+                saveDeliveryMethod(input.value);
+                if (input.value === 'Entrega') {
+                    deliveryAddressField.style.display = 'block';
+                } else {
+                    deliveryAddressField.style.display = 'none';
+                    deliveryAddressInput.value = '';
+                    deliveryComplementInput.value = '';
+                    saveDeliveryAddress('');
+                    saveDeliveryComplement('');
+                }
+            }
+        });
+    });
+    
+    // Save address and complement on input
+    if (deliveryAddressInput) {
+        deliveryAddressInput.addEventListener('input', () => {
+            saveDeliveryAddress(deliveryAddressInput.value.trim());
+        });
+    }
+    
+    if (deliveryComplementInput) {
+        deliveryComplementInput.addEventListener('input', () => {
+            saveDeliveryComplement(deliveryComplementInput.value.trim());
+        });
+    }
+    
+    // Load saved delivery data
+    const savedDeliveryMethod = loadDeliveryMethod();
+    if (savedDeliveryMethod) {
+        const savedInput = document.querySelector(`input[name="delivery-method"][value="${savedDeliveryMethod}"]`);
+        if (savedInput) {
+            savedInput.checked = true;
+            if (savedDeliveryMethod === 'Entrega') {
+                deliveryAddressField.style.display = 'block';
+                const savedAddress = loadDeliveryAddress();
+                const savedComplement = loadDeliveryComplement();
+                if (deliveryAddressInput && savedAddress) {
+                    deliveryAddressInput.value = savedAddress;
+                }
+                if (deliveryComplementInput && savedComplement) {
+                    deliveryComplementInput.value = savedComplement;
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -283,6 +437,37 @@ function setupCartToggleListeners() {
         });
     }
     
+    // Navigation buttons
+    if (btnContinueStep1) {
+        btnContinueStep1.addEventListener('click', () => {
+            nextCartStep();
+        });
+    }
+    
+    if (btnContinueStep2) {
+        btnContinueStep2.addEventListener('click', () => {
+            nextCartStep();
+        });
+    }
+    
+    if (btnBackStep2) {
+        btnBackStep2.addEventListener('click', () => {
+            prevCartStep();
+        });
+    }
+    
+    if (btnBackStep3) {
+        btnBackStep3.addEventListener('click', () => {
+            prevCartStep();
+        });
+    }
+    
+    if (cartBackBtn) {
+        cartBackBtn.addEventListener('click', () => {
+            prevCartStep();
+        });
+    }
+    
     checkoutBtn.addEventListener('click', () => {
         handleCheckout();
     });
@@ -299,6 +484,12 @@ function setupCustomerFieldListeners() {
     customerNotesInput.addEventListener('input', () => {
         saveCustomerData(customerNameInput.value.trim(), customerNotesInput.value.trim());
     });
+    
+    if (customerPhoneInput) {
+        customerPhoneInput.addEventListener('input', () => {
+            saveCustomerPhone(customerPhoneInput.value.trim());
+        });
+    }
 }
 
 /**
@@ -514,6 +705,51 @@ function handleCheckout() {
         }
     }
     
+    // Get delivery method
+    const selectedDeliveryMethod = document.querySelector('input[name="delivery-method"]:checked');
+    const deliveryMethod = selectedDeliveryMethod ? selectedDeliveryMethod.value : '';
+    
+    // Get delivery address if delivery
+    let deliveryAddress = '';
+    let deliveryComplement = '';
+    if (deliveryMethod === 'Entrega') {
+        deliveryAddress = deliveryAddressInput ? deliveryAddressInput.value.trim() : '';
+        deliveryComplement = deliveryComplementInput ? deliveryComplementInput.value.trim() : '';
+        if (!deliveryAddress) {
+            alert('Informe o endereço de entrega');
+            return;
+        }
+    }
+    
+    // Validate required fields
+    if (!customerNameInput.value.trim()) {
+        alert('Informe seu nome');
+        return;
+    }
+    
+    if (!customerPhoneInput || !customerPhoneInput.value.trim()) {
+        alert('Informe seu telefone');
+        return;
+    }
+    
+    if (!paymentMethod) {
+        alert('Selecione uma forma de pagamento');
+        return;
+    }
+    
+    // Save all data
+    saveCustomerData(customerNameInput.value.trim(), customerNotesInput.value.trim());
+    if (customerPhoneInput) {
+        saveCustomerPhone(customerPhoneInput.value.trim());
+    }
+    if (deliveryMethod) {
+        saveDeliveryMethod(deliveryMethod);
+    }
+    if (deliveryMethod === 'Entrega') {
+        saveDeliveryAddress(deliveryAddress);
+        saveDeliveryComplement(deliveryComplement);
+    }
+    
     const order = {
         items: cart.map(item => ({
             name: item.name,
@@ -522,13 +758,23 @@ function handleCheckout() {
         })),
         total: total,
         customerName: customerNameInput.value.trim(),
+        customerPhone: customerPhoneInput ? customerPhoneInput.value.trim() : '',
         notes: customerNotesInput.value.trim(),
+        deliveryMethod: deliveryMethod,
+        deliveryAddress: deliveryAddress,
+        deliveryComplement: deliveryComplement,
         paymentMethod: paymentMethod,
         changeAmount: changeAmount,
         change: change
     };
     
     sendToWhatsApp(CONFIG.whatsappNumber, order);
+    
+    // Clear cart after checkout
+    clearCart();
+    clearStorage();
+    renderCartUI();
+    closeCart();
 }
 
 /**
