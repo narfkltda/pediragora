@@ -20,6 +20,7 @@
  * @param {number} orderObject.total - Total price of the order
  * @param {string} orderObject.customerName - Customer name (optional)
  * @param {string} orderObject.notes - Additional notes/observations (optional)
+ * @param {string} orderObject.paymentMethod - Payment method (optional)
  */
 function sendToWhatsApp(phoneNumber, orderObject) {
     if (!phoneNumber) {
@@ -36,6 +37,12 @@ function sendToWhatsApp(phoneNumber, orderObject) {
     
     // Build the message
     let message = '🍽️ *NOVO PEDIDO*\n\n';
+    
+    // Add date and time
+    const now = new Date();
+    const date = now.toLocaleDateString('pt-BR');
+    const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    message += `📅 Data: ${date} às ${time}\n\n`;
     
     // Add customer name if provided
     if (orderObject.customerName) {
@@ -63,9 +70,15 @@ function sendToWhatsApp(phoneNumber, orderObject) {
         message += `${orderObject.notes}\n\n`;
     }
     
+    // Add payment method if provided
+    if (orderObject.paymentMethod && orderObject.paymentMethod.trim()) {
+        message += '💳 *FORMA DE PAGAMENTO:*\n';
+        message += `${orderObject.paymentMethod}\n\n`;
+    }
+    
     // Add footer
     message += '─'.repeat(30) + '\n';
-    message += 'Obrigado pelo pedido! 🎉';
+    message += 'Aguarde confirmação do pedido por favor!';
     
     // Encode the message for URL
     const encodedMessage = encodeURIComponent(message);

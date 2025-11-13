@@ -62,6 +62,23 @@
                     <label for="customer-notes">Observações (opcional)</label>
                     <textarea id="customer-notes" class="customer-textarea" placeholder="Observações sobre o pedido" rows="3"></textarea>
                 </div>
+                <div class="field-group">
+                    <label>Forma de Pagamento (opcional)</label>
+                    <div class="payment-methods">
+                        <label class="payment-option">
+                            <input type="radio" name="payment-method" value="PIX" id="payment-pix">
+                            <span>PIX</span>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="payment-method" value="Dinheiro" id="payment-dinheiro">
+                            <span>Dinheiro</span>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="payment-method" value="Cartão (Crédito/Débito)" id="payment-cartao">
+                            <span>Cartão (Crédito/Débito)</span>
+                        </label>
+                    </div>
+                </div>
             </div>
             <div class="cart-total">
                 <strong>Total: R$ <span id="cart-total">0.00</span></strong>

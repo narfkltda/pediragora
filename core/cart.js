@@ -20,7 +20,8 @@
 const STORAGE_KEYS = {
     CART: 'menu_cart',
     CUSTOMER_NAME: 'menu_customer_name',
-    CUSTOMER_NOTES: 'menu_customer_notes'
+    CUSTOMER_NOTES: 'menu_customer_notes',
+    PAYMENT_METHOD: 'menu_payment_method'
 };
 
 // In-memory cart storage
@@ -98,6 +99,38 @@ function loadCustomerData() {
 }
 
 /**
+ * Save payment method to localStorage
+ * 
+ * @param {string} method - Payment method (PIX, Dinheiro, Cartão)
+ */
+function savePaymentMethod(method) {
+    try {
+        if (method) {
+            localStorage.setItem(STORAGE_KEYS.PAYMENT_METHOD, method);
+        } else {
+            localStorage.removeItem(STORAGE_KEYS.PAYMENT_METHOD);
+        }
+        console.log('Payment method saved to localStorage');
+    } catch (error) {
+        console.error('Error saving payment method to localStorage:', error);
+    }
+}
+
+/**
+ * Load payment method from localStorage
+ * 
+ * @returns {string} Payment method or empty string
+ */
+function loadPaymentMethod() {
+    try {
+        return localStorage.getItem(STORAGE_KEYS.PAYMENT_METHOD) || '';
+    } catch (error) {
+        console.error('Error loading payment method from localStorage:', error);
+        return '';
+    }
+}
+
+/**
  * Clear all cart and customer data from localStorage
  */
 function clearStorage() {
@@ -105,6 +138,7 @@ function clearStorage() {
         localStorage.removeItem(STORAGE_KEYS.CART);
         localStorage.removeItem(STORAGE_KEYS.CUSTOMER_NAME);
         localStorage.removeItem(STORAGE_KEYS.CUSTOMER_NOTES);
+        localStorage.removeItem(STORAGE_KEYS.PAYMENT_METHOD);
         console.log('All cart data cleared from localStorage');
     } catch (error) {
         console.error('Error clearing localStorage:', error);

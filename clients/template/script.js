@@ -66,6 +66,7 @@ const customerNameInput = document.getElementById('customer-name');
 const customerNotesInput = document.getElementById('customer-notes');
 const searchInput = document.getElementById('search-input');
 const searchClearBtn = document.getElementById('search-clear');
+const paymentMethodInputs = document.querySelectorAll('input[name="payment-method"]');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -76,9 +77,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const cart = getCart();
     const customerData = loadCustomerData();
+    const paymentMethod = loadPaymentMethod();
     
     customerNameInput.value = customerData.name || '';
     customerNotesInput.value = customerData.notes || '';
+    
+    if (paymentMethod) {
+        const selectedInput = document.querySelector(`input[name="payment-method"][value="${paymentMethod}"]`);
+        if (selectedInput) {
+            selectedInput.checked = true;
+        }
+    }
     
     renderCategories();
     renderItems();
@@ -88,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupSearchListeners();
     setupCartToggleListeners();
     setupCustomerFieldListeners();
+    setupPaymentMethodListeners();
 });
 
 /**
@@ -237,6 +247,19 @@ function setupCustomerFieldListeners() {
 }
 
 /**
+ * Setup payment method listeners
+ */
+function setupPaymentMethodListeners() {
+    paymentMethodInputs.forEach(input => {
+        input.addEventListener('change', () => {
+            if (input.checked) {
+                savePaymentMethod(input.value);
+            }
+        });
+    });
+}
+
+/**
  * Handle add to cart
  */
 function handleAddToCart(itemId) {
@@ -349,6 +372,13 @@ function handleCheckout() {
     
     saveCustomerData(customerNameInput.value.trim(), customerNotesInput.value.trim());
     
+    const selectedPaymentMethod = document.querySelector('input[name="payment-method"]:checked');
+    const paymentMethod = selectedPaymentMethod ? selectedPaymentMethod.value : '';
+    
+    if (selectedPaymentMethod) {
+        savePaymentMethod(paymentMethod);
+    }
+    
     const order = {
         items: cart.map(item => ({
             name: item.name,
@@ -357,7 +387,8 @@ function handleCheckout() {
         })),
         total: getTotal(),
         customerName: customerNameInput.value.trim(),
-        notes: customerNotesInput.value.trim()
+        notes: customerNotesInput.value.trim(),
+        paymentMethod: paymentMethod
     };
     
     sendToWhatsApp(CONFIG.whatsappNumber, order);
