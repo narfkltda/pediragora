@@ -33,7 +33,8 @@ body {
     align-items: center;
     gap: 20px;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: space-between;
+    position: relative;
 }
 
 .logo-placeholder {
@@ -63,61 +64,156 @@ body {
     font-size: 2rem;
     color: #2c3e50;
     text-align: center;
+    flex: 1;
+    margin: 0;
 }
 
-/* Opening Hours Section */
+/* Cart Toggle Button in Header */
+.cart-toggle {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    background: transparent;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    padding: 0;
+    margin-left: auto;
+}
+
+.cart-toggle:hover {
+    background: #f8f9fa;
+    border-color: #27ae60;
+    transform: scale(1.05);
+}
+
+.cart-toggle:active {
+    transform: scale(0.95);
+}
+
+.cart-icon {
+    width: 24px;
+    height: 24px;
+    color: #27ae60;
+    transition: color 0.3s ease;
+}
+
+.cart-toggle:hover .cart-icon {
+    color: #27ae60;
+}
+
+.cart-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    min-width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 0 4px;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    animation: none;
+}
+
+.cart-count.pulse {
+    animation: pulse 0.5s ease;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.3);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Opening Hours Section - Minimalista */
 .opening-hours-section {
     background: white;
-    padding: 20px;
+    padding: 12px 20px;
     border-bottom: 1px solid #e0e0e0;
 }
 
 .opening-hours-container {
     max-width: 1200px;
     margin: 0 auto;
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
 }
 
 .opening-hours-day-card {
-    background: #f8f9fa;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 12px 8px;
+    background: transparent;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 8px 12px;
     text-align: center;
-    transition: all 0.3s ease;
+    min-width: 80px;
+    transition: all 0.2s ease;
     cursor: default;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .opening-hours-day-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-color: #27ae60;
+    background: #f8f9fa;
 }
 
 .opening-hours-day-card.current-day {
     background: #e8f5e9;
     border-color: #27ae60;
-    border-width: 2px;
+    position: relative;
+}
+
+.opening-hours-day-card.current-day::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 6px;
+    height: 6px;
+    background: #27ae60;
+    border-radius: 50%;
 }
 
 .opening-hours-day-card.closed-day {
-    background: #fff5f5;
-    border-color: #e74c3c;
+    opacity: 0.6;
 }
 
 .opening-hours-day-name {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     font-weight: 600;
     color: #2c3e50;
-    margin-bottom: 6px;
+    margin-bottom: 2px;
     text-transform: capitalize;
+    line-height: 1.2;
 }
 
 .opening-hours-day-status {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 500;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
+    display: none;
 }
 
 .opening-hours-day-status.open {
@@ -131,25 +227,30 @@ body {
 .opening-hours-day-time {
     font-size: 0.7rem;
     color: #666;
-    margin-top: 4px;
+    line-height: 1.2;
 }
 
-/* Responsive: Mobile */
+.opening-hours-day-time.closed-text {
+    color: #999;
+    font-size: 0.65rem;
+}
+
+/* Responsive: Tablet */
 @media (max-width: 768px) {
+    .opening-hours-section {
+        padding: 10px 15px;
+    }
+    
     .opening-hours-container {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 8px;
+        gap: 6px;
     }
     
     .opening-hours-day-card {
-        padding: 10px 6px;
+        min-width: 70px;
+        padding: 6px 10px;
     }
     
     .opening-hours-day-name {
-        font-size: 0.75rem;
-    }
-    
-    .opening-hours-day-status {
         font-size: 0.7rem;
     }
     
@@ -158,9 +259,79 @@ body {
     }
 }
 
+/* Responsive: Mobile */
 @media (max-width: 480px) {
+    .opening-hours-section {
+        padding: 8px 12px;
+    }
+    
     .opening-hours-container {
-        grid-template-columns: repeat(2, 1fr);
+        gap: 4px;
+    }
+    
+    .opening-hours-day-card {
+        min-width: 60px;
+        padding: 6px 8px;
+    }
+    
+    .opening-hours-day-name {
+        font-size: 0.65rem;
+    }
+    
+    .opening-hours-day-time {
+        font-size: 0.6rem;
+    }
+}
+
+/* Responsive: Cart Button */
+@media (max-width: 768px) {
+    .header-content {
+        justify-content: center;
+    }
+    
+    .cart-toggle {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 44px;
+        height: 44px;
+    }
+    
+    .cart-icon {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .cart-count {
+        min-width: 18px;
+        height: 18px;
+        font-size: 0.65rem;
+        top: -6px;
+        right: -6px;
+    }
+    
+    .restaurant-name {
+        font-size: 1.5rem;
+        padding-right: 60px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cart-toggle {
+        width: 40px;
+        height: 40px;
+        top: 15px;
+        right: 15px;
+    }
+    
+    .cart-icon {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .restaurant-name {
+        font-size: 1.3rem;
+        padding-right: 55px;
     }
 }
 
@@ -625,46 +796,6 @@ body {
     cursor: not-allowed;
 }
 
-/* Cart Toggle Button */
-.cart-toggle {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 60px;
-    height: 60px;
-    background: #27ae60;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    font-size: 1.5rem;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 999;
-    transition: transform 0.3s ease;
-}
-
-.cart-toggle:hover {
-    transform: scale(1.1);
-}
-
-.cart-count {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: #e74c3c;
-    color: white;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    font-weight: bold;
-}
 
 /* Empty Cart Message */
 .empty-cart {

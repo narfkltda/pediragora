@@ -368,10 +368,25 @@ function handleRemove(itemId) {
 function renderCartUI() {
     const cart = getCart();
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+    const previousCount = parseInt(cartCount.textContent) || 0;
     
+    // Update count
     cartCount.textContent = totalItems;
     cartTotal.textContent = getTotal().toFixed(2);
     checkoutBtn.disabled = cart.length === 0;
+    
+    // Add pulse animation if count changed
+    if (totalItems !== previousCount && totalItems > 0) {
+        cartCount.classList.remove('pulse');
+        // Trigger reflow to restart animation
+        void cartCount.offsetWidth;
+        cartCount.classList.add('pulse');
+        
+        // Remove class after animation completes
+        setTimeout(() => {
+            cartCount.classList.remove('pulse');
+        }, 500);
+    }
     
     renderCartItems();
     
@@ -489,13 +504,13 @@ function handleCheckout() {
  */
 function getAllDaysInPortuguese() {
     return [
-        { key: 'domingo', name: 'Domingo' },
-        { key: 'segunda', name: 'Segunda' },
-        { key: 'terca', name: 'Terça' },
-        { key: 'quarta', name: 'Quarta' },
-        { key: 'quinta', name: 'Quinta' },
-        { key: 'sexta', name: 'Sexta' },
-        { key: 'sabado', name: 'Sábado' }
+        { key: 'domingo', name: 'Dom', fullName: 'Domingo' },
+        { key: 'segunda', name: 'Seg', fullName: 'Segunda' },
+        { key: 'terca', name: 'Ter', fullName: 'Terça' },
+        { key: 'quarta', name: 'Qua', fullName: 'Quarta' },
+        { key: 'quinta', name: 'Qui', fullName: 'Quinta' },
+        { key: 'sexta', name: 'Sex', fullName: 'Sexta' },
+        { key: 'sabado', name: 'Sáb', fullName: 'Sábado' }
     ];
 }
 
@@ -531,6 +546,14 @@ function isCurrentlyOpen(dayKey, openTime, closeTime) {
 }
 
 /**
+ * Format time to compact format (19:00 -> 19h)
+ */
+function formatTimeCompact(time) {
+    if (!time) return '';
+    return time.replace(':00', 'h');
+}
+
+/**
  * Render opening hours for all days
  */
 function renderOpeningHours() {
@@ -559,38 +582,37 @@ function renderOpeningHours() {
             card.classList.add('closed-day');
         }
         
-        // Day name
+        // Day name (abbreviated)
         const dayName = document.createElement('div');
         dayName.className = 'opening-hours-day-name';
         dayName.textContent = day.name;
         card.appendChild(dayName);
         
-        // Status
+        // Status (hidden, only for styling purposes)
         const status = document.createElement('div');
         status.className = 'opening-hours-day-status';
         
         if (!dayHours || !dayHours.open || !dayHours.close) {
-            status.textContent = 'Fechado!';
             status.classList.add('closed');
         } else {
-            // Check if currently open (only for current day)
             if (isCurrentDay && isCurrentlyOpen(day.key, dayHours.open, dayHours.close)) {
-                status.textContent = 'Aberto';
                 status.classList.add('open');
             } else {
-                status.textContent = 'Fechado!';
                 status.classList.add('closed');
             }
         }
         card.appendChild(status);
         
-        // Time
+        // Time (compact format)
         const time = document.createElement('div');
         time.className = 'opening-hours-day-time';
         if (dayHours && dayHours.open && dayHours.close) {
-            time.textContent = `${dayHours.open} - ${dayHours.close}`;
+            const openTime = formatTimeCompact(dayHours.open);
+            const closeTime = formatTimeCompact(dayHours.close);
+            time.textContent = `${openTime}-${closeTime}`;
         } else {
-            time.textContent = 'Fechado';
+            time.textContent = 'Fec';
+            time.classList.add('closed-text');
         }
         card.appendChild(time);
         
