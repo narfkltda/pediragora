@@ -773,10 +773,29 @@ function handleCheckout() {
     
     sendToWhatsApp(CONFIG.whatsappNumber, order);
     
-    // Clear cart after checkout
+    // Clear cart items and temporary data (payment, notes)
+    // Keep customer data (name, phone, address) for future orders
     clearCart();
-    clearStorage();
+    clearTemporaryData();
+    
+    // Clear form fields (except name, phone, address which are kept in localStorage)
+    customerNotesInput.value = '';
+    if (changeField) {
+        changeField.style.display = 'none';
+        changeAmountInput.value = '';
+        changeResult.style.display = 'none';
+    }
+    
+    // Uncheck payment method
+    paymentMethodInputs.forEach(input => {
+        input.checked = false;
+    });
+    
+    // Update UI
     renderCartUI();
+    
+    // Reset to step 1 and close cart
+    goToCartStep(1);
     closeCart();
 }
 

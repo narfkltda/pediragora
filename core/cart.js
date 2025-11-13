@@ -280,6 +280,25 @@ function loadDeliveryComplement() {
 }
 
 /**
+ * Clear temporary data after checkout (cart, payment, notes)
+ * Keeps customer data (name, phone, address) for future orders
+ */
+function clearTemporaryData() {
+    try {
+        // Clear cart items
+        localStorage.removeItem(STORAGE_KEYS.CART);
+        // Clear temporary fields
+        localStorage.removeItem(STORAGE_KEYS.CUSTOMER_NOTES);
+        localStorage.removeItem(STORAGE_KEYS.PAYMENT_METHOD);
+        localStorage.removeItem(STORAGE_KEYS.CHANGE_AMOUNT);
+        // Keep: CUSTOMER_NAME, CUSTOMER_PHONE, DELIVERY_METHOD, DELIVERY_ADDRESS, DELIVERY_COMPLEMENT
+        console.log('Temporary data cleared, customer data kept for recurrence');
+    } catch (error) {
+        console.error('Error clearing temporary data from localStorage:', error);
+    }
+}
+
+/**
  * Clear all cart and customer data from localStorage
  */
 function clearStorage() {
