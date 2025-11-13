@@ -52,7 +52,7 @@ function sendToWhatsApp(phoneNumber, orderObject) {
     
     // Add customer information if provided
     if (orderObject.customerName) {
-        message += `👤 *Cliente:* ${orderObject.customerName}\n`;
+        message += `👤 *Cliente:* ${String(orderObject.customerName).toUpperCase()}\n`;
     }
     if (orderObject.customerPhone) {
         message += `📱 *Telefone:* ${orderObject.customerPhone}\n`;
@@ -67,7 +67,7 @@ function sendToWhatsApp(phoneNumber, orderObject) {
     
     orderObject.items.forEach((item, index) => {
         const itemTotal = item.price * item.quantity;
-        message += `${index + 1}. ${item.name}\n`;
+        message += `${index + 1}. ${String(item.name).toUpperCase()}\n`;
         message += `   Qtd: ${item.quantity} x R$ ${item.price.toFixed(2)} = R$ ${itemTotal.toFixed(2)}\n`;
     });
     
@@ -79,12 +79,12 @@ function sendToWhatsApp(phoneNumber, orderObject) {
     // Add delivery method if provided
     if (orderObject.deliveryMethod && orderObject.deliveryMethod.trim()) {
         message += '🚚 *FORMA DE ENTREGA:*\n';
-        message += `${orderObject.deliveryMethod}\n`;
+        message += `${String(orderObject.deliveryMethod).toUpperCase()}\n`;
         
         if (orderObject.deliveryMethod === 'Entrega' && orderObject.deliveryAddress) {
-            message += `📍 *Endereço:* ${orderObject.deliveryAddress}\n`;
+            message += `📍 *Endereço:* ${String(orderObject.deliveryAddress).toUpperCase()}\n`;
             if (orderObject.deliveryComplement && orderObject.deliveryComplement.trim()) {
-                message += `   Complemento: ${orderObject.deliveryComplement}\n`;
+                message += `   Complemento: ${String(orderObject.deliveryComplement).toUpperCase()}\n`;
             }
         }
         message += '\n';
@@ -93,13 +93,13 @@ function sendToWhatsApp(phoneNumber, orderObject) {
     // Add notes if provided
     if (orderObject.notes && orderObject.notes.trim()) {
         message += '📝 *OBSERVAÇÕES:*\n';
-        message += `${orderObject.notes}\n\n`;
+        message += `${String(orderObject.notes).toUpperCase()}\n\n`;
     }
     
     // Add payment method if provided
     if (orderObject.paymentMethod && orderObject.paymentMethod.trim()) {
         message += '💳 *FORMA DE PAGAMENTO:*\n';
-        message += `${orderObject.paymentMethod}\n\n`;
+        message += `${String(orderObject.paymentMethod).toUpperCase()}\n\n`;
         
         // Add change information if payment is cash
         if (orderObject.paymentMethod === 'Dinheiro' && orderObject.changeAmount) {
