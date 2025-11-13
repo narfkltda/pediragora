@@ -48,8 +48,9 @@ html.cart-open {
     align-items: center;
     gap: 20px;
     flex-wrap: wrap;
-    justify-content: space-between;
+    justify-content: center;
     position: relative;
+    margin-bottom: 15px;
 }
 
 .logo-placeholder {
@@ -83,7 +84,55 @@ html.cart-open {
     margin: 0;
 }
 
-/* Cart Toggle Button in Header */
+/* Header Toolbar */
+.header-toolbar {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 10px;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* Map Toggle Button */
+.map-toggle {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    background: transparent;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    padding: 0;
+}
+
+.map-toggle:hover {
+    background: #f8f9fa;
+    border-color: #27ae60;
+    transform: scale(1.05);
+}
+
+.map-toggle:active {
+    transform: scale(0.95);
+}
+
+.map-icon {
+    width: 24px;
+    height: 24px;
+    color: #27ae60;
+    transition: color 0.3s ease;
+}
+
+.map-toggle:hover .map-icon {
+    color: #27ae60;
+}
+
+/* Cart Toggle Button in Toolbar */
 .cart-toggle {
     position: relative;
     width: 48px;
@@ -97,7 +146,6 @@ html.cart-open {
     justify-content: center;
     transition: all 0.3s ease;
     padding: 0;
-    margin-left: auto;
 }
 
 .cart-toggle:hover {
@@ -344,23 +392,27 @@ html.cart-open {
     }
 }
 
-/* Responsive: Cart Button */
+/* Responsive: Header Toolbar */
 @media (max-width: 768px) {
     .header-content {
         justify-content: center;
+        margin-bottom: 12px;
     }
     
+    .header-toolbar {
+        padding-top: 8px;
+    }
+    
+    .map-toggle,
     .cart-toggle {
-        position: absolute;
-        top: 20px;
-        right: 20px;
         width: 44px;
         height: 44px;
     }
     
+    .map-icon,
     .cart-icon {
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
     }
     
     .cart-count {
@@ -373,26 +425,32 @@ html.cart-open {
     
     .restaurant-name {
         font-size: 1.5rem;
-        padding-right: 60px;
     }
 }
 
 @media (max-width: 480px) {
+    .header-content {
+        margin-bottom: 10px;
+    }
+    
+    .header-toolbar {
+        padding-top: 6px;
+    }
+    
+    .map-toggle,
     .cart-toggle {
         width: 40px;
         height: 40px;
-        top: 15px;
-        right: 15px;
     }
     
+    .map-icon,
     .cart-icon {
-        width: 18px;
-        height: 18px;
+        width: 20px;
+        height: 20px;
     }
     
     .restaurant-name {
         font-size: 1.3rem;
-        padding-right: 55px;
     }
 }
 

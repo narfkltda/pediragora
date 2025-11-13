@@ -15,6 +15,8 @@ const CONFIG = {
     restaurantName: 'Nome do Restaurante',
     whatsappNumber: '67982077085', // Format: DDD + number (no spaces or special chars)
     logoPath: '../../assets/images/logo-placeholder.png',
+    restaurantLatitude: -20.366398216207873,
+    restaurantLongitude: -51.419600701990916,
     openingHours: {
         segunda: null, // Fechado na segunda-feira
         terca: { open: '19:00', close: '23:00' },
@@ -69,6 +71,7 @@ const cartItems = document.getElementById('cart-items');
 const cartTotal = document.getElementById('cart-total');
 const cartCount = document.getElementById('cart-count');
 const cartToggle = document.getElementById('cart-toggle');
+const mapToggle = document.getElementById('map-toggle');
 const closeCartBtn = document.getElementById('close-cart');
 const checkoutBtn = document.getElementById('btn-checkout');
 const customerNameInput = document.getElementById('customer-name');
@@ -141,6 +144,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setupCategoryListeners();
     setupSearchListeners();
     setupCartToggleListeners();
+    setupMapToggleListener();
+    setupCartNavigationButtons();
     setupCustomerFieldListeners();
     setupPaymentMethodListeners();
     setupDeliveryMethodListeners();
@@ -470,7 +475,28 @@ function setupCartToggleListeners() {
             closeCart();
         });
     }
-    
+}
+
+/**
+ * Setup map toggle listener
+ */
+function setupMapToggleListener() {
+    if (mapToggle) {
+        mapToggle.addEventListener('click', () => {
+            // Use exact coordinates from CONFIG
+            const lat = CONFIG.restaurantLatitude;
+            const lng = CONFIG.restaurantLongitude;
+            // Open Google Maps with exact coordinates
+            const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+            window.open(googleMapsUrl, '_blank');
+        });
+    }
+}
+
+/**
+ * Setup cart navigation buttons
+ */
+function setupCartNavigationButtons() {
     // Navigation buttons
     if (btnContinueStep1) {
         btnContinueStep1.addEventListener('click', () => {
