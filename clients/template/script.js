@@ -67,6 +67,10 @@ const customerNotesInput = document.getElementById('customer-notes');
 const searchInput = document.getElementById('search-input');
 const searchClearBtn = document.getElementById('search-clear');
 const paymentMethodInputs = document.querySelectorAll('input[name="payment-method"]');
+const changeField = document.getElementById('change-field');
+const changeAmountInput = document.getElementById('change-amount');
+const changeResult = document.getElementById('change-result');
+const changeValue = document.getElementById('change-value');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -78,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cart = getCart();
     const customerData = loadCustomerData();
     const paymentMethod = loadPaymentMethod();
+    const changeAmount = loadChangeAmount();
     
     customerNameInput.value = customerData.name || '';
     customerNotesInput.value = customerData.notes || '';
@@ -86,6 +91,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedInput = document.querySelector(`input[name="payment-method"][value="${paymentMethod}"]`);
         if (selectedInput) {
             selectedInput.checked = true;
+            if (paymentMethod === 'Dinheiro') {
+                changeField.style.display = 'block';
+                if (changeAmount) {
+                    changeAmountInput.value = changeAmount;
+                    calculateChange();
+                }
+            }
         }
     }
     
@@ -254,9 +266,54 @@ function setupPaymentMethodListeners() {
         input.addEventListener('change', () => {
             if (input.checked) {
                 savePaymentMethod(input.value);
+                
+                // Show/hide change field based on payment method
+                if (input.value === 'Dinheiro') {
+                    changeField.style.display = 'block';
+                    changeAmountInput.focus();
+                } else {
+                    changeField.style.display = 'none';
+                    changeAmountInput.value = '';
+                    changeResult.style.display = 'none';
+                    saveChangeAmount('');
+                }
             }
         });
     });
+    
+    // Calculate change on input
+    changeAmountInput.addEventListener('input', () => {
+        calculateChange();
+    });
+}
+
+/**
+ * Calculate change (troco)
+ */
+function calculateChange() {
+    const amountStr = changeAmountInput.value.replace(',', '.').trim();
+    const amount = parseFloat(amountStr);
+    const total = getTotal();
+    
+    if (!amountStr || isNaN(amount) || amount <= 0) {
+        changeResult.style.display = 'none';
+        saveChangeAmount('');
+        return;
+    }
+    
+    if (amount < total) {
+        changeResult.style.display = 'block';
+        changeValue.textContent = 'Valor insuficiente';
+        changeValue.style.color = '#e74c3c';
+        saveChangeAmount(amountStr);
+        return;
+    }
+    
+    const change = amount - total;
+    changeResult.style.display = 'block';
+    changeValue.textContent = change.toFixed(2);
+    changeValue.style.color = '#27ae60';
+    saveChangeAmount(amountStr);
 }
 
 /**
@@ -306,6 +363,11 @@ function renderCartUI() {
     checkoutBtn.disabled = cart.length === 0;
     
     renderCartItems();
+    
+    // Recalculate change if field is visible and has value
+    if (changeField.style.display === 'block' && changeAmountInput.value) {
+        calculateChange();
+    }
 }
 
 /**
@@ -379,16 +441,33 @@ function handleCheckout() {
         savePaymentMethod(paymentMethod);
     }
     
+    const total = getTotal();
+    let changeAmount = '';
+    let change = 0;
+    
+    if (paymentMethod === 'Dinheiro' && changeAmountInput.value) {
+        const amountStr = changeAmountInput.value.replace(',', '.').trim();
+        const amount = parseFloat(amountStr);
+        if (!isNaN(amount) && amount > 0) {
+            changeAmount = amountStr;
+            if (amount >= total) {
+                change = amount - total;
+            }
+        }
+    }
+    
     const order = {
         items: cart.map(item => ({
             name: item.name,
             quantity: item.quantity,
             price: item.price
         })),
-        total: getTotal(),
+        total: total,
         customerName: customerNameInput.value.trim(),
         notes: customerNotesInput.value.trim(),
-        paymentMethod: paymentMethod
+        paymentMethod: paymentMethod,
+        changeAmount: changeAmount,
+        change: change
     };
     
     sendToWhatsApp(CONFIG.whatsappNumber, order);

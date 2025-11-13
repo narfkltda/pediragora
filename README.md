@@ -1,4 +1,4 @@
-# Menu - Plataforma de Cardápio Digital
+# Pediragora - Plataforma de Cardápio Digital
 
 Uma plataforma simples e gratuita para criar cardápios digitais para pequenos negócios.
 
@@ -13,7 +13,7 @@ Uma plataforma simples e gratuita para criar cardápios digitais para pequenos n
 ## 📁 Estrutura do Projeto
 
 ```
-/menu
+/pediragora
 │── index.html                      # Página inicial
 │── /clients                        # Páginas dos clientes
 │     └── /template                 # Template base para novos clientes

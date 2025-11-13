@@ -55,15 +55,15 @@
         <div class="cart-footer">
             <div class="cart-customer-fields">
                 <div class="field-group">
-                    <label for="customer-name">Nome (opcional)</label>
+                    <label for="customer-name">Nome</label>
                     <input type="text" id="customer-name" class="customer-input" placeholder="Seu nome">
                 </div>
                 <div class="field-group">
-                    <label for="customer-notes">Observações (opcional)</label>
+                    <label for="customer-notes">Observações</label>
                     <textarea id="customer-notes" class="customer-textarea" placeholder="Observações sobre o pedido" rows="3"></textarea>
                 </div>
                 <div class="field-group">
-                    <label>Forma de Pagamento (opcional)</label>
+                    <label>Forma de Pagamento</label>
                     <div class="payment-methods">
                         <label class="payment-option">
                             <input type="radio" name="payment-method" value="PIX" id="payment-pix">
@@ -77,6 +77,14 @@
                             <input type="radio" name="payment-method" value="Cartão (Crédito/Débito)" id="payment-cartao">
                             <span>Cartão (Crédito/Débito)</span>
                         </label>
+                    </div>
+                    <div class="change-field" id="change-field" style="display: none;">
+                        <label for="change-amount">Troco para:</label>
+                        <input type="text" id="change-amount" class="customer-input" placeholder="Ex: 50,00" inputmode="decimal">
+                        <div class="change-result" id="change-result" style="display: none;">
+                            <span class="change-label">Troco: R$ </span>
+                            <span class="change-value" id="change-value">0.00</span>
+                        </div>
                     </div>
                 </div>
             </div>

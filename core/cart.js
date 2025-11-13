@@ -18,10 +18,11 @@
 
 // Storage keys
 const STORAGE_KEYS = {
-    CART: 'menu_cart',
-    CUSTOMER_NAME: 'menu_customer_name',
-    CUSTOMER_NOTES: 'menu_customer_notes',
-    PAYMENT_METHOD: 'menu_payment_method'
+    CART: 'pediragora_cart',
+    CUSTOMER_NAME: 'pediragora_customer_name',
+    CUSTOMER_NOTES: 'pediragora_customer_notes',
+    PAYMENT_METHOD: 'pediragora_payment_method',
+    CHANGE_AMOUNT: 'pediragora_change_amount'
 };
 
 // In-memory cart storage
@@ -131,6 +132,38 @@ function loadPaymentMethod() {
 }
 
 /**
+ * Save change amount (valor pago) to localStorage
+ * 
+ * @param {string} amount - Amount paid (valor pago)
+ */
+function saveChangeAmount(amount) {
+    try {
+        if (amount) {
+            localStorage.setItem(STORAGE_KEYS.CHANGE_AMOUNT, amount);
+        } else {
+            localStorage.removeItem(STORAGE_KEYS.CHANGE_AMOUNT);
+        }
+        console.log('Change amount saved to localStorage');
+    } catch (error) {
+        console.error('Error saving change amount to localStorage:', error);
+    }
+}
+
+/**
+ * Load change amount from localStorage
+ * 
+ * @returns {string} Change amount or empty string
+ */
+function loadChangeAmount() {
+    try {
+        return localStorage.getItem(STORAGE_KEYS.CHANGE_AMOUNT) || '';
+    } catch (error) {
+        console.error('Error loading change amount from localStorage:', error);
+        return '';
+    }
+}
+
+/**
  * Clear all cart and customer data from localStorage
  */
 function clearStorage() {
@@ -139,6 +172,7 @@ function clearStorage() {
         localStorage.removeItem(STORAGE_KEYS.CUSTOMER_NAME);
         localStorage.removeItem(STORAGE_KEYS.CUSTOMER_NOTES);
         localStorage.removeItem(STORAGE_KEYS.PAYMENT_METHOD);
+        localStorage.removeItem(STORAGE_KEYS.CHANGE_AMOUNT);
         console.log('All cart data cleared from localStorage');
     } catch (error) {
         console.error('Error clearing localStorage:', error);

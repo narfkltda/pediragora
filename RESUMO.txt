@@ -1,9 +1,9 @@
 ================================================================================
-                    RESUMO DO PROJETO MENU MVP - ATUALIZADO
+                    RESUMO DO PROJETO PEDIRAGORA MVP - ATUALIZADO
 ================================================================================
 
 Data de Criação: 2024
-Última Atualização: Fase 3 - Busca de Itens em Tempo Real
+Última Atualização: Forma de Pagamento + Data/Hora no Pedido
 Plataforma: Cardápio Digital para Pequenos Negócios
 Tecnologias: HTML, CSS, JavaScript Vanilla (sem frameworks)
 
@@ -11,7 +11,7 @@ Tecnologias: HTML, CSS, JavaScript Vanilla (sem frameworks)
                             ESTRUTURA DO PROJETO
 ================================================================================
 
-/menu/
+/pediragora/
 │
 ├── index.html                      # Página inicial/landing page
 ├── styles.css                      # Estilos globais da landing page
@@ -36,13 +36,13 @@ Tecnologias: HTML, CSS, JavaScript Vanilla (sem frameworks)
                             ARQUIVOS CRIADOS
 ================================================================================
 
-1. LANDING PAGE (menu/)
+1. LANDING PAGE (pediragora/)
    - index.html: Página inicial com informações do projeto
    - styles.css: Estilos globais (mobile-first, design minimalista)
    - main.js: Script de inicialização básico
    - README.md: Documentação completa do projeto
 
-2. TEMPLATE DO CLIENTE (menu/clients/template/)
+2. TEMPLATE DO CLIENTE (pediragora/clients/template/)
    - index.html: 
      * Header com logo e nome do restaurante
      * Barra de busca em tempo real
@@ -50,6 +50,7 @@ Tecnologias: HTML, CSS, JavaScript Vanilla (sem frameworks)
      * Grid de itens do menu
      * Sidebar do carrinho (lateral)
      * Campos de nome e observações do cliente
+     * Campo de forma de pagamento (PIX, Dinheiro, Cartão)
      * Botão flutuante do carrinho
    
    - styles.css:
@@ -58,6 +59,7 @@ Tecnologias: HTML, CSS, JavaScript Vanilla (sem frameworks)
      * Cards de produtos com hover effects
      * Sidebar do carrinho com animação
      * Estilos para campos de input e textarea
+     * Estilos para radio buttons de forma de pagamento
      * Botões grandes e acessíveis
      * Cores: Verde (#27ae60) para ações principais
    
@@ -68,10 +70,11 @@ Tecnologias: HTML, CSS, JavaScript Vanilla (sem frameworks)
      * Sistema de busca em tempo real
      * Gerenciamento da UI do carrinho
      * Gerenciamento de campos do cliente
+     * Gerenciamento de forma de pagamento
      * Integração com módulos core
      * Persistência automática de dados
 
-3. MÓDULOS CORE (menu/core/)
+3. MÓDULOS CORE (pediragora/core/)
    - cart.js:
      * addItem(item) - Adiciona item ao carrinho
      * removeItem(id) - Remove item do carrinho
@@ -86,13 +89,17 @@ Tecnologias: HTML, CSS, JavaScript Vanilla (sem frameworks)
      * loadCartFromStorage() - Carrega carrinho do localStorage
      * saveCustomerData(name, notes) - Salva dados do cliente
      * loadCustomerData() - Carrega dados do cliente
+     * savePaymentMethod(method) - Salva forma de pagamento
+     * loadPaymentMethod() - Carrega forma de pagamento
      * clearStorage() - Limpa todos os dados salvos
      * Armazenamento: localStorage (persiste entre sessões)
    
    - whatsapp.js:
      * sendToWhatsApp(phoneNumber, orderObject)
      * Formata mensagem do pedido
+     * Inclui data e hora do pedido
      * Inclui nome do cliente e observações (se preenchidos)
+     * Inclui forma de pagamento (se selecionada)
      * Codifica URL para WhatsApp
      * Abre WhatsApp Web/App com mensagem pré-preenchida
      * Formato: https://wa.me/55DDDNUMERO?text=MENSAGEM
@@ -135,6 +142,48 @@ FASE 3 - BUSCA DE ITENS:
 ✓ Atualização instantânea dos resultados
 ✓ Mensagens contextuais quando não há resultados
 ✓ Design responsivo para busca
+
+FASE 4 - FORMA DE PAGAMENTO:
+✓ Campo de forma de pagamento no carrinho
+✓ Opções: PIX, Dinheiro, Cartão (Crédito/Débito)
+✓ Persistência com localStorage
+✓ Restauração automática ao recarregar
+✓ Inclusão na mensagem do WhatsApp
+✓ Estilos CSS para radio buttons
+
+FASE 5 - DATA E HORA:
+✓ Data e hora automáticas no pedido
+✓ Formatação em português brasileiro
+✓ Captura no momento do checkout
+✓ Inclusão na mensagem do WhatsApp
+
+================================================================================
+                            FORMA DE PAGAMENTO
+================================================================================
+
+Localização: Dentro do carrinho (sidebar), abaixo do campo de observações
+
+Opções disponíveis:
+1. PIX
+2. Dinheiro
+3. Cartão (Crédito/Débito)
+
+Características:
+- Campo opcional (não obrigatório)
+- Radio buttons para seleção única
+- Persistido automaticamente no localStorage
+- Restaurado ao recarregar a página
+- Incluído na mensagem do WhatsApp se selecionado
+
+Persistência:
+- Chave de storage: pediragora_payment_method
+- Salvo automaticamente ao selecionar
+- Carregado automaticamente na inicialização
+
+Na Mensagem WhatsApp:
+- Aparece após observações
+- Formato: "💳 *FORMA DE PAGAMENTO:*\n[valor]"
+- Apenas se selecionado
 
 ================================================================================
                             BUSCA DE ITENS (FASE 3)
@@ -195,7 +244,7 @@ Comportamento:
 - Dados são restaurados ao recarregar a página
 - Se preenchidos, são incluídos na mensagem do WhatsApp
 - Nome aparece como "👤 Cliente: [nome]"
-- Observações aparecem como "📝 OBSERVAÇÕES: [texto]"
+- Observações aparecem como "📝 *OBSERVAÇÕES:* [texto]"
 
 ================================================================================
                             PERSISTÊNCIA DE DADOS
@@ -204,17 +253,21 @@ Comportamento:
 Tecnologia: localStorage do navegador
 
 Dados persistidos:
-1. Carrinho (menu_cart)
+1. Carrinho (pediragora_cart)
    - Todos os itens adicionados
    - Quantidades de cada item
    - Restaurado automaticamente ao recarregar
 
-2. Nome do Cliente (menu_customer_name)
+2. Nome do Cliente (pediragora_customer_name)
    - Valor do campo de nome
    - Restaurado automaticamente ao recarregar
 
-3. Observações (menu_customer_notes)
+3. Observações (pediragora_customer_notes)
    - Valor do campo de observações
+   - Restaurado automaticamente ao recarregar
+
+4. Forma de Pagamento (pediragora_payment_method)
+   - Valor selecionado (PIX, Dinheiro, Cartão)
    - Restaurado automaticamente ao recarregar
 
 Como funciona:
@@ -225,7 +278,7 @@ Como funciona:
 
 Desabilitar persistência:
 Para desabilitar, edite core/cart.js:
-- Remova chamadas para saveCart() e saveCustomerData()
+- Remova chamadas para saveCart(), saveCustomerData() e savePaymentMethod()
 - Comente a linha loadCartFromStorage() na inicialização
 
 ================================================================================
@@ -264,7 +317,8 @@ Para criar uma nova página de cliente:
 5. Adicionar itens em MENU_DATA.items
 6. Adicionar imagens em /assets/images/
 
-Os campos de nome, observações e busca já estão configurados e funcionando.
+Os campos de nome, observações, forma de pagamento e busca já estão 
+configurados e funcionando.
 
 ================================================================================
                             CARACTERÍSTICAS TÉCNICAS
@@ -281,6 +335,7 @@ Os campos de nome, observações e busca já estão configurados e funcionando.
 - Salvamento automático de dados
 - Restauração automática ao recarregar
 - Busca em tempo real sem requisições ao servidor
+- Data e hora automáticas no pedido
 
 ================================================================================
                             ESTRUTURA DE UM ITEM
@@ -306,20 +361,24 @@ Campos utilizados na busca:
 
 A mensagem gerada contém (em ordem):
 1. Título "🍽️ *NOVO PEDIDO*"
-2. Nome do cliente (se preenchido): "👤 Cliente: [nome]"
-3. Lista de itens com:
+2. Data e hora: "📅 Data: [DD/MM/YYYY] às [HH:MM]"
+3. Nome do cliente (se preenchido): "👤 Cliente: [nome]"
+4. Lista de itens com:
    * Número do item
    * Nome do item
    * Quantidade x Preço = Subtotal
-4. Total do pedido: "💰 *TOTAL: R$ [valor]*"
-5. Observações (se preenchidas): "📝 *OBSERVAÇÕES:* [texto]"
-6. Mensagem de agradecimento: "Obrigado pelo pedido! 🎉"
+5. Total do pedido: "💰 *TOTAL: R$ [valor]*"
+6. Observações (se preenchidas): "📝 *OBSERVAÇÕES:* [texto]"
+7. Forma de pagamento (se selecionada): "💳 *FORMA DE PAGAMENTO:* [valor]"
+8. Rodapé: "Aguarde confirmação do pedido por favor!"
 
 Formato da URL:
 https://wa.me/55DDDNUMERO?text=MENSAGEM_ENCODED
 
 Exemplo de mensagem completa:
 🍽️ *NOVO PEDIDO*
+
+📅 Data: 15/01/2024 às 14:30
 
 👤 Cliente: João Silva
 
@@ -333,10 +392,13 @@ Exemplo de mensagem completa:
 💰 *TOTAL: R$ 58.00*
 
 📝 *OBSERVAÇÕES:*
-Sem cebola no X-Salada
+Sem cebola no X-Salada, por favor.
+
+💳 *FORMA DE PAGAMENTO:*
+PIX
 
 ──────────────────────────────
-Obrigado pelo pedido! 🎉
+Aguarde confirmação do pedido por favor!
 
 ================================================================================
                             FUNÇÕES DO MÓDULO CART.JS
@@ -358,6 +420,8 @@ Persistência:
 - loadCartFromStorage() - Carrega carrinho do localStorage
 - saveCustomerData(name, notes) - Salva dados do cliente
 - loadCustomerData() - Retorna {name, notes}
+- savePaymentMethod(method) - Salva forma de pagamento
+- loadPaymentMethod() - Retorna forma de pagamento
 - clearStorage() - Limpa todos os dados
 
 Inicialização:
@@ -390,22 +454,26 @@ Estado:
    addItem() → Modifica cart[] → saveCart() → localStorage
 
 2. USUÁRIO DIGITA NOME/OBSERVAÇÕES:
-   Event listener → saveCustomerDataToStorage() → saveCustomerData() → localStorage
+   Event listener → saveCustomerData() → localStorage
 
-3. USUÁRIO DIGITA NA BUSCA:
+3. USUÁRIO SELECIONA FORMA DE PAGAMENTO:
+   Event listener → savePaymentMethod() → localStorage
+
+4. USUÁRIO DIGITA NA BUSCA:
    Event listener 'input' → Atualiza searchTerm → renderItems() → Filtra e exibe
 
-4. USUÁRIO SELECIONA CATEGORIA:
+5. USUÁRIO SELECIONA CATEGORIA:
    Event listener 'click' → Atualiza currentCategory → renderItems() → Filtra e exibe
 
-5. PÁGINA É RECARREGADA:
+6. PÁGINA É RECARREGADA:
    loadCartFromStorage() → Restaura cart[]
    loadCustomerData() → Restaura nome e observações
+   loadPaymentMethod() → Restaura forma de pagamento
    updateCartUI() → Atualiza interface
    (Busca não persiste - resetada ao recarregar)
 
-6. USUÁRIO FINALIZA PEDIDO:
-   handleCheckout() → Coleta dados → sendToWhatsApp() → Abre WhatsApp
+7. USUÁRIO FINALIZA PEDIDO:
+   handleCheckout() → Coleta dados → Gera data/hora → sendToWhatsApp() → Abre WhatsApp
 
 ================================================================================
                             INTERAÇÃO ENTRE FILTROS
@@ -439,6 +507,8 @@ Resultado: Apenas itens que correspondem a AMBOS os critérios são exibidos.
 - [x] Adicionar campo de observações no checkout (CONCLUÍDO - FASE 2)
 - [x] Adicionar campo de nome do cliente no checkout (CONCLUÍDO - FASE 2)
 - [x] Implementar busca de itens (CONCLUÍDO - FASE 3)
+- [x] Adicionar forma de pagamento (CONCLUÍDO - FASE 4)
+- [x] Adicionar data e hora no pedido (CONCLUÍDO - FASE 5)
 - [ ] Criar mais templates de exemplo
 - [ ] Adicionar mais categorias e itens de exemplo
 - [ ] Adicionar animações de transição
@@ -455,7 +525,7 @@ Resultado: Apenas itens que correspondem a AMBOS os critérios são exibidos.
 
 Persistência:
 - O carrinho persiste entre recarregamentos da página
-- Nome e observações também persistem
+- Nome, observações e forma de pagamento também persistem
 - A busca NÃO persiste (resetada ao recarregar)
 - Dados são salvos apenas no navegador atual
 - Não há sincronização entre dispositivos
@@ -468,12 +538,19 @@ WhatsApp:
 - Número deve estar no formato: DDD + número (sem espaços)
 - O sistema adiciona automaticamente o código do país (55 para Brasil)
 - Mensagem é codificada automaticamente para URL
+- Data e hora são capturadas no momento do checkout
 
 Busca:
 - Busca funciona apenas no lado do cliente (client-side)
 - Não requer conexão com servidor
 - Performance instantânea mesmo com muitos itens
 - Busca é case-insensitive por padrão
+
+Forma de Pagamento:
+- Campo opcional (não obrigatório)
+- Valores possíveis: "PIX", "Dinheiro", "Cartão (Crédito/Débito)"
+- Persistido no localStorage
+- Incluído na mensagem do WhatsApp se selecionado
 
 Arquivos:
 - Todos os caminhos de arquivos são relativos
@@ -497,11 +574,11 @@ Total: 9 arquivos
 - 1 arquivo de resumo (RESUMO.txt)
 
 Pastas criadas: 5
-- /menu
-- /menu/clients
-- /menu/clients/template
-- /menu/assets/images
-- /menu/core
+- /pediragora
+- /pediragora/clients
+- /pediragora/clients/template
+- /pediragora/assets/images
+- /pediragora/core
 
 ================================================================================
                             STATUS DO PROJETO
@@ -533,13 +610,42 @@ FASE 3 - BUSCA DE ITENS:
 ✅ Busca em múltiplos campos
 ✅ Documentação atualizada
 
+FASE 4 - FORMA DE PAGAMENTO:
+✅ Campo de forma de pagamento implementado
+✅ Persistência com localStorage
+✅ Restauração automática
+✅ Inclusão na mensagem do WhatsApp
+✅ Estilos CSS para radio buttons
+✅ Documentação atualizada
+
+FASE 5 - DATA E HORA:
+✅ Data e hora automáticas implementadas
+✅ Formatação em português brasileiro
+✅ Inclusão na mensagem do WhatsApp
+✅ Documentação atualizada
+
 PROJETO COMPLETO E PRONTO PARA USO!
 
 ================================================================================
                             CHANGELOG
 ================================================================================
 
-FASE 3 (Última Atualização):
+FASE 5 (Última Atualização):
+- Adicionada data e hora automáticas na mensagem do pedido
+- Formatação em português brasileiro (DD/MM/YYYY às HH:MM)
+- Captura no momento do checkout
+- Atualizado texto do rodapé: "Aguarde confirmação do pedido por favor!"
+
+FASE 4 (Forma de Pagamento):
+- Adicionado campo de forma de pagamento no carrinho
+- Opções: PIX, Dinheiro, Cartão (Crédito/Débito)
+- Implementada persistência com localStorage
+- Adicionadas funções savePaymentMethod() e loadPaymentMethod() no cart.js
+- Atualizado script.js para gerenciar campo de pagamento
+- Adicionados estilos CSS para radio buttons
+- Atualizado whatsapp.js para incluir forma de pagamento na mensagem
+
+FASE 3 (Busca de Itens):
 - Adicionada barra de busca acima dos filtros de categoria
 - Implementada busca em tempo real (event listener 'input')
 - Adicionada função setupSearchListeners() no script.js
@@ -575,7 +681,7 @@ FASE 1 (Criação Inicial):
 ================================================================================
 
 1. ABRIR O TEMPLATE:
-   Navegue até: /menu/clients/template/index.html
+   Navegue até: /pediragora/clients/template/index.html
    Abra no navegador
 
 2. TESTAR BUSCA (FASE 3):
@@ -597,10 +703,22 @@ FASE 1 (Criação Inicial):
    - Recarregue a página → Dados devem ser restaurados
    - Finalize pedido → Dados devem aparecer no WhatsApp
 
-5. TESTAR WHATSAPP:
+5. TESTAR FORMA DE PAGAMENTO:
+   - Selecione uma forma de pagamento (PIX, Dinheiro ou Cartão)
+   - Recarregue a página → Seleção deve ser restaurada
+   - Finalize pedido → Forma de pagamento deve aparecer no WhatsApp
+
+6. TESTAR WHATSAPP:
    - Adicione itens ao carrinho
-   - Preencha nome e observações (opcional)
+   - Preencha nome, observações e forma de pagamento (opcional)
    - Clique em "Finalizar Pedido"
-   - WhatsApp deve abrir com mensagem formatada
+   - WhatsApp deve abrir com mensagem formatada incluindo:
+     * Data e hora do pedido
+     * Nome do cliente (se preenchido)
+     * Lista de itens
+     * Total
+     * Observações (se preenchidas)
+     * Forma de pagamento (se selecionada)
+     * Mensagem final: "Aguarde confirmação do pedido por favor!"
 
 ================================================================================

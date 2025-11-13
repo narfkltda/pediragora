@@ -21,6 +21,8 @@
  * @param {string} orderObject.customerName - Customer name (optional)
  * @param {string} orderObject.notes - Additional notes/observations (optional)
  * @param {string} orderObject.paymentMethod - Payment method (optional)
+ * @param {string} orderObject.changeAmount - Amount paid for change calculation (optional)
+ * @param {number} orderObject.change - Change amount (troco) (optional)
  */
 function sendToWhatsApp(phoneNumber, orderObject) {
     if (!phoneNumber) {
@@ -74,6 +76,21 @@ function sendToWhatsApp(phoneNumber, orderObject) {
     if (orderObject.paymentMethod && orderObject.paymentMethod.trim()) {
         message += '💳 *FORMA DE PAGAMENTO:*\n';
         message += `${orderObject.paymentMethod}\n\n`;
+        
+        // Add change information if payment is cash
+        if (orderObject.paymentMethod === 'Dinheiro' && orderObject.changeAmount) {
+            const amountPaid = parseFloat(orderObject.changeAmount.replace(',', '.'));
+            if (!isNaN(amountPaid) && amountPaid > 0) {
+                message += `💵 *Valor pago: R$ ${amountPaid.toFixed(2)}*\n`;
+                if (orderObject.change && orderObject.change > 0) {
+                    message += `💰 *Troco: R$ ${orderObject.change.toFixed(2)}*\n\n`;
+                } else if (amountPaid < orderObject.total) {
+                    message += `⚠️ Valor insuficiente\n\n`;
+                } else {
+                    message += `💰 *Troco: R$ 0,00*\n\n`;
+                }
+            }
+        }
     }
     
     // Add footer
