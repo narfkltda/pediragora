@@ -38,7 +38,7 @@ const MENU_DATA = {
             description: 'Pão, hambúrguer de carne, queijo mussarela, bacon e molho mima',
             price: 22.00,
             category: 'Lanches',
-            image: '../../assets/images/Burgers 01 - voMima.png'
+            image: '../../assets/images/Burgers_01_voMima.png'
         },
         {
             id: '2',
@@ -46,7 +46,7 @@ const MENU_DATA = {
             description: 'Pão, hambúrguer de carne, queijo mussarela, bacon, ovo, calabresa, alface, tomate e molho mima',
             price: 28.00,
             category: 'Lanches',
-            image: '../../assets/images/Burgers 02 - voLeleu.png'
+            image: '../../assets/images/Burgers_02_voLeleu.png'
         },
         {
             id: '3',
@@ -54,7 +54,7 @@ const MENU_DATA = {
             description: 'Pão, hambúrguer de carne, queijo mussarela, bacon, alface, tomate e molho barbecue',
             price: 24.00,
             category: 'Lanches',
-            image: '../../assets/images/Burgers 03 - voAna.png'
+            image: '../../assets/images/Burgers_03_voAna.png'
         },
         {
             id: '4',
@@ -62,7 +62,7 @@ const MENU_DATA = {
             description: 'Pão, hambúrguer de carne, queijo mussarela, queijo cheddar, bacon, alface, tomate e molho barbecue',
             price: 27.00,
             category: 'Lanches',
-            image: '../../assets/images/Burgers 04 - tiaTa.png'
+            image: '../../assets/images/Burgers_04_tiaTa.png'
         },
         {
             id: '5',
@@ -70,7 +70,7 @@ const MENU_DATA = {
             description: 'Pão, hambúrguer de frango, queijo cheddar, bacon, alface, tomate e molho mima',
             price: 24.00,
             category: 'Lanches',
-            image: '../../assets/images/Burgers 05 - tioJe.png'
+            image: '../../assets/images/Burgers_05_tioJe.png'
         },
         {
             id: '6',
@@ -78,7 +78,7 @@ const MENU_DATA = {
             description: 'Pão, hambúrguer de picanha, queijo cheddar, bacon e molho mima',
             price: 38.00,
             category: 'Lanches',
-            image: '../../assets/images/Burgers 06 - tioLan.png'
+            image: '../../assets/images/Burgers_06_tioLan.png'
         },
         {
             id: '7',
@@ -86,7 +86,7 @@ const MENU_DATA = {
             description: 'Pão, 3 hambúrgueres de carne, camadas de queijo mussarela, queijo cheddar, bacon e molho mima',
             price: 43.00,
             category: 'Lanches',
-            image: '../../assets/images/Burgers 07 - tiaPri.png'
+            image: '../../assets/images/Burgers_07_tiaPri.png'
         },
         {
             id: '8',
@@ -94,7 +94,7 @@ const MENU_DATA = {
             description: 'Pão, hambúrguer de pernil, queijo mussarela, bacon, alface, tomate e molho barbecue',
             price: 25.00,
             category: 'Lanches',
-            image: '../../assets/images/Burgers 08 - tiaTay.png'
+            image: '../../assets/images/Burgers_08_tiaTay.png'
         },
         {
             id: '9',
@@ -102,7 +102,7 @@ const MENU_DATA = {
             description: 'Pão, hambúrguer de carne, queijo mussarela, bacon, ovo, cebola caramelizada, alface, tomate e molho mima',
             price: 28.00,
             category: 'Lanches',
-            image: '../../assets/images/Burgers 09 - voLio.png'
+            image: '../../assets/images/Burgers_09_voLio.png'
         },
         {
             id: '10',
@@ -110,7 +110,7 @@ const MENU_DATA = {
             description: 'Pão brioche, hambúrguer de carne, queijo mussarela e molho mima',
             price: 20.00,
             category: 'Lanches',
-            image: '../../assets/images/Burgers 10 - voNini.png'
+            image: '../../assets/images/Burgers_10_voNini.png'
         },
         {
             id: '11',
@@ -118,7 +118,7 @@ const MENU_DATA = {
             description: 'Pão, hambúrguer de carne, queijo mussarela, tomate, alface, cebola roxa e molho mima',
             price: 25.00,
             category: 'Lanches',
-            image: '../../assets/images/Burgers 11 - voSolis.png'
+            image: '../../assets/images/Burgers_11_voSolis.png'
         },
         {
             id: '12',
@@ -126,7 +126,7 @@ const MENU_DATA = {
             description: 'Pão, hambúrguer de carne, queijo mussarela, alface, tomate, cebola roxa, picles e molho mima',
             price: 27.00,
             category: 'Lanches',
-            image: '../../assets/images/Burgers 12 - voNilton.png'
+            image: '../../assets/images/Burgers_12_voNilton.png'
         },
         {
             id: '13',
@@ -134,7 +134,7 @@ const MENU_DATA = {
             description: 'Pão, duplo hambúrguer de carne, duplo queijo mussarela, onion rings e molho barbecue',
             price: 33.00,
             category: 'Lanches',
-            image: '../../assets/images/Burgers 13 - gemeasLela.png'
+            image: '../../assets/images/Burgers_13_gemeasLela.png'
         }
     ]
 };
