@@ -81,6 +81,7 @@ const changeAmountInput = document.getElementById('change-amount');
 const changeResult = document.getElementById('change-result');
 const changeValue = document.getElementById('change-value');
 const openingHoursContainer = document.getElementById('opening-hours-container');
+const cartOverlay = document.getElementById('cart-overlay');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -240,16 +241,47 @@ function updateSearchClearButton() {
 }
 
 /**
+ * Open cart
+ */
+function openCart() {
+    cartSidebar.classList.add('open');
+    if (cartOverlay) {
+        cartOverlay.classList.add('active');
+    }
+    // Prevent body scroll when cart is open on mobile
+    document.body.style.overflow = 'hidden';
+}
+
+/**
+ * Close cart
+ */
+function closeCart() {
+    cartSidebar.classList.remove('open');
+    if (cartOverlay) {
+        cartOverlay.classList.remove('active');
+    }
+    // Restore body scroll
+    document.body.style.overflow = '';
+}
+
+/**
  * Setup cart toggle listeners
  */
 function setupCartToggleListeners() {
     cartToggle.addEventListener('click', () => {
-        cartSidebar.classList.add('open');
+        openCart();
     });
     
     closeCartBtn.addEventListener('click', () => {
-        cartSidebar.classList.remove('open');
+        closeCart();
     });
+    
+    // Close cart when clicking overlay
+    if (cartOverlay) {
+        cartOverlay.addEventListener('click', () => {
+            closeCart();
+        });
+    }
     
     checkoutBtn.addEventListener('click', () => {
         handleCheckout();
