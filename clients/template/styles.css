@@ -16,6 +16,21 @@ body {
     padding-bottom: 80px;
 }
 
+/* Prevent scroll when cart is open - Mobile fix */
+body.cart-open {
+    overflow: hidden !important;
+    position: fixed !important;
+    width: 100% !important;
+    height: 100% !important;
+    touch-action: none;
+    -webkit-overflow-scrolling: none;
+}
+
+html.cart-open {
+    overflow: hidden !important;
+    height: 100% !important;
+}
+
 /* Header */
 .header {
     background: white;

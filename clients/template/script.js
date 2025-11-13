@@ -339,7 +339,7 @@ function prevCartStep() {
  */
 function openCart() {
     // Save current scroll position
-    scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    scrollPosition = window.pageYOffset || document.documentElement.scrollTop || window.scrollY;
     
     cartSidebar.classList.add('open');
     if (cartOverlay) {
@@ -348,12 +348,18 @@ function openCart() {
     // Reset to step 1
     goToCartStep(1);
     
-    // Prevent body and html scroll completely
+    // Prevent body and html scroll completely - Mobile optimized
+    document.body.classList.add('cart-open');
+    document.documentElement.classList.add('cart-open');
+    document.body.style.top = `-${scrollPosition}px`;
+    
+    // Additional mobile fixes
     document.body.style.overflow = 'hidden';
     document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollPosition}px`;
     document.body.style.width = '100%';
+    document.body.style.height = '100%';
     document.documentElement.style.overflow = 'hidden';
+    document.documentElement.style.height = '100%';
 }
 
 /**
@@ -367,15 +373,28 @@ function closeCart() {
     // Reset to step 1
     goToCartStep(1);
     
-    // Restore body and html scroll
+    // Restore body and html scroll - Mobile optimized
+    document.body.classList.remove('cart-open');
+    document.documentElement.classList.remove('cart-open');
+    
+    // Remove inline styles
     document.body.style.overflow = '';
     document.body.style.position = '';
     document.body.style.top = '';
     document.body.style.width = '';
+    document.body.style.height = '';
     document.documentElement.style.overflow = '';
+    document.documentElement.style.height = '';
     
-    // Restore scroll position
-    window.scrollTo(0, scrollPosition);
+    // Restore scroll position - Use requestAnimationFrame for better mobile support
+    requestAnimationFrame(() => {
+        window.scrollTo(0, scrollPosition);
+        // Force scroll on mobile
+        if (window.pageYOffset !== scrollPosition) {
+            document.documentElement.scrollTop = scrollPosition;
+            document.body.scrollTop = scrollPosition;
+        }
+    });
 }
 
 /**
