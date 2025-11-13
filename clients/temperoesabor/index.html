@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tempero & Sabor - Cardápio Digital</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-placeholder">
+                <img src="../../../Clientes/Tempero&Sabor/TemperoESaborLogo.png" alt="Logo Tempero & Sabor" id="logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="logo-text" style="display: none;">LOGO</div>
+            </div>
+            <h1 class="restaurant-name">Tempero & Sabor</h1>
+        </div>
+        <div class="header-toolbar">
+            <button class="map-toggle" id="map-toggle">
+                <svg class="map-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+            </button>
+            <button class="cart-toggle" id="cart-toggle">
+                <svg class="cart-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                <span class="cart-count" id="cart-count">0</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Opening Hours Section -->
+    <section class="opening-hours-section">
+        <div class="opening-hours-container" id="opening-hours-container">
+            <!-- Days will be rendered here by JavaScript -->
+        </div>
+        <div class="opening-hours-current-time" id="opening-hours-current-time"></div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Search Bar -->
+        <section class="search-section">
+            <div class="search-container">
+                <input type="text" id="search-input" class="search-input" placeholder="Buscar item...">
+                <button class="search-clear" id="search-clear" style="display: none;">&times;</button>
+            </div>
+        </section>
+
+        <!-- Category Filter -->
+        <section class="categories">
+            <div class="category-buttons" id="category-buttons">
+                <!-- Categories will be dynamically generated -->
+            </div>
+        </section>
+
+        <!-- Menu Items Grid -->
+        <section class="menu-items">
+            <div class="items-grid" id="items-grid">
+                <!-- Items will be dynamically generated -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Cart Overlay -->
+    <div class="cart-overlay" id="cart-overlay"></div>
+
+    <!-- Cart Sidebar -->
+    <aside class="cart-sidebar" id="cart-sidebar">
+        <div class="cart-header">
+            <button class="cart-back-btn" id="cart-back-btn" style="display: none;">←</button>
+            <h2 id="cart-header-title">Carrinho</h2>
+            <button class="close-cart" id="close-cart">&times;</button>
+        </div>
+        
+        <!-- Step 1: Cart Items -->
+        <div class="cart-step cart-step-1" id="cart-step-1">
+            <div class="cart-items" id="cart-items">
+                <!-- Cart items will be dynamically generated -->
+            </div>
+            <div class="cart-step-footer">
+                <div class="cart-total">
+                    <strong>Total: R$ <span id="cart-total">0.00</span></strong>
+                </div>
+                <button class="btn-continue" id="btn-continue-step1">Continuar</button>
+            </div>
+        </div>
+        
+        <!-- Step 2: Delivery Method -->
+        <div class="cart-step cart-step-2" id="cart-step-2" style="display: none;">
+            <div class="cart-step-content">
+                <div class="field-group">
+                    <label>Forma de Entrega</label>
+                    <div class="delivery-methods">
+                        <label class="delivery-option">
+                            <input type="radio" name="delivery-method" value="Retirar no local" id="delivery-retirar">
+                            <span>Retirar no local</span>
+                        </label>
+                        <label class="delivery-option">
+                            <input type="radio" name="delivery-method" value="Entrega" id="delivery-entrega">
+                            <span>Entrega</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="delivery-address-field" id="delivery-address-field" style="display: none;">
+                    <div class="field-group">
+                        <label for="delivery-address">Endereço</label>
+                        <input type="text" id="delivery-address" class="customer-input" placeholder="Rua, número, bairro">
+                    </div>
+                    <div class="field-group">
+                        <label for="delivery-complement">Complemento</label>
+                        <input type="text" id="delivery-complement" class="customer-input" placeholder="Apto, bloco, referência (opcional)">
+                    </div>
+                </div>
+            </div>
+            <div class="cart-step-footer">
+                <button class="btn-continue" id="btn-continue-step2">Continuar</button>
+            </div>
+        </div>
+        
+        <!-- Step 3: Identification and Payment -->
+        <div class="cart-step cart-step-3" id="cart-step-3" style="display: none;">
+            <div class="cart-step-content">
+                <div class="field-group">
+                    <label for="customer-name">Nome</label>
+                    <input type="text" id="customer-name" class="customer-input" placeholder="Seu nome">
+                </div>
+                <div class="field-group">
+                    <label for="customer-phone">Telefone</label>
+                    <input type="tel" id="customer-phone" class="customer-input" placeholder="(00) 00000-0000" inputmode="tel">
+                </div>
+                <div class="field-group">
+                    <label for="customer-notes">Observações</label>
+                    <textarea id="customer-notes" class="customer-textarea" placeholder="Observações sobre o pedido" rows="3"></textarea>
+                </div>
+                <div class="field-group">
+                    <label>Forma de Pagamento</label>
+                    <div class="payment-methods">
+                        <label class="payment-option">
+                            <input type="radio" name="payment-method" value="PIX" id="payment-pix">
+                            <span>PIX</span>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="payment-method" value="Dinheiro" id="payment-dinheiro">
+                            <span>Dinheiro</span>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="payment-method" value="Cartão (Crédito/Débito)" id="payment-cartao">
+                            <span>Cartão (Crédito/Débito)</span>
+                        </label>
+                    </div>
+                    <div class="change-field" id="change-field" style="display: none;">
+                        <label for="change-amount">Troco para:</label>
+                        <input type="text" id="change-amount" class="customer-input" placeholder="Ex: 50,00" inputmode="decimal">
+                        <div class="change-result" id="change-result" style="display: none;">
+                            <span class="change-label">Troco: R$ </span>
+                            <span class="change-value" id="change-value">0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="cart-step-footer">
+                <div class="cart-total">
+                    <strong>Total: R$ <span id="cart-total-step3">0.00</span></strong>
+                </div>
+                <button class="btn-checkout" id="btn-checkout">Finalizar Pedido</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Scripts -->
+    <script src="../../core/cart.js"></script>
+    <script src="../../core/whatsapp.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
+
