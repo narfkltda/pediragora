@@ -788,6 +788,7 @@ html.cart-open {
     align-items: center;
     gap: 10px;
     position: relative;
+    background: white;
 }
 
 .cart-back-btn {
@@ -825,10 +826,7 @@ html.cart-open {
     flex: 1;
     text-align: center;
     margin: 0;
-}
-
-.cart-header h2:first-child {
-    text-align: left;
+    font-weight: 700;
 }
 
 .close-cart {

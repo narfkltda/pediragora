@@ -51,7 +51,7 @@ const MENU_DATA = {
         {
             id: '3',
             name: 'VÓ ANA',
-            description: 'Pão, hambúrguer de carne, queijo mussarela, bacon, alface, tomate e molho barbecue',
+            description: 'Pão, hambúrguer de carne, queijo mussarela, bacon, alface, tomate e molho de churrasco',
             price: 24.00,
             category: 'Lanches',
             image: '../../assets/images/Burgers_03_voAna.png'
@@ -59,7 +59,7 @@ const MENU_DATA = {
         {
             id: '4',
             name: 'TIA TÁ',
-            description: 'Pão, hambúrguer de carne, queijo mussarela, queijo cheddar, bacon, alface, tomate e molho barbecue',
+            description: 'Pão, hambúrguer de carne, queijo mussarela, queijo cheddar, bacon, alface, tomate e molho de churrasco',
             price: 27.00,
             category: 'Lanches',
             image: '../../assets/images/Burgers_04_tiaTa.png'
@@ -91,7 +91,7 @@ const MENU_DATA = {
         {
             id: '8',
             name: 'TIA TAY',
-            description: 'Pão, hambúrguer de pernil, queijo mussarela, bacon, alface, tomate e molho barbecue',
+            description: 'Pão, hambúrguer de pernil, queijo mussarela, bacon, alface, tomate e molho de churrasco',
             price: 25.00,
             category: 'Lanches',
             image: '../../assets/images/Burgers_08_tiaTay.png'
