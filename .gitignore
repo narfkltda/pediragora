@@ -1,8 +1,3 @@
-# Arquivos gerados pelo build
-# Os arquivos em temperoesabor/ são gerados automaticamente pelo build.js
-# Se quiser commitar esses arquivos, remova esta linha
-temperoesabor/
-
 # Arquivos do sistema
 .DS_Store
 Thumbs.db

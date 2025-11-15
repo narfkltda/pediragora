@@ -15,11 +15,15 @@ Uma plataforma simples e gratuita para criar cardápios digitais para pequenos n
 ```
 /pediragora
 │── index.html                      # Página inicial
-│── /clients                        # Páginas dos clientes
+│── /clients                        # Templates e referências
 │     └── /template                 # Template base para novos clientes
 │         └── index.html
 │         └── styles.css
 │         └── script.js
+│── /temperoesabor                  # Página do cliente Tempero & Sabor
+│     └── index.html
+│     └── styles.css
+│     └── script.js
 │── /assets
 │     └── /images                   # Imagens dos produtos
 │── /core
@@ -34,11 +38,12 @@ Uma plataforma simples e gratuita para criar cardápios digitais para pequenos n
 
 ### Criar uma Nova Página de Cliente
 
-1. Copie a pasta `/clients/template`
-2. Renomeie para o nome do cliente (ex: `/clients/temperoesabor`)
+1. Copie a pasta `/clients/template` para a raiz do projeto
+2. Renomeie para o nome do cliente (ex: `/temperoesabor`)
 3. Personalize o conteúdo em `index.html`
 4. Adicione os produtos e categorias
 5. Configure o número do WhatsApp em `script.js`
+6. Ajuste os caminhos relativos se necessário (assets e core)
 
 ### Estrutura de um Item
 
