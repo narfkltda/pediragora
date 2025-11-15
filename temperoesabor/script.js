@@ -18,13 +18,13 @@ const CONFIG = {
     restaurantLatitude: -20.367082707152765,
     restaurantLongitude: -51.42205139592757,
     openingHours: {
-        segunda: { open: '18:00', close: '23:00' },
-        terca: { open: '18:00', close: '23:00' },
-        quarta: { open: '18:00', close: '23:00' },
-        quinta: { open: '18:00', close: '23:00' },
-        sexta: { open: '18:00', close: '23:00' },
-        sabado: { open: '18:00', close: '23:00' },
-        domingo: { open: '18:00', close: '23:00' }
+        segunda: null, // Fechado na segunda-feira
+        terca: { open: '19:00', close: '23:00' },
+        quarta: { open: '19:00', close: '23:00' },
+        quinta: { open: '19:00', close: '23:00' },
+        sexta: { open: '19:00', close: '23:00' },
+        sabado: { open: '19:00', close: '23:00' },
+        domingo: { open: '19:00', close: '23:00' }
     }
 };
 
