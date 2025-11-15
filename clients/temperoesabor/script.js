@@ -312,9 +312,16 @@ function createItemCard(item) {
             <h3 class="item-title">${formattedName}</h3>
             <p class="item-description">${item.description}</p>
             <div class="item-price">R$ ${item.price.toFixed(2)}</div>
+            <button class="btn-buy-now" data-item-id="${item.id}">Comprar Agora</button>
             <button class="btn-add-cart" data-item-id="${item.id}">Adicionar ao Carrinho</button>
         </div>
     `;
+    
+    const buyNowBtn = card.querySelector('.btn-buy-now');
+    buyNowBtn.addEventListener('click', () => {
+        handleAddToCart(item.id);
+        openCart();
+    });
     
     const addBtn = card.querySelector('.btn-add-cart');
     addBtn.addEventListener('click', () => {

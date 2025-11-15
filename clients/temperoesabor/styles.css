@@ -720,6 +720,28 @@ html.cart-open {
     margin-bottom: 15px;
 }
 
+.btn-buy-now {
+    width: 100%;
+    padding: 12px;
+    background: #df4c2d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    margin-bottom: 10px;
+}
+
+.btn-buy-now:hover {
+    background: #c43d20;
+}
+
+.btn-buy-now:active {
+    transform: scale(0.98);
+}
+
 .btn-add-cart {
     width: 100%;
     padding: 12px;
