@@ -139,6 +139,44 @@ const MENU_DATA = {
     ]
 };
 
+// Security functions
+/**
+ * Sanitize HTML string by escaping special characters
+ * @param {string} str - String to sanitize
+ * @returns {string} Sanitized string
+ */
+function sanitizeHTML(str) {
+    if (typeof str !== 'string') return '';
+    return str.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * Sanitize user input by removing HTML tags and escaping special characters
+ * @param {string} input - User input to sanitize
+ * @returns {string} Sanitized input
+ */
+function sanitizeInput(input) {
+    if (typeof input !== 'string') return '';
+    // Remove HTML tags and escape special characters
+    return input
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/[\x00-\x1F\x7F]/g, ''); // Remove control characters
+}
+
+/**
+ * Validate Brazilian phone number format
+ * @param {string} phone - Phone number to validate
+ * @returns {boolean} True if valid, false otherwise
+ */
+function validatePhone(phone) {
+    if (!phone || typeof phone !== 'string') return false;
+    // Remove all non-digit characters
+    const digitsOnly = phone.replace(/\D/g, '');
+    // Brazilian phone: 10 digits (landline) or 11 digits (mobile with 9)
+    return digitsOnly.length === 10 || digitsOnly.length === 11;
+}
+
 // State
 let currentCategory = 'Todos';
 let searchTerm = '';
@@ -277,7 +315,10 @@ function renderItems() {
         const message = searchTerm.trim() 
             ? 'Nenhum item encontrado com essa busca.'
             : 'Nenhum item encontrado nesta categoria.';
-        itemsGrid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;">${message}</p>`;
+        const messageEl = document.createElement('p');
+        messageEl.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 40px; color: #999;';
+        messageEl.textContent = message;
+        itemsGrid.appendChild(messageEl);
         return;
     }
     
@@ -304,29 +345,60 @@ function createItemCard(item) {
     
     const formattedName = formatItemName(item);
     
-    card.innerHTML = `
-        <div class="item-image-container">
-            <img src="${item.image}" alt="${item.name}" class="item-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3ESem Imagem%3C/text%3E%3C/svg%3E'">
-        </div>
-        <div class="item-content">
-            <h3 class="item-title">${formattedName}</h3>
-            <p class="item-description">${item.description}</p>
-            <div class="item-price">R$ ${item.price.toFixed(2)}</div>
-            <button class="btn-buy-now" data-item-id="${item.id}">Comprar Agora</button>
-            <button class="btn-add-cart" data-item-id="${item.id}">Adicionar ao Carrinho</button>
-        </div>
-    `;
+    // Image container
+    const imageContainer = document.createElement('div');
+    imageContainer.className = 'item-image-container';
     
-    const buyNowBtn = card.querySelector('.btn-buy-now');
+    const img = document.createElement('img');
+    img.src = item.image;
+    img.alt = sanitizeHTML(item.name);
+    img.className = 'item-image';
+    img.onerror = function() {
+        this.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3ESem Imagem%3C/text%3E%3C/svg%3E';
+    };
+    imageContainer.appendChild(img);
+    
+    // Content container
+    const contentContainer = document.createElement('div');
+    contentContainer.className = 'item-content';
+    
+    const title = document.createElement('h3');
+    title.className = 'item-title';
+    title.textContent = formattedName;
+    
+    const description = document.createElement('p');
+    description.className = 'item-description';
+    description.textContent = item.description;
+    
+    const price = document.createElement('div');
+    price.className = 'item-price';
+    price.textContent = `R$ ${item.price.toFixed(2)}`;
+    
+    const buyNowBtn = document.createElement('button');
+    buyNowBtn.className = 'btn-buy-now';
+    buyNowBtn.setAttribute('data-item-id', item.id);
+    buyNowBtn.textContent = 'Comprar Agora';
     buyNowBtn.addEventListener('click', () => {
         handleAddToCart(item.id);
         openCart();
     });
     
-    const addBtn = card.querySelector('.btn-add-cart');
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn-add-cart';
+    addBtn.setAttribute('data-item-id', item.id);
+    addBtn.textContent = 'Adicionar ao Carrinho';
     addBtn.addEventListener('click', () => {
         handleAddToCart(item.id);
     });
+    
+    contentContainer.appendChild(title);
+    contentContainer.appendChild(description);
+    contentContainer.appendChild(price);
+    contentContainer.appendChild(buyNowBtn);
+    contentContainer.appendChild(addBtn);
+    
+    card.appendChild(imageContainer);
+    card.appendChild(contentContainer);
     
     return card;
 }
@@ -625,16 +697,21 @@ function setupCartNavigationButtons() {
  */
 function setupCustomerFieldListeners() {
     customerNameInput.addEventListener('input', () => {
-        saveCustomerData(customerNameInput.value.trim(), customerNotesInput.value.trim());
+        const sanitizedName = sanitizeInput(customerNameInput.value.trim());
+        const sanitizedNotes = sanitizeInput(customerNotesInput.value.trim());
+        saveCustomerData(sanitizedName, sanitizedNotes);
     });
     
     customerNotesInput.addEventListener('input', () => {
-        saveCustomerData(customerNameInput.value.trim(), customerNotesInput.value.trim());
+        const sanitizedName = sanitizeInput(customerNameInput.value.trim());
+        const sanitizedNotes = sanitizeInput(customerNotesInput.value.trim());
+        saveCustomerData(sanitizedName, sanitizedNotes);
     });
     
     if (customerPhoneInput) {
         customerPhoneInput.addEventListener('input', () => {
-            saveCustomerPhone(customerPhoneInput.value.trim());
+            const sanitizedPhone = sanitizeInput(customerPhoneInput.value.trim());
+            saveCustomerPhone(sanitizedPhone);
         });
     }
 }
@@ -773,7 +850,11 @@ function renderCartItems() {
     const cart = getCart();
     
     if (cart.length === 0) {
-        cartItems.innerHTML = '<div class="empty-cart">Carrinho vazio</div>';
+        const emptyCartEl = document.createElement('div');
+        emptyCartEl.className = 'empty-cart';
+        emptyCartEl.textContent = 'Carrinho vazio';
+        cartItems.innerHTML = '';
+        cartItems.appendChild(emptyCartEl);
         return;
     }
     
@@ -803,27 +884,63 @@ function createCartItemElement(item) {
         priceDisplay = `R$ ${item.price.toFixed(2)}`;
     }
     
-    div.innerHTML = `
-        <img src="${item.image}" alt="${item.name}" class="cart-item-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Crect fill=%22%23f0f0f0%22 width=%2260%22 height=%2260%22/%3E%3C/svg%3E'">
-        <div class="cart-item-info">
-            <div class="cart-item-name">${formattedName}</div>
-            <div class="cart-item-price">${priceDisplay}</div>
-            <div class="cart-item-quantity">
-                <button class="quantity-btn" data-action="decrease" data-item-id="${item.id}">-</button>
-                <span class="quantity-value">${item.quantity}</span>
-                <button class="quantity-btn" data-action="increase" data-item-id="${item.id}">+</button>
-            </div>
-        </div>
-        <button class="cart-item-remove" data-item-id="${item.id}">Remover</button>
-    `;
+    const img = document.createElement('img');
+    img.src = item.image;
+    img.alt = sanitizeHTML(item.name);
+    img.className = 'cart-item-image';
+    img.onerror = function() {
+        this.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Crect fill=%22%23f0f0f0%22 width=%2260%22 height=%2260%22/%3E%3C/svg%3E';
+    };
     
-    const decreaseBtn = div.querySelector('[data-action="decrease"]');
-    const increaseBtn = div.querySelector('[data-action="increase"]');
-    const removeBtn = div.querySelector('.cart-item-remove');
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'cart-item-info';
     
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'cart-item-name';
+    nameDiv.textContent = formattedName;
+    
+    const priceDiv = document.createElement('div');
+    priceDiv.className = 'cart-item-price';
+    priceDiv.textContent = priceDisplay;
+    
+    const quantityDiv = document.createElement('div');
+    quantityDiv.className = 'cart-item-quantity';
+    
+    const decreaseBtn = document.createElement('button');
+    decreaseBtn.className = 'quantity-btn';
+    decreaseBtn.setAttribute('data-action', 'decrease');
+    decreaseBtn.setAttribute('data-item-id', item.id);
+    decreaseBtn.textContent = '-';
     decreaseBtn.addEventListener('click', () => handleDecrease(item.id));
+    
+    const quantityValue = document.createElement('span');
+    quantityValue.className = 'quantity-value';
+    quantityValue.textContent = item.quantity;
+    
+    const increaseBtn = document.createElement('button');
+    increaseBtn.className = 'quantity-btn';
+    increaseBtn.setAttribute('data-action', 'increase');
+    increaseBtn.setAttribute('data-item-id', item.id);
+    increaseBtn.textContent = '+';
     increaseBtn.addEventListener('click', () => handleIncrease(item.id));
+    
+    quantityDiv.appendChild(decreaseBtn);
+    quantityDiv.appendChild(quantityValue);
+    quantityDiv.appendChild(increaseBtn);
+    
+    infoDiv.appendChild(nameDiv);
+    infoDiv.appendChild(priceDiv);
+    infoDiv.appendChild(quantityDiv);
+    
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'cart-item-remove';
+    removeBtn.setAttribute('data-item-id', item.id);
+    removeBtn.textContent = 'Remover';
     removeBtn.addEventListener('click', () => handleRemove(item.id));
+    
+    div.appendChild(img);
+    div.appendChild(infoDiv);
+    div.appendChild(removeBtn);
     
     return div;
 }
@@ -879,14 +996,27 @@ function handleCheckout() {
         }
     }
     
+    // Sanitize and validate inputs
+    const sanitizedName = sanitizeInput(customerNameInput.value.trim());
+    const sanitizedPhone = customerPhoneInput ? sanitizeInput(customerPhoneInput.value.trim()) : '';
+    const sanitizedNotes = sanitizeInput(customerNotesInput.value.trim());
+    const sanitizedAddress = deliveryAddress ? sanitizeInput(deliveryAddress) : '';
+    const sanitizedComplement = deliveryComplement ? sanitizeInput(deliveryComplement) : '';
+    
     // Validate required fields
-    if (!customerNameInput.value.trim()) {
+    if (!sanitizedName) {
         alert('Informe seu nome');
         return;
     }
     
-    if (!customerPhoneInput || !customerPhoneInput.value.trim()) {
+    if (!sanitizedPhone) {
         alert('Informe seu telefone');
+        return;
+    }
+    
+    // Validate phone format
+    if (!validatePhone(sanitizedPhone)) {
+        alert('Telefone inválido. Informe um telefone válido (10 ou 11 dígitos)');
         return;
     }
     
@@ -895,17 +1025,17 @@ function handleCheckout() {
         return;
     }
     
-    // Save all data
-    saveCustomerData(customerNameInput.value.trim(), customerNotesInput.value.trim());
+    // Save all data (already sanitized)
+    saveCustomerData(sanitizedName, sanitizedNotes);
     if (customerPhoneInput) {
-        saveCustomerPhone(customerPhoneInput.value.trim());
+        saveCustomerPhone(sanitizedPhone);
     }
     if (deliveryMethod) {
         saveDeliveryMethod(deliveryMethod);
     }
     if (deliveryMethod === 'Entrega') {
-        saveDeliveryAddress(deliveryAddress);
-        saveDeliveryComplement(deliveryComplement);
+        saveDeliveryAddress(sanitizedAddress);
+        saveDeliveryComplement(sanitizedComplement);
     }
     
     const order = {
@@ -915,12 +1045,12 @@ function handleCheckout() {
             price: item.price
         })),
         total: total,
-        customerName: customerNameInput.value.trim(),
-        customerPhone: customerPhoneInput ? customerPhoneInput.value.trim() : '',
-        notes: customerNotesInput.value.trim(),
+        customerName: sanitizedName,
+        customerPhone: sanitizedPhone,
+        notes: sanitizedNotes,
         deliveryMethod: deliveryMethod,
-        deliveryAddress: deliveryAddress,
-        deliveryComplement: deliveryComplement,
+        deliveryAddress: sanitizedAddress,
+        deliveryComplement: sanitizedComplement,
         paymentMethod: paymentMethod,
         changeAmount: changeAmount,
         change: change
@@ -928,8 +1058,10 @@ function handleCheckout() {
     
     sendToWhatsApp(CONFIG.whatsappNumber, order);
     
+    // Clear sensitive customer data after successful checkout
+    clearSensitiveData();
+    
     // Clear cart items and temporary data (payment, notes)
-    // Keep customer data (name, phone, address) for future orders
     clearCart();
     clearTemporaryData();
     

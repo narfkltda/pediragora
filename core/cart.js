@@ -299,6 +299,24 @@ function clearTemporaryData() {
 }
 
 /**
+ * Clear all sensitive customer data from localStorage
+ * This function removes all personal information after checkout
+ */
+function clearSensitiveData() {
+    try {
+        localStorage.removeItem(STORAGE_KEYS.CUSTOMER_NAME);
+        localStorage.removeItem(STORAGE_KEYS.CUSTOMER_PHONE);
+        localStorage.removeItem(STORAGE_KEYS.DELIVERY_ADDRESS);
+        localStorage.removeItem(STORAGE_KEYS.DELIVERY_COMPLEMENT);
+        localStorage.removeItem(STORAGE_KEYS.PAYMENT_METHOD);
+        localStorage.removeItem(STORAGE_KEYS.CHANGE_AMOUNT);
+        console.log('Sensitive customer data cleared from localStorage');
+    } catch (error) {
+        console.error('Error clearing sensitive data from localStorage:', error);
+    }
+}
+
+/**
  * Clear all cart and customer data from localStorage
  */
 function clearStorage() {
