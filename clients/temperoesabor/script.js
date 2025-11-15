@@ -288,18 +288,28 @@ function renderItems() {
 }
 
 /**
+ * Format item name with number prefix
+ */
+function formatItemName(item) {
+    const number = item.id.padStart(2, '0');
+    return `${number} - ${item.name}`;
+}
+
+/**
  * Create an item card element
  */
 function createItemCard(item) {
     const card = document.createElement('div');
     card.className = 'item-card';
     
+    const formattedName = formatItemName(item);
+    
     card.innerHTML = `
         <div class="item-image-container">
             <img src="${item.image}" alt="${item.name}" class="item-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3ESem Imagem%3C/text%3E%3C/svg%3E'">
         </div>
         <div class="item-content">
-            <h3 class="item-title">${item.name}</h3>
+            <h3 class="item-title">${formattedName}</h3>
             <p class="item-description">${item.description}</p>
             <div class="item-price">R$ ${item.price.toFixed(2)}</div>
             <button class="btn-add-cart" data-item-id="${item.id}">Adicionar ao Carrinho</button>
@@ -775,10 +785,12 @@ function createCartItemElement(item) {
     const div = document.createElement('div');
     div.className = 'cart-item';
     
+    const formattedName = formatItemName(item);
+    
     div.innerHTML = `
         <img src="${item.image}" alt="${item.name}" class="cart-item-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Crect fill=%22%23f0f0f0%22 width=%2260%22 height=%2260%22/%3E%3C/svg%3E'">
         <div class="cart-item-info">
-            <div class="cart-item-name">${item.name}</div>
+            <div class="cart-item-name">${formattedName}</div>
             <div class="cart-item-price">R$ ${item.price.toFixed(2)}</div>
             <div class="cart-item-quantity">
                 <button class="quantity-btn" data-action="decrease" data-item-id="${item.id}">-</button>
