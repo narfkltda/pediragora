@@ -245,187 +245,389 @@ html.cart-open {
 /* Opening Hours Section - Minimalista */
 .opening-hours-section {
     background: white;
-    padding: 12px 20px;
+    padding: 16px 20px;
     border-bottom: 1px solid #e0e0e0;
 }
 
-.opening-hours-container {
+.opening-hours-info {
     max-width: 1200px;
     margin: 0 auto;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-    justify-content: center;
-    align-items: center;
 }
 
-.opening-hours-current-time {
-    text-align: center;
-    margin-top: 8px;
-    font-size: 0.75rem;
-    color: #666;
-    font-weight: 500;
-}
-
-.opening-hours-day-card {
-    background: transparent;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-    padding: 7px 11px;
-    text-align: center;
-    min-width: 72px;
-    transition: all 0.2s ease;
-    cursor: default;
+.opening-hours-info-container {
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 12px;
+}
+
+.opening-hours-date {
+    font-size: 0.9rem;
+    color: #303030;
+    font-weight: 600;
+    text-align: center;
+}
+
+.opening-hours-status-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
     justify-content: center;
 }
 
-.opening-hours-day-card:hover {
-    border-color: #eeb534;
-    background: #f0e0d0;
+.opening-hours-status {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.opening-hours-day-card.current-day {
-    background: #f0e0d0;
-    border-color: #eeb534;
-    position: relative;
+.opening-hours-status.status-open {
+    background: #e8f5e9;
+    color: #2e7d32;
 }
 
-.opening-hours-day-card.current-day::before {
-    content: '';
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 6px;
-    height: 6px;
-    background: #eeb534;
+.opening-hours-status.status-closed {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.opening-hours-time-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.opening-hours-time {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.opening-hours-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    line-height: 1;
+    color: #eeb534;
+}
+
+.opening-hours-icon-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.opening-hours-icon-btn:hover {
+    background: rgba(238, 181, 52, 0.1);
+    transform: scale(1.1);
+    color: #d69826;
+}
+
+.opening-hours-icon-btn:active {
+    transform: scale(0.95);
+}
+
+.opening-hours-timezone-notice {
+    max-width: 1200px;
+    margin: 8px auto 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.7rem;
+    color: #666;
+    padding-top: 8px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.timezone-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #eeb534;
+}
+
+.timezone-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.timezone-text {
+    font-size: 0.7rem;
+}
+
+/* Hours Modal Overlay */
+.hours-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.hours-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Hours Modal Sidebar */
+.hours-sidebar {
+    position: fixed;
+    right: -400px;
+    top: 0;
+    width: 400px;
+    height: 100vh;
+    height: 100dvh;
+    background: white;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+    transition: right 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+.hours-sidebar.open {
+    right: 0;
+}
+
+.hours-header {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    background: white;
+}
+
+.hours-header h2 {
+    font-size: 1.5rem;
+    color: #303030;
+    flex: 1;
+    text-align: center;
+    margin: 0;
+    font-weight: 700;
+}
+
+.close-hours {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: all 0.3s ease;
     border-radius: 50%;
 }
 
-.opening-hours-day-card.closed-day {
+.close-hours:hover {
+    background: #f0e0d0;
+    color: #303030;
+}
+
+.close-hours:active {
+    background: #f0f0f0;
+}
+
+.hours-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hours-day-item {
+    padding: 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: white;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hours-day-item:hover {
+    border-color: #eeb534;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.hours-day-item.current-day {
+    background: #f0e0d0;
+    border-color: #eeb534;
+}
+
+.hours-day-item.closed-day {
     background: #ffebee;
     border-color: #df4c2d;
-    color: #df4c2d;
 }
 
-.opening-hours-day-card.closed-day .opening-hours-day-name {
-    color: #df4c2d;
-    font-weight: 600;
-}
-
-.opening-hours-day-name {
-    font-size: 0.675rem;
+.hours-day-name {
+    font-size: 1rem;
     font-weight: 600;
     color: #303030;
-    margin-bottom: 2px;
-    text-transform: capitalize;
-    line-height: 1.2;
 }
 
-.opening-hours-day-status {
-    font-size: 0.7rem;
-    font-weight: 500;
-    margin-bottom: 2px;
-    display: none;
-}
-
-.opening-hours-day-status.open {
-    color: #eeb534;
-}
-
-.opening-hours-day-status.closed {
+.hours-day-item.closed-day .hours-day-name {
     color: #df4c2d;
 }
 
-.opening-hours-day-time {
-    font-size: 0.63rem;
+.hours-day-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.hours-status-badge {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hours-status-badge.status-open {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.hours-status-badge.status-closed {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.hours-time-text {
+    font-size: 0.9rem;
     color: #666;
-    line-height: 1.2;
     font-weight: 500;
 }
 
-.opening-hours-day-time.open-status {
-    color: #eeb534;
-    font-weight: 600;
+/* Prevent scroll when hours modal is open */
+body.hours-open {
+    overflow: hidden !important;
+    position: fixed !important;
+    width: 100% !important;
+    height: 100% !important;
+    touch-action: none;
+    -webkit-overflow-scrolling: none;
 }
 
-.opening-hours-day-time.closed-text {
-    color: #999;
-    font-size: 0.63rem;
+html.hours-open {
+    overflow: hidden !important;
+    height: 100% !important;
 }
 
 /* Responsive: Tablet */
 @media (max-width: 768px) {
     .opening-hours-section {
-        padding: 8px 10px;
+        padding: 12px 16px;
     }
     
-    .opening-hours-container {
-        gap: 4px;
-        flex-wrap: nowrap;
-        justify-content: space-between;
+    .opening-hours-date {
+        font-size: 0.85rem;
     }
     
-    .opening-hours-day-card {
-        min-width: 0;
-        width: calc((100% - 24px) / 7 * 0.9);
-        padding: 5px 4px;
-        flex-shrink: 1;
-        flex-grow: 1;
+    .opening-hours-status {
+        font-size: 0.8rem;
+        padding: 5px 12px;
     }
     
-    .opening-hours-day-name {
-        font-size: 0.6rem;
+    .opening-hours-time {
+        font-size: 0.85rem;
     }
     
-    .opening-hours-current-time {
-        font-size: 0.7rem;
-        margin-top: 6px;
+    .opening-hours-icon-btn {
+        font-size: 0.9rem;
+        width: 22px;
+        height: 22px;
+    }
+    
+    .hours-sidebar {
+        width: 100%;
+        right: -100%;
     }
 }
 
 /* Responsive: Mobile */
 @media (max-width: 480px) {
     .opening-hours-section {
-        padding: 6px 4px;
-        overflow: hidden;
+        padding: 10px 12px;
     }
     
-    .opening-hours-container {
-        gap: 2px;
-        flex-wrap: nowrap;
-        justify-content: space-between;
-        overflow: hidden;
-        width: 100%;
+    .opening-hours-info-container {
+        gap: 10px;
     }
     
-    .opening-hours-day-card {
-        min-width: 0;
-        width: calc((100% - 12px) / 7 * 0.9);
-        padding: 4px 2px;
-        flex-direction: column;
-        flex-shrink: 1;
-        flex-grow: 1;
+    .opening-hours-date {
+        font-size: 0.8rem;
     }
     
-    .opening-hours-day-name {
-        font-size: 0.5rem;
-        margin-bottom: 0;
-        line-height: 1.1;
+    .opening-hours-status-container {
+        gap: 8px;
     }
     
-    .opening-hours-day-card.current-day::before {
-        width: 3px;
-        height: 3px;
-        top: 1px;
-        right: 1px;
+    .opening-hours-status {
+        font-size: 0.75rem;
+        padding: 4px 10px;
     }
     
-    .opening-hours-current-time {
-        font-size: 0.65rem;
-        margin-top: 4px;
+    .opening-hours-time {
+        font-size: 0.8rem;
+    }
+    
+    .opening-hours-icon-btn {
+        font-size: 0.85rem;
+        width: 20px;
+        height: 20px;
+    }
+    
+    .hours-header {
+        padding: 16px;
+    }
+    
+    .hours-header h2 {
+        font-size: 1.3rem;
+    }
+    
+    .hours-content {
+        padding: 16px;
+        gap: 10px;
+    }
+    
+    .hours-day-item {
+        padding: 12px;
+    }
+    
+    .hours-day-name {
+        font-size: 0.9rem;
     }
 }
 
