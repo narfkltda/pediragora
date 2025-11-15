@@ -202,6 +202,13 @@ const alertModalClose = document.getElementById('alert-modal-close');
 const alertModalOk = document.getElementById('alert-modal-ok');
 const alertModalTitle = document.getElementById('alert-modal-title');
 const alertModalMessage = document.getElementById('alert-modal-message');
+const pickupMapModal = document.getElementById('pickup-map-modal');
+const pickupMapModalOverlay = document.getElementById('pickup-map-modal-overlay');
+const pickupMapModalClose = document.getElementById('pickup-map-modal-close');
+const pickupMapImage = document.getElementById('pickup-map-image');
+const pickupMapLink = document.getElementById('pickup-map-link');
+const pickupMapBtnGoogle = document.getElementById('pickup-map-btn-google');
+const pickupMapBtnApple = document.getElementById('pickup-map-btn-apple');
 const checkoutBtn = document.getElementById('btn-checkout');
 const customerNameInput = document.getElementById('customer-name');
 const customerNotesInput = document.getElementById('customer-notes');
@@ -284,6 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupDeliveryMethodListeners();
     setupHoursModalListeners();
     setupAlertModalListeners();
+    setupPickupMapModalListeners();
     renderOpeningHours();
     
     // Initialize cart to step 1
@@ -848,6 +856,103 @@ function setupAlertModalListeners() {
 }
 
 /**
+ * Show pickup map modal
+ */
+function showPickupMapModal() {
+    if (pickupMapModal && pickupMapModalOverlay && pickupMapImage && pickupMapLink) {
+        const lat = CONFIG.restaurantLatitude;
+        const lng = CONFIG.restaurantLongitude;
+        
+        // Try multiple static map services as fallback
+        // Option 1: Use Nominatim (OpenStreetMap) - more reliable
+        const nominatimUrl = `https://nominatim.openstreetmap.org/ui/reverse.html?format=json&lat=${lat}&lon=${lng}&zoom=15`;
+        
+        // Option 2: Use staticmap.openstreetmap.de with proper encoding
+        const staticMapUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=15&size=600x300&markers=${lat},${lng},red-pushpin&scale=2`;
+        
+        // Option 3: Use a simple tile-based approach
+        // For now, use a placeholder that will be replaced by CSS background
+        // The image will be set but we'll also add a fallback background
+        
+        // Try to load the static map
+        pickupMapImage.src = staticMapUrl;
+        pickupMapImage.alt = `Localização: ${CONFIG.restaurantName}`;
+        
+        // Add error handler to show placeholder if image fails
+        pickupMapImage.onerror = function() {
+            // If image fails, hide it and show placeholder via CSS
+            this.style.display = 'none';
+            const container = this.closest('.pickup-map-container');
+            if (container) {
+                container.classList.add('map-placeholder');
+            }
+        };
+        
+        // Set link to open in Google Maps
+        const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+        pickupMapLink.href = googleMapsUrl;
+        
+        pickupMapModal.classList.add('active');
+        pickupMapModalOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+/**
+ * Hide pickup map modal
+ */
+function hidePickupMapModal() {
+    if (pickupMapModal && pickupMapModalOverlay) {
+        pickupMapModal.classList.remove('active');
+        pickupMapModalOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+        
+        // Clear image src to stop loading
+        if (pickupMapImage) {
+            pickupMapImage.src = '';
+        }
+    }
+}
+
+/**
+ * Setup pickup map modal listeners
+ */
+function setupPickupMapModalListeners() {
+    if (pickupMapModalClose) {
+        pickupMapModalClose.addEventListener('click', hidePickupMapModal);
+    }
+    
+    if (pickupMapModalOverlay) {
+        pickupMapModalOverlay.addEventListener('click', hidePickupMapModal);
+    }
+    
+    if (pickupMapBtnGoogle) {
+        pickupMapBtnGoogle.addEventListener('click', () => {
+            const lat = CONFIG.restaurantLatitude;
+            const lng = CONFIG.restaurantLongitude;
+            hidePickupMapModal();
+            openGoogleMaps(lat, lng);
+        });
+    }
+    
+    if (pickupMapBtnApple) {
+        pickupMapBtnApple.addEventListener('click', () => {
+            const lat = CONFIG.restaurantLatitude;
+            const lng = CONFIG.restaurantLongitude;
+            hidePickupMapModal();
+            openAppleMaps(lat, lng);
+        });
+    }
+    
+    // Close on ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && pickupMapModal && pickupMapModal.classList.contains('active')) {
+            hidePickupMapModal();
+        }
+    });
+}
+
+/**
  * Setup hours modal listeners
  */
 function setupHoursModalListeners() {
@@ -1327,6 +1432,14 @@ function handleCheckout() {
     // Reset to step 1 and close cart
     goToCartStep(1);
     closeCart();
+    
+    // If delivery method is "Retirar no local", show pickup map modal
+    if (deliveryMethod === 'Retirar no local') {
+        // Small delay to ensure cart is closed before showing modal
+        setTimeout(() => {
+            showPickupMapModal();
+        }, 300);
+    }
 }
 
 /**

@@ -238,6 +238,47 @@
         </div>
     </div>
 
+    <!-- Pickup Map Modal -->
+    <div class="pickup-map-modal-overlay" id="pickup-map-modal-overlay"></div>
+    <div class="pickup-map-modal" id="pickup-map-modal">
+        <div class="pickup-map-modal-header">
+            <h3>Local para Retirada</h3>
+            <button class="pickup-map-modal-close" id="pickup-map-modal-close">&times;</button>
+        </div>
+        <div class="pickup-map-modal-content">
+            <div class="pickup-map-container">
+                <a id="pickup-map-link" href="#" target="_blank" rel="noopener noreferrer" class="pickup-map-link">
+                    <img id="pickup-map-image" class="pickup-map-image" alt="Localização do restaurante" onerror="this.style.display='none'; this.parentElement.parentElement.classList.add('map-placeholder');" />
+                    <div class="pickup-map-placeholder-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                    </div>
+                    <div class="pickup-map-overlay">
+                        <span>Clique para ver no Google Maps</span>
+                    </div>
+                </a>
+            </div>
+            <div class="pickup-map-buttons">
+                <button class="pickup-map-btn" id="pickup-map-btn-google">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <span>Abrir no Google Maps</span>
+                </button>
+                <button class="pickup-map-btn" id="pickup-map-btn-apple">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <span>Abrir no Apple Maps</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="../core/cart.js"></script>
     <script src="../core/whatsapp.js"></script>
