@@ -942,6 +942,8 @@ html.cart-open {
 .cart-item-price {
     color: #eeb534;
     font-weight: 600;
+    word-wrap: break-word;
+    line-height: 1.4;
 }
 
 .cart-item-quantity {

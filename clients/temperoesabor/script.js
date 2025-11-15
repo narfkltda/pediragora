@@ -794,11 +794,20 @@ function createCartItemElement(item) {
     
     const formattedName = formatItemName(item);
     
+    // Formatar preço: se quantidade > 1, mostrar cálculo; senão, apenas o preço unitário
+    let priceDisplay;
+    if (item.quantity > 1) {
+        const total = item.price * item.quantity;
+        priceDisplay = `R$ ${item.price.toFixed(2)} x ${item.quantity} = R$ ${total.toFixed(2)}`;
+    } else {
+        priceDisplay = `R$ ${item.price.toFixed(2)}`;
+    }
+    
     div.innerHTML = `
         <img src="${item.image}" alt="${item.name}" class="cart-item-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Crect fill=%22%23f0f0f0%22 width=%2260%22 height=%2260%22/%3E%3C/svg%3E'">
         <div class="cart-item-info">
             <div class="cart-item-name">${formattedName}</div>
-            <div class="cart-item-price">R$ ${item.price.toFixed(2)}</div>
+            <div class="cart-item-price">${priceDisplay}</div>
             <div class="cart-item-quantity">
                 <button class="quantity-btn" data-action="decrease" data-item-id="${item.id}">-</button>
                 <span class="quantity-value">${item.quantity}</span>
