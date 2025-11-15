@@ -67,16 +67,14 @@ html.cart-open {
     margin: 0 auto;
     display: flex;
     align-items: center;
-    gap: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
+    justify-content: space-between;
     position: relative;
-    margin-bottom: 15px;
+    gap: 20px;
 }
 
 .logo-placeholder {
     width: auto;
-    height: 90px;
+    height: 117px;
     background: none;
     display: flex;
     align-items: center;
@@ -84,6 +82,7 @@ html.cart-open {
     overflow: visible;
     border: none;
     padding: 0;
+    flex: 1;
 }
 
 .logo-placeholder img {
@@ -108,16 +107,7 @@ html.cart-open {
     font-weight: 700;
 }
 
-/* Header Toolbar */
-.header-toolbar {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
+/* Header Toolbar - Removed, buttons now in header-content */
 
 /* Map Toggle Button */
 .map-toggle {
@@ -419,12 +409,8 @@ html.cart-open {
 /* Responsive: Header Toolbar */
 @media (max-width: 768px) {
     .header-content {
-        justify-content: center;
-        margin-bottom: 12px;
-    }
-    
-    .header-toolbar {
-        padding-top: 8px;
+        justify-content: space-between;
+        gap: 10px;
     }
     
     .map-toggle,
@@ -454,11 +440,7 @@ html.cart-open {
 
 @media (max-width: 480px) {
     .header-content {
-        margin-bottom: 10px;
-    }
-    
-    .header-toolbar {
-        padding-top: 6px;
+        gap: 8px;
     }
     
     .map-toggle,
