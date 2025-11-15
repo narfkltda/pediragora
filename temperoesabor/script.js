@@ -19,12 +19,12 @@ const CONFIG = {
     restaurantLongitude: -51.42205139592757,
     openingHours: {
         segunda: null, // Fechado na segunda-feira
-        terca: { open: '19:00', close: '23:00' },
-        quarta: { open: '19:00', close: '23:00' },
-        quinta: { open: '19:00', close: '23:00' },
-        sexta: { open: '19:00', close: '23:00' },
-        sabado: { open: '19:00', close: '23:00' },
-        domingo: { open: '19:00', close: '23:00' }
+        terca: { open: '19:00', close: '22:45' },
+        quarta: { open: '19:00', close: '22:45' },
+        quinta: { open: '19:00', close: '22:45' },
+        sexta: { open: '19:00', close: '22:45' },
+        sabado: { open: '19:00', close: '22:45' },
+        domingo: { open: '19:00', close: '22:45' }
     }
 };
 
@@ -196,6 +196,12 @@ const mapsModalOverlay = document.getElementById('maps-modal-overlay');
 const mapsModalClose = document.getElementById('maps-modal-close');
 const mapsOptionGoogle = document.getElementById('maps-option-google');
 const mapsOptionApple = document.getElementById('maps-option-apple');
+const alertModal = document.getElementById('alert-modal');
+const alertModalOverlay = document.getElementById('alert-modal-overlay');
+const alertModalClose = document.getElementById('alert-modal-close');
+const alertModalOk = document.getElementById('alert-modal-ok');
+const alertModalTitle = document.getElementById('alert-modal-title');
+const alertModalMessage = document.getElementById('alert-modal-message');
 const checkoutBtn = document.getElementById('btn-checkout');
 const customerNameInput = document.getElementById('customer-name');
 const customerNotesInput = document.getElementById('customer-notes');
@@ -277,6 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupPaymentMethodListeners();
     setupDeliveryMethodListeners();
     setupHoursModalListeners();
+    setupAlertModalListeners();
     renderOpeningHours();
     
     // Initialize cart to step 1
@@ -389,6 +396,12 @@ function createItemCard(item) {
     buyNowBtn.setAttribute('data-item-id', item.id);
     buyNowBtn.textContent = 'Comprar Agora';
     buyNowBtn.addEventListener('click', () => {
+            // Verificar se pode comprar antes de adicionar e abrir carrinho
+            const purchaseCheck = checkIfCanPurchase();
+            if (!purchaseCheck.canPurchase) {
+                showAlertModal('Aviso', purchaseCheck.message);
+                return;
+            }
         handleAddToCart(item.id);
         openCart();
     });
@@ -489,19 +502,19 @@ function nextCartStep() {
     if (currentCartStep === 1) {
         const cart = getCart();
         if (cart.length === 0) {
-            alert('Adicione itens ao carrinho antes de continuar');
+            showAlertModal('Aviso', 'Adicione itens ao carrinho antes de continuar');
             return;
         }
         goToCartStep(2);
     } else if (currentCartStep === 2) {
         const selectedDelivery = document.querySelector('input[name="delivery-method"]:checked');
         if (!selectedDelivery) {
-            alert('Selecione uma forma de entrega');
+            showAlertModal('Aviso', 'Selecione uma forma de entrega');
             return;
         }
         if (selectedDelivery.value === 'Entrega') {
             if (!deliveryAddressInput.value.trim()) {
-                alert('Informe o endereço de entrega');
+                showAlertModal('Aviso', 'Informe o endereço de entrega');
                 return;
             }
         }
@@ -643,6 +656,12 @@ function setupDeliveryMethodListeners() {
  */
 function setupCartToggleListeners() {
     cartToggle.addEventListener('click', () => {
+        // Verificar se pode comprar (horário de atendimento) antes de abrir carrinho
+        const purchaseCheck = checkIfCanPurchase();
+        if (!purchaseCheck.canPurchase) {
+            showAlertModal('Aviso', purchaseCheck.message);
+            return;
+        }
         openCart();
     });
     
@@ -779,6 +798,56 @@ function setupMapToggleListener() {
 }
 
 /**
+ * Show alert modal
+ * @param {string} title - Modal title
+ * @param {string} message - Modal message
+ */
+function showAlertModal(title, message) {
+    if (alertModal && alertModalOverlay && alertModalTitle && alertModalMessage) {
+        alertModalTitle.textContent = title || 'Aviso';
+        alertModalMessage.textContent = message || '';
+        alertModal.classList.add('active');
+        alertModalOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+/**
+ * Hide alert modal
+ */
+function hideAlertModal() {
+    if (alertModal && alertModalOverlay) {
+        alertModal.classList.remove('active');
+        alertModalOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+/**
+ * Setup alert modal listeners
+ */
+function setupAlertModalListeners() {
+    if (alertModalClose) {
+        alertModalClose.addEventListener('click', hideAlertModal);
+    }
+    
+    if (alertModalOverlay) {
+        alertModalOverlay.addEventListener('click', hideAlertModal);
+    }
+    
+    if (alertModalOk) {
+        alertModalOk.addEventListener('click', hideAlertModal);
+    }
+    
+    // Close on ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && alertModal && alertModal.classList.contains('active')) {
+            hideAlertModal();
+        }
+    });
+}
+
+/**
  * Setup hours modal listeners
  */
 function setupHoursModalListeners() {
@@ -909,7 +978,49 @@ function calculateChange() {
 /**
  * Handle add to cart
  */
+/**
+ * Check if customer can purchase (restaurant is open)
+ * @returns {Object} { canPurchase: boolean, message: string }
+ */
+function checkIfCanPurchase() {
+    const dayStatus = getCurrentDayStatus();
+    
+    if (dayStatus.isOpen) {
+        return { canPurchase: true, message: '' };
+    }
+    
+    // Formatar horários para exibição
+    const formatTime = (time) => {
+        if (!time) return '';
+        return time.replace(':00', 'h');
+    };
+    
+    let message = '';
+    if (dayStatus.statusKey === 'not-started') {
+        const openTime = formatTime(dayStatus.openTime);
+        const closeTime = formatTime(dayStatus.closeTime);
+        message = `Atendimento ainda não iniciado. Horário: ${openTime} às ${closeTime}`;
+    } else if (dayStatus.statusKey === 'finished') {
+        const openTime = formatTime(dayStatus.openTime);
+        const closeTime = formatTime(dayStatus.closeTime);
+        message = `Atendimento finalizado. Horário: ${openTime} às ${closeTime}`;
+    } else if (dayStatus.statusKey === 'closed') {
+        message = 'Fechado hoje';
+    } else {
+        message = 'Atendimento não disponível no momento';
+    }
+    
+    return { canPurchase: false, message };
+}
+
 function handleAddToCart(itemId) {
+    // Verificar se pode comprar (horário de atendimento)
+    const purchaseCheck = checkIfCanPurchase();
+    if (!purchaseCheck.canPurchase) {
+        showAlertModal('Aviso', purchaseCheck.message);
+        return;
+    }
+    
     const item = MENU_DATA.items.find(i => i.id === itemId);
     if (item) {
         addItem(item);
@@ -1084,7 +1195,7 @@ function handleCheckout() {
     const cart = getCart();
     
     if (cart.length === 0) {
-        alert('Carrinho vazio!');
+        showAlertModal('Aviso', 'Carrinho vazio!');
         return;
     }
     
@@ -1123,7 +1234,7 @@ function handleCheckout() {
         deliveryAddress = deliveryAddressInput ? deliveryAddressInput.value.trim() : '';
         deliveryComplement = deliveryComplementInput ? deliveryComplementInput.value.trim() : '';
         if (!deliveryAddress) {
-            alert('Informe o endereço de entrega');
+            showAlertModal('Aviso', 'Informe o endereço de entrega');
             return;
         }
     }
@@ -1137,23 +1248,23 @@ function handleCheckout() {
     
     // Validate required fields
     if (!sanitizedName) {
-        alert('Informe seu nome');
+        showAlertModal('Aviso', 'Informe seu nome');
         return;
     }
     
     if (!sanitizedPhone) {
-        alert('Informe seu telefone');
+        showAlertModal('Aviso', 'Informe seu telefone');
         return;
     }
     
     // Validate phone format
     if (!validatePhone(sanitizedPhone)) {
-        alert('Telefone inválido. Informe um telefone válido (10 ou 11 dígitos)');
+        showAlertModal('Aviso', 'Telefone inválido. Informe um telefone válido (10 ou 11 dígitos)');
         return;
     }
     
     if (!paymentMethod) {
-        alert('Selecione uma forma de pagamento');
+        showAlertModal('Aviso', 'Selecione uma forma de pagamento');
         return;
     }
     
@@ -1285,18 +1396,53 @@ function getCurrentDayStatus() {
         return {
             isOpen: false,
             status: 'Fechado',
+            statusKey: 'closed',
             openTime: null,
             closeTime: null
         };
     }
     
-    // Se o dia tem horários configurados, está sempre aberto (não verifica horário atual)
-    return {
-        isOpen: true,
-        status: 'Aberto',
-        openTime: dayHours.open,
-        closeTime: dayHours.close
-    };
+    // Verificar horário atual (Brasília)
+    const brasiliaTime = getBrasiliaTime();
+    const currentTime = `${brasiliaTime.getHours().toString().padStart(2, '0')}:${brasiliaTime.getMinutes().toString().padStart(2, '0')}`;
+    
+    const [openHour, openMin] = dayHours.open.split(':').map(Number);
+    const [closeHour, closeMin] = dayHours.close.split(':').map(Number);
+    const [currentHour, currentMin] = currentTime.split(':').map(Number);
+    
+    const openMinutes = openHour * 60 + openMin;
+    const closeMinutes = closeHour * 60 + closeMin;
+    const currentMinutes = currentHour * 60 + currentMin;
+    
+    // Verificar status baseado no horário atual
+    if (currentMinutes < openMinutes) {
+        // Ainda não iniciou
+        return {
+            isOpen: false,
+            status: 'Não iniciado',
+            statusKey: 'not-started',
+            openTime: dayHours.open,
+            closeTime: dayHours.close
+        };
+    } else if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
+        // Dentro do horário
+        return {
+            isOpen: true,
+            status: 'Aberto',
+            statusKey: 'open',
+            openTime: dayHours.open,
+            closeTime: dayHours.close
+        };
+    } else {
+        // Já finalizou
+        return {
+            isOpen: false,
+            status: 'Finalizado',
+            statusKey: 'finished',
+            openTime: dayHours.open,
+            closeTime: dayHours.close
+        };
+    }
 }
 
 /**
@@ -1356,7 +1502,9 @@ function renderOpeningHours() {
     statusContainer.className = 'opening-hours-status-container';
     
     const statusBadge = document.createElement('span');
-    statusBadge.className = `opening-hours-status ${dayStatus.isOpen ? 'status-open' : 'status-closed'}`;
+    // Usar statusKey para aplicar classe CSS correta
+    const statusClass = dayStatus.statusKey ? `status-${dayStatus.statusKey}` : (dayStatus.isOpen ? 'status-open' : 'status-closed');
+    statusBadge.className = `opening-hours-status ${statusClass}`;
     statusBadge.textContent = dayStatus.status;
     
     // Container para horário e ícone
@@ -1479,8 +1627,16 @@ function renderHoursModal() {
             const closeTime = formatTimeCompact(dayHours.close);
             
             const statusBadge = document.createElement('span');
-            statusBadge.className = 'hours-status-badge status-open';
-            statusBadge.textContent = 'Aberto';
+            // Se for o dia atual, usar status real; senão, mostrar apenas "Aberto"
+            if (isCurrentDay) {
+                const dayStatus = getCurrentDayStatus();
+                const statusClass = dayStatus.statusKey ? `status-${dayStatus.statusKey}` : 'status-open';
+                statusBadge.className = `hours-status-badge ${statusClass}`;
+                statusBadge.textContent = dayStatus.status;
+            } else {
+                statusBadge.className = 'hours-status-badge status-open';
+                statusBadge.textContent = 'Aberto';
+            }
             
             const hoursText = document.createElement('span');
             hoursText.className = 'hours-time-text';

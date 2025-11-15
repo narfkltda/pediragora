@@ -295,6 +295,16 @@ html.cart-open {
     color: #c62828;
 }
 
+.opening-hours-status.status-not-started {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.opening-hours-status.status-finished {
+    background: #eceff1;
+    color: #546e7a;
+}
+
 .opening-hours-time-container {
     display: flex;
     align-items: center;
@@ -522,6 +532,16 @@ html.cart-open {
 .hours-status-badge.status-closed {
     background: #ffebee;
     color: #c62828;
+}
+
+.hours-status-badge.status-not-started {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.hours-status-badge.status-finished {
+    background: #eceff1;
+    color: #546e7a;
 }
 
 .hours-time-text {
@@ -1595,6 +1615,154 @@ html.hours-open {
     }
     
     .maps-option {
+        padding: 14px;
+        font-size: 0.95rem;
+    }
+}
+
+/* Alert Modal - Generic Alert Modal */
+.alert-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.alert-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.alert-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    width: 90%;
+    max-width: 400px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.alert-modal.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.alert-modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.alert-modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #303030;
+    font-weight: 600;
+}
+
+.alert-modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.alert-modal-close:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.alert-modal-content {
+    padding: 20px;
+}
+
+.alert-modal-content p {
+    margin: 0;
+    font-size: 1rem;
+    color: #666;
+    line-height: 1.6;
+    text-align: center;
+}
+
+.alert-modal-footer {
+    padding: 0 20px 20px 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.alert-modal-ok {
+    width: 100%;
+    padding: 12px;
+    background: #eeb534;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.alert-modal-ok:hover {
+    background: #d69826;
+}
+
+.alert-modal-ok:active {
+    transform: scale(0.98);
+}
+
+@media (max-width: 480px) {
+    .alert-modal {
+        width: 95%;
+        border-radius: 16px;
+    }
+    
+    .alert-modal-header {
+        padding: 16px;
+    }
+    
+    .alert-modal-header h3 {
+        font-size: 1.1rem;
+    }
+    
+    .alert-modal-content {
+        padding: 16px;
+    }
+    
+    .alert-modal-content p {
+        font-size: 0.95rem;
+    }
+    
+    .alert-modal-footer {
+        padding: 0 16px 16px 16px;
+    }
+    
+    .alert-modal-ok {
         padding: 14px;
         font-size: 0.95rem;
     }
