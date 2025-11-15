@@ -191,6 +191,11 @@ const cartCount = document.getElementById('cart-count');
 const cartToggle = document.getElementById('cart-toggle');
 const mapToggle = document.getElementById('map-toggle');
 const closeCartBtn = document.getElementById('close-cart');
+const mapsModal = document.getElementById('maps-modal');
+const mapsModalOverlay = document.getElementById('maps-modal-overlay');
+const mapsModalClose = document.getElementById('maps-modal-close');
+const mapsOptionGoogle = document.getElementById('maps-option-google');
+const mapsOptionApple = document.getElementById('maps-option-apple');
 const checkoutBtn = document.getElementById('btn-checkout');
 const customerNameInput = document.getElementById('customer-name');
 const customerNotesInput = document.getElementById('customer-notes');
@@ -654,17 +659,121 @@ function setupCartToggleListeners() {
 }
 
 /**
+ * Check if device is mobile
+ */
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+           (window.innerWidth <= 768 && 'ontouchstart' in window);
+}
+
+/**
+ * Open Google Maps
+ */
+function openGoogleMaps(lat, lng) {
+    // Try to open Google Maps app first, fallback to web
+    const googleMapsAppUrl = `comgooglemaps://?q=${lat},${lng}`;
+    const googleMapsWebUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+    
+    // Try app first
+    const appWindow = window.open(googleMapsAppUrl, '_blank');
+    
+    // If app doesn't open (blocked or not installed), use web
+    setTimeout(() => {
+        if (!appWindow || appWindow.closed || typeof appWindow.closed === 'undefined') {
+            window.open(googleMapsWebUrl, '_blank', 'noopener,noreferrer');
+        }
+    }, 500);
+}
+
+/**
+ * Open Apple Maps
+ */
+function openAppleMaps(lat, lng) {
+    // Try to open Apple Maps app first, fallback to web
+    const appleMapsAppUrl = `maps://?q=${lat},${lng}`;
+    const appleMapsWebUrl = `http://maps.apple.com/?q=${lat},${lng}`;
+    
+    // Try app first
+    const appWindow = window.open(appleMapsAppUrl, '_blank');
+    
+    // If app doesn't open (blocked or not installed), use web
+    setTimeout(() => {
+        if (!appWindow || appWindow.closed || typeof appWindow.closed === 'undefined') {
+            window.open(appleMapsWebUrl, '_blank', 'noopener,noreferrer');
+        }
+    }, 500);
+}
+
+/**
+ * Show maps selection modal
+ */
+function showMapsModal() {
+    if (mapsModal && mapsModalOverlay) {
+        mapsModal.classList.add('active');
+        mapsModalOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+/**
+ * Hide maps selection modal
+ */
+function hideMapsModal() {
+    if (mapsModal && mapsModalOverlay) {
+        mapsModal.classList.remove('active');
+        mapsModalOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+/**
  * Setup map toggle listener
  */
 function setupMapToggleListener() {
     if (mapToggle) {
-        mapToggle.addEventListener('click', () => {
-            // Use exact coordinates from CONFIG
+        mapToggle.addEventListener('click', (e) => {
+            e.preventDefault();
             const lat = CONFIG.restaurantLatitude;
             const lng = CONFIG.restaurantLongitude;
-            // Open Google Maps with exact coordinates
-            const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-            window.open(googleMapsUrl, '_blank');
+            
+            // On mobile, show modal to choose app
+            if (isMobileDevice()) {
+                showMapsModal();
+            } else {
+                // On desktop, open Google Maps directly
+                const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+                const newWindow = window.open(googleMapsUrl, '_blank', 'noopener,noreferrer');
+                if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                    window.location.href = googleMapsUrl;
+                }
+            }
+        });
+    }
+    
+    // Setup modal listeners
+    if (mapsModalClose) {
+        mapsModalClose.addEventListener('click', hideMapsModal);
+    }
+    
+    if (mapsModalOverlay) {
+        mapsModalOverlay.addEventListener('click', hideMapsModal);
+    }
+    
+    if (mapsOptionGoogle) {
+        mapsOptionGoogle.addEventListener('click', () => {
+            const lat = CONFIG.restaurantLatitude;
+            const lng = CONFIG.restaurantLongitude;
+            hideMapsModal();
+            openGoogleMaps(lat, lng);
+        });
+    }
+    
+    if (mapsOptionApple) {
+        mapsOptionApple.addEventListener('click', () => {
+            const lat = CONFIG.restaurantLatitude;
+            const lng = CONFIG.restaurantLongitude;
+            hideMapsModal();
+            openAppleMaps(lat, lng);
         });
     }
 }
