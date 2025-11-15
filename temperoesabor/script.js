@@ -201,7 +201,11 @@ const changeField = document.getElementById('change-field');
 const changeAmountInput = document.getElementById('change-amount');
 const changeResult = document.getElementById('change-result');
 const changeValue = document.getElementById('change-value');
-const openingHoursContainer = document.getElementById('opening-hours-container');
+const openingHoursInfo = document.getElementById('opening-hours-info');
+const hoursOverlay = document.getElementById('hours-overlay');
+const hoursSidebar = document.getElementById('hours-sidebar');
+const hoursContent = document.getElementById('hours-content');
+const closeHoursBtn = document.getElementById('close-hours');
 const cartOverlay = document.getElementById('cart-overlay');
 const cartBackBtn = document.getElementById('cart-back-btn');
 const cartHeaderTitle = document.getElementById('cart-header-title');
@@ -267,6 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupCustomerFieldListeners();
     setupPaymentMethodListeners();
     setupDeliveryMethodListeners();
+    setupHoursModalListeners();
     renderOpeningHours();
     
     // Initialize cart to step 1
@@ -660,6 +665,24 @@ function setupMapToggleListener() {
             // Open Google Maps with exact coordinates
             const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
             window.open(googleMapsUrl, '_blank');
+        });
+    }
+}
+
+/**
+ * Setup hours modal listeners
+ */
+function setupHoursModalListeners() {
+    if (closeHoursBtn) {
+        closeHoursBtn.addEventListener('click', () => {
+            closeHoursModal();
+        });
+    }
+    
+    // Close modal when clicking overlay
+    if (hoursOverlay) {
+        hoursOverlay.addEventListener('click', () => {
+            closeHoursModal();
         });
     }
 }
@@ -1106,8 +1129,65 @@ function getAllDaysInPortuguese() {
  */
 function getCurrentDayInPortuguese() {
     const days = getAllDaysInPortuguese();
-    const today = new Date().getDay();
+    const brasiliaDate = getBrasiliaTime();
+    const today = brasiliaDate.getDay();
     return days[today];
+}
+
+/**
+ * Get current time in Brasília timezone (UTC-3)
+ * @returns {Date} Date object with Brasília time
+ */
+function getBrasiliaTime() {
+    const now = new Date();
+    // Get UTC time
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    // Brasília is UTC-3
+    const brasiliaOffset = -3 * 60; // -3 hours in minutes
+    const brasiliaTime = new Date(utc + (brasiliaOffset * 60000));
+    return brasiliaTime;
+}
+
+/**
+ * Format current date in Portuguese
+ * @returns {string} Formatted date (e.g., "Sábado, 15 de Novembro")
+ */
+function formatCurrentDate() {
+    const brasiliaDate = getBrasiliaTime();
+    const days = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    
+    const dayName = days[brasiliaDate.getDay()];
+    const day = brasiliaDate.getDate();
+    const month = months[brasiliaDate.getMonth()];
+    
+    return `${dayName}, ${day} de ${month}`;
+}
+
+/**
+ * Get current day status (open/closed) with hours
+ * @returns {Object} { isOpen: boolean, status: string, openTime: string, closeTime: string }
+ */
+function getCurrentDayStatus() {
+    const currentDay = getCurrentDayInPortuguese();
+    const dayHours = CONFIG.openingHours[currentDay.key];
+    
+    if (!dayHours || !dayHours.open || !dayHours.close) {
+        return {
+            isOpen: false,
+            status: 'Fechado',
+            openTime: null,
+            closeTime: null
+        };
+    }
+    
+    // Se o dia tem horários configurados, está sempre aberto (não verifica horário atual)
+    return {
+        isOpen: true,
+        status: 'Aberto',
+        openTime: dayHours.open,
+        closeTime: dayHours.close
+    };
 }
 
 /**
@@ -1118,8 +1198,8 @@ function isCurrentlyOpen(dayKey, openTime, closeTime) {
         return false;
     }
     
-    const now = new Date();
-    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const brasiliaTime = getBrasiliaTime();
+    const currentTime = `${brasiliaTime.getHours().toString().padStart(2, '0')}:${brasiliaTime.getMinutes().toString().padStart(2, '0')}`;
     
     const [openHour, openMin] = openTime.split(':').map(Number);
     const [closeHour, closeMin] = closeTime.split(':').map(Number);
@@ -1141,14 +1221,122 @@ function formatTimeCompact(time) {
 }
 
 /**
- * Render opening hours for all days
+ * Render opening hours section with current day info
  */
 function renderOpeningHours() {
-    if (!openingHoursContainer) {
+    if (!openingHoursInfo) {
         return;
     }
     
-    openingHoursContainer.innerHTML = '';
+    openingHoursInfo.innerHTML = '';
+    
+    const currentDate = formatCurrentDate();
+    const dayStatus = getCurrentDayStatus();
+    
+    // Container principal
+    const container = document.createElement('div');
+    container.className = 'opening-hours-info-container';
+    
+    // Data atual
+    const dateEl = document.createElement('div');
+    dateEl.className = 'opening-hours-date';
+    dateEl.textContent = currentDate;
+    
+    // Status e horário
+    const statusContainer = document.createElement('div');
+    statusContainer.className = 'opening-hours-status-container';
+    
+    const statusBadge = document.createElement('span');
+    statusBadge.className = `opening-hours-status ${dayStatus.isOpen ? 'status-open' : 'status-closed'}`;
+    statusBadge.textContent = dayStatus.status;
+    
+    // Container para horário e ícone
+    const hoursContainer = document.createElement('div');
+    hoursContainer.className = 'opening-hours-time-container';
+    
+    const hoursText = document.createElement('span');
+    hoursText.className = 'opening-hours-time';
+    
+    if (dayStatus.openTime && dayStatus.closeTime) {
+        const openTime = formatTimeCompact(dayStatus.openTime);
+        const closeTime = formatTimeCompact(dayStatus.closeTime);
+        hoursText.textContent = `${openTime} às ${closeTime}`;
+        
+        // Ícone clicável para ver horários completos
+        const hoursIcon = document.createElement('button');
+        hoursIcon.className = 'opening-hours-icon-btn';
+        hoursIcon.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M8 11V8M8 5H8.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+        hoursIcon.setAttribute('aria-label', 'Ver horários completos');
+        hoursIcon.addEventListener('click', openHoursModal);
+        
+        hoursContainer.appendChild(hoursText);
+        hoursContainer.appendChild(hoursIcon);
+    } else {
+        hoursText.textContent = 'Fechado';
+        hoursContainer.appendChild(hoursText);
+    }
+    
+    statusContainer.appendChild(statusBadge);
+    statusContainer.appendChild(hoursContainer);
+    
+    container.appendChild(dateEl);
+    container.appendChild(statusContainer);
+    
+    openingHoursInfo.appendChild(container);
+}
+
+/**
+ * Open hours modal
+ */
+function openHoursModal() {
+    if (!hoursSidebar || !hoursOverlay) {
+        return;
+    }
+    
+    renderHoursModal();
+    
+    hoursSidebar.classList.add('open');
+    hoursOverlay.classList.add('active');
+    
+    // Prevent body scroll
+    document.body.classList.add('hours-open');
+    document.documentElement.classList.add('hours-open');
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+}
+
+/**
+ * Close hours modal
+ */
+function closeHoursModal() {
+    if (!hoursSidebar || !hoursOverlay) {
+        return;
+    }
+    
+    hoursSidebar.classList.remove('open');
+    hoursOverlay.classList.remove('active');
+    
+    // Restore body scroll
+    document.body.classList.remove('hours-open');
+    document.documentElement.classList.remove('hours-open');
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+    document.body.style.height = '';
+}
+
+/**
+ * Render hours modal with all days
+ */
+function renderHoursModal() {
+    if (!hoursContent) {
+        return;
+    }
+    
+    hoursContent.innerHTML = '';
+    
     const allDays = getAllDaysInPortuguese();
     const currentDay = getCurrentDayInPortuguese();
     
@@ -1156,52 +1344,53 @@ function renderOpeningHours() {
         const dayHours = CONFIG.openingHours[day.key];
         const isCurrentDay = day.key === currentDay.key;
         
-        // Create card element
-        const card = document.createElement('div');
-        card.className = 'opening-hours-day-card';
+        // Create day item
+        const dayItem = document.createElement('div');
+        dayItem.className = 'hours-day-item';
         
         if (isCurrentDay) {
-            card.classList.add('current-day');
+            dayItem.classList.add('current-day');
         }
         
-        // Check if day is closed
         if (!dayHours || !dayHours.open || !dayHours.close) {
-            card.classList.add('closed-day');
+            dayItem.classList.add('closed-day');
         }
         
-        // Day name (abbreviated)
+        // Day name
         const dayName = document.createElement('div');
-        dayName.className = 'opening-hours-day-name';
-        dayName.textContent = day.name;
-        card.appendChild(dayName);
+        dayName.className = 'hours-day-name';
+        dayName.textContent = day.fullName;
         
-        openingHoursContainer.appendChild(card);
+        // Status and hours
+        const dayInfo = document.createElement('div');
+        dayInfo.className = 'hours-day-info';
+        
+        if (dayHours && dayHours.open && dayHours.close) {
+            const openTime = formatTimeCompact(dayHours.open);
+            const closeTime = formatTimeCompact(dayHours.close);
+            
+            const statusBadge = document.createElement('span');
+            statusBadge.className = 'hours-status-badge status-open';
+            statusBadge.textContent = 'Aberto';
+            
+            const hoursText = document.createElement('span');
+            hoursText.className = 'hours-time-text';
+            hoursText.textContent = `${openTime} às ${closeTime}`;
+            
+            dayInfo.appendChild(statusBadge);
+            dayInfo.appendChild(hoursText);
+        } else {
+            const statusBadge = document.createElement('span');
+            statusBadge.className = 'hours-status-badge status-closed';
+            statusBadge.textContent = 'Fechado';
+            
+            dayInfo.appendChild(statusBadge);
+        }
+        
+        dayItem.appendChild(dayName);
+        dayItem.appendChild(dayInfo);
+        
+        hoursContent.appendChild(dayItem);
     });
-    
-    // Render current day hours below cards
-    renderCurrentDayHours();
-}
-
-/**
- * Render current day hours below the cards
- */
-function renderCurrentDayHours() {
-    const currentTimeElement = document.getElementById('opening-hours-current-time');
-    if (!currentTimeElement) {
-        return;
-    }
-    
-    const currentDay = getCurrentDayInPortuguese();
-    const dayHours = CONFIG.openingHours[currentDay.key];
-    
-    if (dayHours && dayHours.open && dayHours.close) {
-        const openTime = formatTimeCompact(dayHours.open);
-        const closeTime = formatTimeCompact(dayHours.close);
-        currentTimeElement.textContent = `Horário: ${openTime} às ${closeTime}`;
-        currentTimeElement.style.display = 'block';
-    } else {
-        currentTimeElement.textContent = '';
-        currentTimeElement.style.display = 'none';
-    }
 }
 
