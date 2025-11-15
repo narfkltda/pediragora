@@ -185,6 +185,11 @@ let scrollPosition = 0;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    const restaurantNameEl = document.querySelector('.restaurant-name');
+    if (restaurantNameEl) {
+        restaurantNameEl.textContent = CONFIG.restaurantName;
+    }
+    
     const cart = getCart();
     const customerData = loadCustomerData();
     const paymentMethod = loadPaymentMethod();

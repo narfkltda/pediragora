@@ -66,10 +66,25 @@ html.cart-open {
     max-width: 1200px;
     margin: 0 auto;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     position: relative;
+    gap: 15px;
+}
+
+.logo-title-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     gap: 20px;
+}
+
+.header-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
 }
 
 .logo-placeholder {
@@ -82,7 +97,13 @@ html.cart-open {
     overflow: visible;
     border: none;
     padding: 0;
-    flex: 1;
+}
+
+/* Desktop: Increase logo height by 30% */
+@media (min-width: 769px) {
+    .logo-placeholder {
+        height: 152px;
+    }
 }
 
 .logo-placeholder img {
@@ -99,12 +120,14 @@ html.cart-open {
 }
 
 .restaurant-name {
-    font-size: 2rem;
+    font-size: clamp(1.2rem, 5vw, 3rem);
     color: #ffffff;
-    text-align: center;
-    flex: 1;
+    text-align: left;
     margin: 0;
     font-weight: 700;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
 }
 
 /* Header Toolbar - Removed, buttons now in header-content */
@@ -411,6 +434,17 @@ html.cart-open {
     .header-content {
         justify-content: space-between;
         gap: 10px;
+        padding: 0 10px;
+    }
+    
+    .logo-title-container {
+        gap: 10px;
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .restaurant-name {
+        max-width: calc(100% - 10px);
     }
     
     .map-toggle,
