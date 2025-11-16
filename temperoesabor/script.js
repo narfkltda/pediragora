@@ -19,13 +19,19 @@ const CONFIG = {
     restaurantLongitude: -51.42205139592757,
     openingHours: {
         segunda: null, // Fechado na segunda-feira
-        terca: { open: '08:00', close: '23:00' },
-        quarta: { open: '08:00', close: '23:00' },
-        quinta: { open: '08:00', close: '23:00' },
-        sexta: { open: '08:00', close: '23:00' },
-        sabado: { open: '08:00', close: '23:00' },
-        domingo: { open: '08:00', close: '23:00' }
+        terca: { open: '19:00', close: '22:45' },
+        quarta: { open: '19:00', close: '22:45' },
+        quinta: { open: '19:00', close: '22:45' },
+        sexta: { open: '19:00', close: '22:45' },
+        sabado: { open: '19:00', close: '22:45' },
+        domingo: { open: '19:00', close: '22:45' }
     }
+};
+
+// Test Mode - Para testar horários diferentes
+const TEST_MODE = {
+    enabled: true, // Modo teste ativado
+    simulatedTime: "01:50" // Simulando 20:00 (durante o horário de atendimento 19:00-22:45)
 };
 
 // Menu data
@@ -1376,25 +1382,20 @@ function checkIfCanPurchase() {
         return { canPurchase: true, message: '' };
     }
     
-    // Formatar horários para exibição
-    const formatTime = (time) => {
-        if (!time) return '';
-        return time.replace(':00', 'h');
-    };
-    
     let message = '';
-    if (dayStatus.statusKey === 'not-started') {
-        const openTime = formatTime(dayStatus.openTime);
-        const closeTime = formatTime(dayStatus.closeTime);
-        message = `Atendimento ainda não iniciado. Horário: ${openTime} às ${closeTime}`;
+    if (dayStatus.statusKey === 'not-started' && dayStatus.openTime && dayStatus.closeTime) {
+        // Se abrir no dia, mas antes do horário de início
+        const openTime = formatTimeForDisplay(dayStatus.openTime);
+        const closeTime = formatTimeForDisplay(dayStatus.closeTime);
+        message = `Loja fechada, abre hoje das ${openTime} as ${closeTime}`;
     } else if (dayStatus.statusKey === 'finished') {
-        const openTime = formatTime(dayStatus.openTime);
-        const closeTime = formatTime(dayStatus.closeTime);
-        message = `Atendimento finalizado. Horário: ${openTime} às ${closeTime}`;
-    } else if (dayStatus.statusKey === 'closed') {
-        message = 'Fechado hoje';
+        // Se for depois do horário de atendimento
+        message = 'Loja Fechada';
+    } else if (dayStatus.statusKey === 'closed' || !dayStatus.openTime || !dayStatus.closeTime) {
+        // Se não abrir no dia
+        message = 'Loja Fechada!';
     } else {
-        message = 'Atendimento não disponível no momento';
+        message = 'Loja Fechada!';
     }
     
     return { canPurchase: false, message };
@@ -1752,7 +1753,7 @@ function getCurrentDayInPortuguese() {
 }
 
 /**
- * Get current time in Brasília timezone (UTC-3)
+ * Get current time in Brasília timezone (UTC-3) or simulated time if test mode is enabled
  * @returns {Date} Date object with Brasília time
  */
 function getBrasiliaTime() {
@@ -1763,6 +1764,20 @@ function getBrasiliaTime() {
     const brasiliaOffset = -3 * 60; // -3 hours in minutes
     const brasiliaTime = new Date(utc + (brasiliaOffset * 60000));
     return brasiliaTime;
+}
+
+/**
+ * Get current time string (HH:MM format) - uses simulated time if test mode is enabled
+ * @returns {string} Current time in "HH:MM" format
+ */
+function getCurrentTimeString() {
+    // Verificar modo teste primeiro
+    if (typeof TEST_MODE !== 'undefined' && TEST_MODE.enabled && TEST_MODE.simulatedTime) {
+        return TEST_MODE.simulatedTime;
+    }
+    // Se não estiver em modo teste, usar horário real
+    const brasiliaTime = getBrasiliaTime();
+    return `${brasiliaTime.getHours().toString().padStart(2, '0')}:${brasiliaTime.getMinutes().toString().padStart(2, '0')}`;
 }
 
 /**
@@ -1799,9 +1814,8 @@ function getCurrentDayStatus() {
         };
     }
     
-    // Verificar horário atual (Brasília)
-    const brasiliaTime = getBrasiliaTime();
-    const currentTime = `${brasiliaTime.getHours().toString().padStart(2, '0')}:${brasiliaTime.getMinutes().toString().padStart(2, '0')}`;
+    // Verificar horário atual (Brasília) ou simulado (modo teste)
+    const currentTime = getCurrentTimeString();
     
     const [openHour, openMin] = dayHours.open.split(':').map(Number);
     const [closeHour, closeMin] = dayHours.close.split(':').map(Number);
@@ -1850,8 +1864,8 @@ function isCurrentlyOpen(dayKey, openTime, closeTime) {
         return false;
     }
     
-    const brasiliaTime = getBrasiliaTime();
-    const currentTime = `${brasiliaTime.getHours().toString().padStart(2, '0')}:${brasiliaTime.getMinutes().toString().padStart(2, '0')}`;
+    // Verificar horário atual (Brasília) ou simulado (modo teste)
+    const currentTime = getCurrentTimeString();
     
     const [openHour, openMin] = openTime.split(':').map(Number);
     const [closeHour, closeMin] = closeTime.split(':').map(Number);
@@ -1869,6 +1883,15 @@ function isCurrentlyOpen(dayKey, openTime, closeTime) {
  */
 function formatTimeCompact(time) {
     if (!time) return '';
+    return time.replace(':00', 'h');
+}
+
+/**
+ * Format time for display (19:00 -> 19h, 22:45 -> 22:45)
+ */
+function formatTimeForDisplay(time) {
+    if (!time) return '';
+    // "19:00" -> "19h", "22:45" -> "22:45"
     return time.replace(':00', 'h');
 }
 
@@ -1902,7 +1925,21 @@ function renderOpeningHours() {
     // Usar statusKey para aplicar classe CSS correta
     const statusClass = dayStatus.statusKey ? `status-${dayStatus.statusKey}` : (dayStatus.isOpen ? 'status-open' : 'status-closed');
     statusBadge.className = `opening-hours-status ${statusClass}`;
-    statusBadge.textContent = dayStatus.status;
+    
+    // Definir texto do status conforme novas regras
+    if (dayStatus.isOpen && dayStatus.openTime && dayStatus.closeTime) {
+        // Se for durante o horário de atendimento
+        statusBadge.textContent = 'Aberto';
+    } else if (dayStatus.statusKey === 'not-started' && dayStatus.openTime && dayStatus.closeTime) {
+        // Se abrir no dia, mas antes do horário de início
+        statusBadge.textContent = 'Loja fechada, abre hoje!';
+    } else if (dayStatus.statusKey === 'finished') {
+        // Se for depois do horário de atendimento
+        statusBadge.textContent = 'Loja Fechada';
+    } else {
+        // Se não abrir no dia
+        statusBadge.textContent = 'Loja Fechada!';
+    }
     
     // Container para horário e ícone
     const hoursContainer = document.createElement('div');
@@ -1912,8 +1949,8 @@ function renderOpeningHours() {
     hoursText.className = 'opening-hours-time';
     
     if (dayStatus.openTime && dayStatus.closeTime) {
-        const openTime = formatTimeCompact(dayStatus.openTime);
-        const closeTime = formatTimeCompact(dayStatus.closeTime);
+        const openTime = formatTimeForDisplay(dayStatus.openTime);
+        const closeTime = formatTimeForDisplay(dayStatus.closeTime);
         hoursText.textContent = `${openTime} às ${closeTime}`;
         
         // Ícone clicável para ver horários completos
@@ -2024,12 +2061,26 @@ function renderHoursModal() {
             const closeTime = formatTimeCompact(dayHours.close);
             
             const statusBadge = document.createElement('span');
-            // Se for o dia atual, usar status real; senão, mostrar apenas "Aberto"
+            // Se for o dia atual, usar status real com novas mensagens; senão, mostrar apenas "Aberto"
             if (isCurrentDay) {
                 const dayStatus = getCurrentDayStatus();
                 const statusClass = dayStatus.statusKey ? `status-${dayStatus.statusKey}` : 'status-open';
                 statusBadge.className = `hours-status-badge ${statusClass}`;
-                statusBadge.textContent = dayStatus.status;
+                
+                // Aplicar novas regras de mensagens
+                if (dayStatus.isOpen && dayStatus.openTime && dayStatus.closeTime) {
+                    const openTime = formatTimeForDisplay(dayStatus.openTime);
+                    const closeTime = formatTimeForDisplay(dayStatus.closeTime);
+                    statusBadge.textContent = `Aberto das ${openTime} as ${closeTime}`;
+                } else if (dayStatus.statusKey === 'not-started' && dayStatus.openTime && dayStatus.closeTime) {
+                    const openTime = formatTimeForDisplay(dayStatus.openTime);
+                    const closeTime = formatTimeForDisplay(dayStatus.closeTime);
+                    statusBadge.textContent = `Loja fechada, abre hoje das ${openTime} as ${closeTime}`;
+                } else if (dayStatus.statusKey === 'finished') {
+                    statusBadge.textContent = 'Loja Fechada';
+                } else {
+                    statusBadge.textContent = 'Loja Fechada!';
+                }
             } else {
                 statusBadge.className = 'hours-status-badge status-open';
                 statusBadge.textContent = 'Aberto';
