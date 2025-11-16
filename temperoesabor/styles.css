@@ -895,6 +895,28 @@ html.hours-open {
     gap: 20px;
 }
 
+/* Desktop: 3 cards per row in horizontal layout */
+@media (min-width: 769px) {
+    .items-grid.horizontal {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+    
+    .item-card.horizontal .item-image-container {
+        height: 250px;
+        min-height: 250px;
+        max-height: 250px;
+    }
+    
+    .item-card.horizontal .item-image {
+        max-height: 250px !important;
+    }
+    
+    .item-card.horizontal .item-image.hotdog-image {
+        max-height: 250px !important;
+    }
+}
+
 .item-card {
     background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(20px);
@@ -1034,11 +1056,13 @@ html.hours-open {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: transparent;
     position: relative;
     z-index: 1;
+}
+
+.item-card:not(.horizontal) .item-content {
+    padding: 24px 24px 20px 24px;
 }
 
 /* Horizontal Card Layout */
@@ -1314,7 +1338,7 @@ html.hours-open {
 }
 
 .item-card:not(.horizontal) .item-price-actions {
-    margin-top: auto;
+    margin-top: 0;
 }
 
 .item-price-actions .item-price {
@@ -1331,12 +1355,19 @@ html.hours-open {
     flex-wrap: nowrap;
 }
 
-/* Vertical layout: price and buttons on same line */
+/* Vertical layout: price on top, buttons below, both centered */
 .item-card:not(.horizontal) .item-price-actions {
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    gap: 10px;
+    justify-content: center;
+    gap: 15px;
+    padding: 0 24px 24px 24px;
+}
+
+.item-card:not(.horizontal) .item-price-actions .item-price {
+    text-align: center;
+    width: 100%;
+    margin-bottom: 0;
 }
 
 .item-card:not(.horizontal) .item-price-actions .item-buttons {
@@ -1345,23 +1376,26 @@ html.hours-open {
     gap: 10px;
     flex-shrink: 0;
     align-items: center;
+    justify-content: center;
+    width: 100%;
 }
 
 .item-card:not(.horizontal) .item-price-actions .btn-buy-now,
 .item-card:not(.horizontal) .item-price-actions .btn-add-cart {
-    width: auto;
-    min-width: 120px;
+    width: auto !important;
+    min-width: 140px;
     flex: 0 0 auto;
     height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
+    margin: 0 !important;
 }
 
 .item-card:not(.horizontal) .item-price-actions .btn-add-cart {
     width: auto;
-    min-width: auto;
+    min-width: 140px;
     padding: 12px;
     height: 44px;
     gap: 8px;
