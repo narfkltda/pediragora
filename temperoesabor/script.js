@@ -30,8 +30,8 @@ const CONFIG = {
 
 // Test Mode - Para testar horários diferentes
 const TEST_MODE = {
-    enabled: true, // Modo teste ativado
-    simulatedTime: "01:50" // Simulando 20:00 (durante o horário de atendimento 19:00-22:45)
+    enabled: false, // Modo teste desativado
+    simulatedTime: null // Sem horário simulado
 };
 
 // Menu data
@@ -290,7 +290,7 @@ function validatePhone(phone) {
 // State
 let currentCategory = 'Todos';
 let searchTerm = '';
-let currentLayout = 'vertical'; // 'vertical' or 'horizontal'
+let currentLayout = 'horizontal'; // Always horizontal
 
 // DOM Elements
 const categoryButtons = document.getElementById('category-buttons');
@@ -406,14 +406,10 @@ document.addEventListener('DOMContentLoaded', () => {
     setupHoursModalListeners();
     setupAlertModalListeners();
     setupPickupMapModalListeners();
-    setupLayoutSelectorListeners();
     renderOpeningHours();
     
-    // Load saved layout preference
-    const savedLayout = loadLayoutPreference();
-    if (savedLayout) {
-        setLayout(savedLayout, false); // false = don't save again
-    }
+    // Always use horizontal layout
+    itemsGrid.classList.add('horizontal');
     
     // Initialize cart to step 1
     goToCartStep(1);
@@ -529,10 +525,8 @@ function createItemCard(item) {
     const card = document.createElement('div');
     card.className = 'item-card';
     
-    // Add horizontal class if layout is horizontal
-    if (currentLayout === 'horizontal') {
-        card.classList.add('horizontal');
-    }
+    // Always add horizontal class
+    card.classList.add('horizontal');
     
     const formattedName = formatItemName(item);
     
@@ -616,21 +610,14 @@ function createItemCard(item) {
     priceActionsContainer.appendChild(price);
     priceActionsContainer.appendChild(buttonsContainer);
     
-    // For horizontal layout: create top section with content and image, then price-actions below
-    if (currentLayout === 'horizontal') {
-        const topSection = document.createElement('div');
-        topSection.className = 'item-top-section';
-        topSection.appendChild(contentContainer);
-        topSection.appendChild(imageContainer);
-        
-        card.appendChild(topSection);
-        card.appendChild(priceActionsContainer);
-    } else {
-        // Vertical layout: normal structure
-        card.appendChild(imageContainer);
-        card.appendChild(contentContainer);
-        card.appendChild(priceActionsContainer);
-    }
+    // Always use horizontal layout: create top section with content and image, then price-actions below
+    const topSection = document.createElement('div');
+    topSection.className = 'item-top-section';
+    topSection.appendChild(contentContainer);
+    topSection.appendChild(imageContainer);
+    
+    card.appendChild(topSection);
+    card.appendChild(priceActionsContainer);
     
     return card;
 }
