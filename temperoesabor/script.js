@@ -30,14 +30,14 @@ const CONFIG = {
 
 // Menu data
 const MENU_DATA = {
-    categories: ['Todos', 'Lanches'],
+    categories: ['Todos', 'Burguers', 'Hot-Dogs', 'Porções', 'Bebidas'],
     items: [
         {
             id: '1',
             name: 'VÓ MIMA',
             description: 'Pão, hambúrguer de carne, queijo mussarela, bacon e molho mima',
             price: 22.00,
-            category: 'Lanches',
+            category: 'Burguers',
             image: '../assets/images/Burgers_01_voMima.png'
         },
         {
@@ -45,7 +45,7 @@ const MENU_DATA = {
             name: 'VÔ LELEU',
             description: 'Pão, hambúrguer de carne, queijo mussarela, bacon, ovo, calabresa, alface, tomate e molho mima',
             price: 28.00,
-            category: 'Lanches',
+            category: 'Burguers',
             image: '../assets/images/Burgers_02_voLeleu.png'
         },
         {
@@ -53,7 +53,7 @@ const MENU_DATA = {
             name: 'VÓ ANA',
             description: 'Pão, hambúrguer de carne, queijo mussarela, bacon, alface, tomate e molho de churrasco',
             price: 24.00,
-            category: 'Lanches',
+            category: 'Burguers',
             image: '../assets/images/Burgers_03_voAna.png'
         },
         {
@@ -61,7 +61,7 @@ const MENU_DATA = {
             name: 'TIA TÁ',
             description: 'Pão, hambúrguer de carne, queijo mussarela, queijo cheddar, bacon, alface, tomate e molho de churrasco',
             price: 27.00,
-            category: 'Lanches',
+            category: 'Burguers',
             image: '../assets/images/Burgers_04_tiaTa.png'
         },
         {
@@ -69,7 +69,7 @@ const MENU_DATA = {
             name: 'TIO JE',
             description: 'Pão, hambúrguer de frango, queijo cheddar, bacon, alface, tomate e molho mima',
             price: 24.00,
-            category: 'Lanches',
+            category: 'Burguers',
             image: '../assets/images/Burgers_05_tioJe.png'
         },
         {
@@ -77,7 +77,7 @@ const MENU_DATA = {
             name: 'TIO LAN',
             description: 'Pão, hambúrguer de picanha, queijo cheddar, bacon e molho mima',
             price: 38.00,
-            category: 'Lanches',
+            category: 'Burguers',
             image: '../assets/images/Burgers_06_tioLan.png'
         },
         {
@@ -85,7 +85,7 @@ const MENU_DATA = {
             name: 'TIA PRI',
             description: 'Pão, 3 hambúrgueres de carne, camadas de queijo mussarela, queijo cheddar, bacon e molho mima',
             price: 43.00,
-            category: 'Lanches',
+            category: 'Burguers',
             image: '../assets/images/Burgers_07_tiaPri.png'
         },
         {
@@ -93,7 +93,7 @@ const MENU_DATA = {
             name: 'TIA TAY',
             description: 'Pão, hambúrguer de pernil, queijo mussarela, bacon, alface, tomate e molho de churrasco',
             price: 25.00,
-            category: 'Lanches',
+            category: 'Burguers',
             image: '../assets/images/Burgers_08_tiaTay.png'
         },
         {
@@ -101,7 +101,7 @@ const MENU_DATA = {
             name: 'VÔ LIÓ',
             description: 'Pão, hambúrguer de carne, queijo mussarela, bacon, ovo, cebola caramelizada, alface, tomate e molho mima',
             price: 28.00,
-            category: 'Lanches',
+            category: 'Burguers',
             image: '../assets/images/Burgers_09_voLio.png'
         },
         {
@@ -109,7 +109,7 @@ const MENU_DATA = {
             name: 'NINI',
             description: 'Pão brioche, hambúrguer de carne, queijo mussarela e molho mima',
             price: 20.00,
-            category: 'Lanches',
+            category: 'Burguers',
             image: '../assets/images/Burgers_10_voNini.png'
         },
         {
@@ -117,7 +117,7 @@ const MENU_DATA = {
             name: 'VÓ SOLIS',
             description: 'Pão, hambúrguer de carne, queijo mussarela, tomate, alface, cebola roxa e molho mima',
             price: 25.00,
-            category: 'Lanches',
+            category: 'Burguers',
             image: '../assets/images/Burgers_11_voSolis.png'
         },
         {
@@ -125,7 +125,7 @@ const MENU_DATA = {
             name: 'VÔ NILTON',
             description: 'Pão, hambúrguer de carne, queijo mussarela, alface, tomate, cebola roxa, picles e molho mima',
             price: 27.00,
-            category: 'Lanches',
+            category: 'Burguers',
             image: '../assets/images/Burgers_12_voNilton.png'
         },
         {
@@ -133,8 +133,112 @@ const MENU_DATA = {
             name: 'GÊMEAS LELA',
             description: 'Pão, duplo hambúrguer de carne, duplo queijo mussarela, onion rings e molho barbecue',
             price: 33.00,
-            category: 'Lanches',
+            category: 'Burguers',
             image: '../assets/images/Burgers_13_gemeasLela.png'
+        },
+        {
+            id: '14',
+            name: 'HOT CHEDDAR',
+            description: 'Pão, duas salsichas, queijo mussarela, cheddar, bacon e molho de churrasco',
+            price: 22.00,
+            category: 'Hot-Dogs',
+            image: '../assets/images/HotDog_01_Cheddar.png'
+        },
+        {
+            id: '15',
+            name: 'HOT CATUPIRY',
+            description: 'Pão, duas salsichas, queijo mussarela, catupiry, bacon e molho de churrasco',
+            price: 22.00,
+            category: 'Hot-Dogs',
+            image: '../assets/images/HotDog_02_Catupiry.png'
+        },
+        {
+            id: '16',
+            name: 'BATATA FRITA 150 GRAMAS',
+            description: 'Batata frita crocante 150 gramas',
+            price: 17.00,
+            category: 'Porções',
+            image: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3EBatata Frita%3C/text%3E%3C/svg%3E'
+        },
+        {
+            id: '17',
+            name: 'BATATA FRITA 300 GRAMAS COM CHEDDAR OU MUSSARELA E BACON',
+            description: 'Batata frita 300 gramas com cheddar ou mussarela e bacon',
+            price: 37.00,
+            category: 'Porções',
+            image: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3EBatata Frita%3C/text%3E%3C/svg%3E'
+        },
+        {
+            id: '18',
+            name: 'BATATA FRITA 500 GRAMAS COM CHEDDAR OU MUSSARELA E BACON',
+            description: 'Batata frita 500 gramas com cheddar ou mussarela e bacon',
+            price: 45.00,
+            category: 'Porções',
+            image: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3EBatata Frita%3C/text%3E%3C/svg%3E'
+        },
+        {
+            id: '19',
+            name: 'ONION RINGS 10 UNIDADES',
+            description: 'Onion rings crocantes 10 unidades',
+            price: 15.00,
+            category: 'Porções',
+            image: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3EOnion Rings%3C/text%3E%3C/svg%3E'
+        },
+        {
+            id: '20',
+            name: 'LATA 310ML',
+            description: 'LATA 310ML',
+            price: 6.00,
+            category: 'Bebidas',
+            image: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3ELata 310ml%3C/text%3E%3C/svg%3E'
+        },
+        {
+            id: '21',
+            name: 'COCA 1L',
+            description: 'COCA 1L',
+            price: 10.00,
+            category: 'Bebidas',
+            image: '../assets/images/Bebida_01_Coca1L.png'
+        },
+        {
+            id: '22',
+            name: 'ANTÁRTICA 1L',
+            description: 'ANTÁRTICA 1L',
+            price: 8.00,
+            category: 'Bebidas',
+            image: '../assets/images/Bebida_02_Antartica1L.png'
+        },
+        {
+            id: '23',
+            name: 'FANTA 2L',
+            description: 'FANTA 2L',
+            price: 12.00,
+            category: 'Bebidas',
+            image: '../assets/images/Bebida_03_Fanta2L.png'
+        },
+        {
+            id: '24',
+            name: 'KUAT 2L',
+            description: 'KUAT 2L',
+            price: 12.00,
+            category: 'Bebidas',
+            image: '../assets/images/Bebida_04_Kuat2L.png'
+        },
+        {
+            id: '25',
+            name: 'COCA 2L',
+            description: 'COCA 2L',
+            price: 14.00,
+            category: 'Bebidas',
+            image: '../assets/images/Bebida_05_Coca2L.png'
+        },
+        {
+            id: '26',
+            name: 'COCA 2,5L',
+            description: 'COCA 2,5L',
+            price: 15.00,
+            category: 'Bebidas',
+            image: '../assets/images/Bebida_06_Coca2_5L.png'
         }
     ]
 };
@@ -317,11 +421,37 @@ function renderCategories() {
 }
 
 /**
- * Render menu items dynamically
+ * Render menu items dynamically with animations
  */
 function renderItems() {
-    itemsGrid.innerHTML = '';
-    
+    // If there are existing items, fade them out first
+    const existingItems = itemsGrid.querySelectorAll('.item-card');
+    if (existingItems.length > 0) {
+        // Add fade-out class to existing items
+        existingItems.forEach(card => {
+            card.style.animation = 'fadeOut 0.3s ease forwards';
+        });
+        
+        // Add fade-out class to grid
+        itemsGrid.classList.add('fade-out');
+        
+        // Wait for fade-out animation to complete, then clear and render new items
+        setTimeout(() => {
+            itemsGrid.innerHTML = '';
+            itemsGrid.classList.remove('fade-out');
+            renderNewItems();
+        }, 300);
+    } else {
+        // No existing items, render immediately
+        itemsGrid.innerHTML = '';
+        renderNewItems();
+    }
+}
+
+/**
+ * Render new items with fade-in animation
+ */
+function renderNewItems() {
     let filteredItems = currentCategory === 'Todos' 
         ? MENU_DATA.items 
         : MENU_DATA.items.filter(item => item.category === currentCategory);
@@ -341,15 +471,25 @@ function renderItems() {
             ? 'Nenhum item encontrado com essa busca.'
             : 'Nenhum item encontrado nesta categoria.';
         const messageEl = document.createElement('p');
-        messageEl.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 40px; color: #999;';
+        messageEl.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 40px; color: #999; opacity: 0; animation: fadeInUp 0.5s ease forwards;';
         messageEl.textContent = message;
         itemsGrid.appendChild(messageEl);
         return;
     }
     
-    filteredItems.forEach(item => {
+    // Add items with staggered delay for cascade effect
+    filteredItems.forEach((item, index) => {
         const card = createItemCard(item);
+        // Reset animation and add delay for cascade effect
+        card.style.animation = 'none';
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
         itemsGrid.appendChild(card);
+        
+        // Trigger animation with delay
+        setTimeout(() => {
+            card.style.animation = 'fadeInUp 0.5s ease forwards';
+        }, index * 50); // 50ms delay between each item
     });
 }
 
@@ -357,6 +497,10 @@ function renderItems() {
  * Format item name with number prefix
  */
 function formatItemName(item) {
+    // Don't add ID prefix for Bebidas category
+    if (item.category === 'Bebidas') {
+        return item.name;
+    }
     const number = item.id.padStart(2, '0');
     return `${number} - ${item.name}`;
 }
@@ -373,11 +517,19 @@ function createItemCard(item) {
     // Image container
     const imageContainer = document.createElement('div');
     imageContainer.className = 'item-image-container';
+    // Add specific class for hot dog containers
+    if (item.category === 'Hot-Dogs') {
+        imageContainer.classList.add('hotdog-container');
+    }
     
     const img = document.createElement('img');
     img.src = item.image;
     img.alt = sanitizeHTML(item.name);
     img.className = 'item-image';
+    // Add specific class for hot dog images
+    if (item.category === 'Hot-Dogs') {
+        img.classList.add('hotdog-image');
+    }
     img.onerror = function() {
         this.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3ESem Imagem%3C/text%3E%3C/svg%3E';
     };
@@ -402,7 +554,7 @@ function createItemCard(item) {
     const buyNowBtn = document.createElement('button');
     buyNowBtn.className = 'btn-buy-now';
     buyNowBtn.setAttribute('data-item-id', item.id);
-    buyNowBtn.textContent = 'Comprar Agora';
+    buyNowBtn.textContent = 'Pedir Agora';
     buyNowBtn.addEventListener('click', () => {
             // Verificar se pode comprar antes de adicionar e abrir carrinho
             const purchaseCheck = checkIfCanPurchase();
@@ -441,6 +593,16 @@ function setupCategoryListeners() {
     categoryButtons.addEventListener('click', (e) => {
         if (e.target.classList.contains('category-btn')) {
             const category = e.target.getAttribute('data-category');
+            
+            // Add click animation to button
+            e.target.classList.add('clicked');
+            
+            // Remove animation class after animation completes
+            e.target.addEventListener('animationend', function handler() {
+                e.target.classList.remove('clicked');
+                e.target.removeEventListener('animationend', handler);
+            });
+            
             currentCategory = category;
             renderCategories();
             renderItems();
@@ -1236,6 +1398,10 @@ function createCartItemElement(item) {
     img.src = item.image;
     img.alt = sanitizeHTML(item.name);
     img.className = 'cart-item-image';
+    // Add specific class for hot dog images
+    if (item.category === 'Hot-Dogs') {
+        img.classList.add('hotdog-image');
+    }
     img.onerror = function() {
         this.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Crect fill=%22%23f0f0f0%22 width=%2260%22 height=%2260%22/%3E%3C/svg%3E';
     };

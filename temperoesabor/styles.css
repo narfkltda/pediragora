@@ -810,6 +810,23 @@ html.hours-open {
     border-color: #eeb534;
 }
 
+/* Category button click animation */
+.category-btn.clicked {
+    animation: buttonPulse 0.4s ease;
+}
+
+@keyframes buttonPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(0.95);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
 /* Menu Items Grid */
 .menu-items {
     margin-bottom: 30px;
@@ -819,6 +836,12 @@ html.hours-open {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
+    transition: opacity 0.3s ease;
+}
+
+.items-grid.fade-out {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .item-card {
@@ -833,6 +856,32 @@ html.hours-open {
     display: flex;
     flex-direction: column;
     position: relative;
+}
+
+.item-card.fade-in {
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
 }
 
 .item-card::before {
@@ -875,6 +924,11 @@ html.hours-open {
     border: none;
 }
 
+/* Allow hot dog containers to show larger images without cropping */
+.item-image-container.hotdog-container {
+    overflow: visible;
+}
+
 .item-image-container::before {
     content: '';
     position: absolute;
@@ -905,8 +959,22 @@ html.hours-open {
     outline: none;
 }
 
+/* Hot Dog images - 21% larger using contain to avoid cropping */
+.item-image.hotdog-image {
+    width: 121%;
+    height: 121%;
+    object-fit: contain;
+    object-position: center;
+}
+
 .item-card:hover .item-image {
     transform: scale(1.08);
+}
+
+.item-card:hover .item-image.hotdog-image {
+    width: 130.68%; /* 121% * 1.08 */
+    height: 130.68%;
+    transform: none;
 }
 
 .item-content {
@@ -1149,6 +1217,11 @@ html.hours-open {
     object-fit: cover;
     border-radius: 8px;
     background: #f0f0f0;
+}
+
+/* Hot Dog images in cart - 21% larger width (66px * 1.10) */
+.cart-item-image.hotdog-image {
+    width: 73px;
 }
 
 .cart-item-info {

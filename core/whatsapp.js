@@ -42,27 +42,28 @@ function sendToWhatsApp(phoneNumber, orderObject) {
     }
     
     // Build the message
-    let message = '🍽️ *NOVO PEDIDO*\n\n';
+    // Using simpler emojis for better iOS compatibility
+    let message = '*NOVO PEDIDO*\n\n';
     
     // Add date and time
     const now = new Date();
     const date = now.toLocaleDateString('pt-BR');
     const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    message += `📅 Data: ${date} às ${time}\n\n`;
+    message += `Data: ${date} às ${time}\n\n`;
     
     // Add customer information if provided
     if (orderObject.customerName) {
-        message += `👤 *Cliente:* ${String(orderObject.customerName).toUpperCase()}\n`;
+        message += `*Cliente:* ${String(orderObject.customerName).toUpperCase()}\n`;
     }
     if (orderObject.customerPhone) {
-        message += `📱 *Telefone:* ${orderObject.customerPhone}\n`;
+        message += `*Telefone:* ${orderObject.customerPhone}\n`;
     }
     if (orderObject.customerName || orderObject.customerPhone) {
         message += '\n';
     }
     
     // Add items list
-    message += '📋 *ITENS:*\n';
+    message += '*ITENS:*\n';
     message += '─'.repeat(30) + '\n';
     
     orderObject.items.forEach((item, index) => {
@@ -74,15 +75,42 @@ function sendToWhatsApp(phoneNumber, orderObject) {
     message += '─'.repeat(30) + '\n';
     
     // Add total
-    message += `💰 *TOTAL: R$ ${orderObject.total.toFixed(2)}*\n\n`;
+    message += `*TOTAL: R$ ${orderObject.total.toFixed(2)}*\n\n`;
     
-    // Add delivery method if provided
+    // Add notes if provided
+    if (orderObject.notes && orderObject.notes.trim()) {
+        message += '*OBSERVAÇÕES:*\n';
+        message += `${String(orderObject.notes).toUpperCase()}\n\n`;
+    }
+    
+    // Add payment method if provided
+    if (orderObject.paymentMethod && orderObject.paymentMethod.trim()) {
+        message += '*FORMA DE PAGAMENTO:*\n';
+        message += `${String(orderObject.paymentMethod).toUpperCase()}\n\n`;
+        
+        // Add change information if payment is cash
+        if (orderObject.paymentMethod === 'Dinheiro' && orderObject.changeAmount) {
+            const amountPaid = parseFloat(orderObject.changeAmount.replace(',', '.'));
+            if (!isNaN(amountPaid) && amountPaid > 0) {
+                message += `*Valor pago: R$ ${amountPaid.toFixed(2)}*\n`;
+                if (orderObject.change && orderObject.change > 0) {
+                    message += `*Troco: R$ ${orderObject.change.toFixed(2)}*\n\n`;
+                } else if (amountPaid < orderObject.total) {
+                    message += `*Valor insuficiente*\n\n`;
+                } else {
+                    message += `*Troco: R$ 0,00*\n\n`;
+                }
+            }
+        }
+    }
+    
+    // Add delivery method if provided (moved to end, before footer)
     if (orderObject.deliveryMethod && orderObject.deliveryMethod.trim()) {
-        message += '🚚 *FORMA DE ENTREGA:*\n';
+        message += '*FORMA DE ENTREGA:*\n';
         message += `${String(orderObject.deliveryMethod).toUpperCase()}\n`;
         
         if (orderObject.deliveryMethod === 'Entrega' && orderObject.deliveryAddress) {
-            message += `📍 *Endereço:* ${String(orderObject.deliveryAddress).toUpperCase()}\n`;
+            message += `*Endereço:* ${String(orderObject.deliveryAddress).toUpperCase()}\n`;
             if (orderObject.deliveryComplement && orderObject.deliveryComplement.trim()) {
                 message += `   Complemento: ${String(orderObject.deliveryComplement).toUpperCase()}\n`;
             }
@@ -93,37 +121,10 @@ function sendToWhatsApp(phoneNumber, orderObject) {
             const lat = orderObject.restaurantLatitude;
             const lng = orderObject.restaurantLongitude;
             const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-            message += `📍 *LOCAL PARA RETIRADA:*\nAbrir Mapa ↓\n${mapsUrl}\n`;
+            message += `*LOCAL PARA RETIRADA:*\nAbrir Mapa ↓\n${mapsUrl}\n`;
         }
         
         message += '\n';
-    }
-    
-    // Add notes if provided
-    if (orderObject.notes && orderObject.notes.trim()) {
-        message += '📝 *OBSERVAÇÕES:*\n';
-        message += `${String(orderObject.notes).toUpperCase()}\n\n`;
-    }
-    
-    // Add payment method if provided
-    if (orderObject.paymentMethod && orderObject.paymentMethod.trim()) {
-        message += '💳 *FORMA DE PAGAMENTO:*\n';
-        message += `${String(orderObject.paymentMethod).toUpperCase()}\n\n`;
-        
-        // Add change information if payment is cash
-        if (orderObject.paymentMethod === 'Dinheiro' && orderObject.changeAmount) {
-            const amountPaid = parseFloat(orderObject.changeAmount.replace(',', '.'));
-            if (!isNaN(amountPaid) && amountPaid > 0) {
-                message += `💵 *Valor pago: R$ ${amountPaid.toFixed(2)}*\n`;
-                if (orderObject.change && orderObject.change > 0) {
-                    message += `💰 *Troco: R$ ${orderObject.change.toFixed(2)}*\n\n`;
-                } else if (amountPaid < orderObject.total) {
-                    message += `⚠️ Valor insuficiente\n\n`;
-                } else {
-                    message += `💰 *Troco: R$ 0,00*\n\n`;
-                }
-            }
-        }
     }
     
     // Add footer
