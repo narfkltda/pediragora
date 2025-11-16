@@ -19,12 +19,12 @@ const CONFIG = {
     restaurantLongitude: -51.42205139592757,
     openingHours: {
         segunda: null, // Fechado na segunda-feira
-        terca: { open: '19:00', close: '22:45' },
-        quarta: { open: '19:00', close: '22:45' },
-        quinta: { open: '19:00', close: '22:45' },
-        sexta: { open: '19:00', close: '22:45' },
-        sabado: { open: '19:00', close: '22:45' },
-        domingo: { open: '19:00', close: '22:45' }
+        terca: { open: '08:00', close: '23:00' },
+        quarta: { open: '08:00', close: '23:00' },
+        quinta: { open: '08:00', close: '23:00' },
+        sexta: { open: '08:00', close: '23:00' },
+        sabado: { open: '08:00', close: '23:00' },
+        domingo: { open: '08:00', close: '23:00' }
     }
 };
 
@@ -1404,6 +1404,12 @@ function handleCheckout() {
         change: change
     };
     
+    // Add restaurant coordinates if pickup at location
+    if (deliveryMethod === 'Retirar no local') {
+        order.restaurantLatitude = CONFIG.restaurantLatitude;
+        order.restaurantLongitude = CONFIG.restaurantLongitude;
+    }
+    
     sendToWhatsApp(CONFIG.whatsappNumber, order);
     
     // Clear sensitive customer data after successful checkout
@@ -1432,14 +1438,6 @@ function handleCheckout() {
     // Reset to step 1 and close cart
     goToCartStep(1);
     closeCart();
-    
-    // If delivery method is "Retirar no local", show pickup map modal
-    if (deliveryMethod === 'Retirar no local') {
-        // Small delay to ensure cart is closed before showing modal
-        setTimeout(() => {
-            showPickupMapModal();
-        }, 300);
-    }
 }
 
 /**

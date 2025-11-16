@@ -87,6 +87,15 @@ function sendToWhatsApp(phoneNumber, orderObject) {
                 message += `   Complemento: ${String(orderObject.deliveryComplement).toUpperCase()}\n`;
             }
         }
+        
+        // Add pickup location link if "Retirar no local"
+        if (orderObject.deliveryMethod === 'Retirar no local' && orderObject.restaurantLatitude && orderObject.restaurantLongitude) {
+            const lat = orderObject.restaurantLatitude;
+            const lng = orderObject.restaurantLongitude;
+            const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+            message += `📍 *LOCAL PARA RETIRADA:*\nAbrir Mapa ↓\n${mapsUrl}\n`;
+        }
+        
         message += '\n';
     }
     
