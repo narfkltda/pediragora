@@ -780,6 +780,52 @@ html.hours-open {
     margin-bottom: 30px;
 }
 
+/* Layout Selector */
+.layout-selector-section {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 20px;
+}
+
+.layout-selector {
+    display: flex;
+    gap: 8px;
+    background: white;
+    padding: 6px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+}
+
+.layout-btn {
+    background: transparent;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    color: #666;
+}
+
+.layout-btn:hover {
+    background: #f0e0d0;
+    color: #eeb534;
+}
+
+.layout-btn.active {
+    background: #eeb534;
+    color: white;
+}
+
+.layout-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
 .category-buttons {
     display: flex;
     gap: 10px;
@@ -844,6 +890,11 @@ html.hours-open {
     pointer-events: none;
 }
 
+.items-grid.horizontal {
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
 .item-card {
     background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(20px);
@@ -857,6 +908,7 @@ html.hours-open {
     flex-direction: column;
     position: relative;
 }
+
 
 .item-card.fade-in {
     animation: fadeInUp 0.5s ease forwards;
@@ -989,6 +1041,246 @@ html.hours-open {
     z-index: 1;
 }
 
+/* Horizontal Card Layout */
+.item-card.horizontal {
+    flex-direction: column !important;
+    height: auto;
+}
+
+.item-card.horizontal .item-top-section {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 15px;
+    height: auto;
+}
+
+.item-card.horizontal .item-content {
+    padding: 15px 15px 0 15px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    height: auto;
+    align-self: flex-start;
+}
+
+.item-card.horizontal .item-image-container {
+    width: 180px;
+    min-width: 180px;
+    max-width: 180px;
+    flex-shrink: 0;
+    overflow: hidden;
+    height: auto;
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.item-card.horizontal .item-image {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 180px !important;
+    max-height: 100% !important;
+    object-fit: contain;
+    object-position: center;
+    display: block;
+}
+
+/* Override hot dog image size in horizontal layout */
+.item-card.horizontal .item-image.hotdog-image {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 180px !important;
+    max-height: 100% !important;
+    object-fit: contain;
+}
+
+.item-card.horizontal .item-title {
+    margin-bottom: 6px;
+    font-size: 1.1rem;
+}
+
+.item-card.horizontal .item-description {
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    overflow: visible;
+    text-overflow: clip;
+    display: block;
+    flex: 0 0 auto;
+}
+
+.item-card.horizontal .item-price-actions {
+    margin-top: 0;
+    gap: 10px;
+    padding: 15px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.item-card.horizontal .item-price-actions .item-price {
+    font-size: 1.2rem;
+}
+
+.item-card.horizontal .item-price-actions .item-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.item-card.horizontal .btn-buy-now,
+.item-card.horizontal .btn-add-cart {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    margin: 0;
+    white-space: nowrap;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.item-card.horizontal .btn-add-cart {
+    width: auto;
+    min-width: auto;
+    padding: 8px 12px;
+    height: 40px;
+    gap: 6px;
+}
+
+.item-card.horizontal .btn-add-cart span {
+    white-space: nowrap;
+}
+
+.item-card.horizontal .btn-add-cart svg {
+    width: 20px;
+    height: 20px;
+}
+
+.item-card.horizontal .item-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.item-card.horizontal .item-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+/* Responsive: Horizontal cards on mobile - keep horizontal but adjust sizes */
+@media (max-width: 768px) {
+    .item-card.horizontal .item-top-section {
+        gap: 10px;
+        align-items: flex-start;
+        height: auto;
+    }
+    
+    .item-card.horizontal .item-image-container {
+        width: 140px;
+        min-width: 140px;
+        max-width: 140px;
+        height: 150px;
+        min-height: 150px;
+        max-height: 150px;
+        align-self: flex-start;
+    }
+    
+    .item-card.horizontal .item-image {
+        max-width: 140px !important;
+        max-height: 150px !important;
+        height: 100% !important;
+    }
+    
+    .item-card.horizontal .item-image.hotdog-image {
+        max-width: 140px !important;
+        max-height: 150px !important;
+        height: 100% !important;
+    }
+    
+    .item-card.horizontal .item-content {
+        padding: 12px 12px 0 12px;
+        height: 150px;
+        min-height: 150px;
+        max-height: 150px;
+        align-self: flex-start;
+        overflow-y: auto;
+    }
+    
+    .item-card.horizontal .item-price-actions {
+        padding: 12px;
+    }
+    
+    .item-card.horizontal .item-title {
+        font-size: 1rem;
+        margin-bottom: 4px;
+    }
+    
+    .item-card.horizontal .item-description {
+        font-size: 0.8rem;
+        margin-bottom: 6px;
+        overflow: visible;
+        text-overflow: clip;
+        display: block;
+    }
+    
+    .item-card.horizontal .item-price-actions .item-price {
+        font-size: 1.1rem;
+    }
+    
+    .item-card.horizontal .btn-buy-now,
+    .item-card.horizontal .btn-add-cart {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+        min-width: 100px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+    
+    .item-card.horizontal .btn-add-cart {
+        width: auto;
+        min-width: auto;
+        padding: 6px 10px;
+        height: 36px;
+        gap: 4px;
+    }
+    
+    .item-card.horizontal .btn-add-cart span {
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+    
+    .item-card.horizontal .btn-add-cart svg {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .item-card.horizontal .item-buttons {
+        display: flex;
+        flex-direction: row;
+        gap: 6px;
+        flex-wrap: nowrap;
+        align-items: center;
+    }
+    
+    .item-card.horizontal .item-price-actions .item-buttons {
+        display: flex;
+        flex-direction: row;
+        gap: 6px;
+        flex-wrap: nowrap;
+        align-items: center;
+    }
+}
+
 .item-title {
     font-size: 1.3rem;
     font-weight: 600;
@@ -1000,7 +1292,10 @@ html.hours-open {
     color: #666;
     font-size: 0.9rem;
     margin-bottom: 12px;
-    min-height: 40px;
+}
+
+.item-card.horizontal .item-description {
+    min-height: auto;
 }
 
 .item-price {
@@ -1008,6 +1303,72 @@ html.hours-open {
     font-weight: bold;
     color: #eeb534;
     margin-bottom: 15px;
+}
+
+/* Price and actions container (price + buttons on same line) */
+.item-price-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.item-card:not(.horizontal) .item-price-actions {
+    margin-top: auto;
+}
+
+.item-price-actions .item-price {
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+.item-price-actions .item-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    flex-shrink: 0;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+/* Vertical layout: price and buttons on same line */
+.item-card:not(.horizontal) .item-price-actions {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.item-card:not(.horizontal) .item-price-actions .item-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+.item-card:not(.horizontal) .item-price-actions .btn-buy-now,
+.item-card:not(.horizontal) .item-price-actions .btn-add-cart {
+    width: auto;
+    min-width: 120px;
+    flex: 0 0 auto;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.item-card:not(.horizontal) .item-price-actions .btn-add-cart {
+    width: auto;
+    min-width: auto;
+    padding: 12px;
+    height: 44px;
+    gap: 8px;
+}
+
+.item-card:not(.horizontal) .item-price-actions .btn-add-cart span {
+    white-space: nowrap;
 }
 
 .btn-buy-now {
@@ -1043,6 +1404,16 @@ html.hours-open {
     font-weight: 600;
     cursor: pointer;
     transition: background 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-add-cart svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
 }
 
 .btn-add-cart:hover {

@@ -284,6 +284,7 @@ function validatePhone(phone) {
 // State
 let currentCategory = 'Todos';
 let searchTerm = '';
+let currentLayout = 'vertical'; // 'vertical' or 'horizontal'
 
 // DOM Elements
 const categoryButtons = document.getElementById('category-buttons');
@@ -342,6 +343,9 @@ const deliveryAddressInput = document.getElementById('delivery-address');
 const deliveryComplementInput = document.getElementById('delivery-complement');
 const customerPhoneInput = document.getElementById('customer-phone');
 const cartTotalStep3 = document.getElementById('cart-total-step3');
+const layoutSelector = document.getElementById('layout-selector');
+const layoutBtnVertical = document.getElementById('layout-btn-vertical');
+const layoutBtnHorizontal = document.getElementById('layout-btn-horizontal');
 
 // Cart step state
 let currentCartStep = 1;
@@ -396,7 +400,14 @@ document.addEventListener('DOMContentLoaded', () => {
     setupHoursModalListeners();
     setupAlertModalListeners();
     setupPickupMapModalListeners();
+    setupLayoutSelectorListeners();
     renderOpeningHours();
+    
+    // Load saved layout preference
+    const savedLayout = loadLayoutPreference();
+    if (savedLayout) {
+        setLayout(savedLayout, false); // false = don't save again
+    }
     
     // Initialize cart to step 1
     goToCartStep(1);
@@ -512,6 +523,11 @@ function createItemCard(item) {
     const card = document.createElement('div');
     card.className = 'item-card';
     
+    // Add horizontal class if layout is horizontal
+    if (currentLayout === 'horizontal') {
+        card.classList.add('horizontal');
+    }
+    
     const formattedName = formatItemName(item);
     
     // Image container
@@ -535,7 +551,7 @@ function createItemCard(item) {
     };
     imageContainer.appendChild(img);
     
-    // Content container
+    // Content container (for title and description only)
     const contentContainer = document.createElement('div');
     contentContainer.className = 'item-content';
     
@@ -546,6 +562,13 @@ function createItemCard(item) {
     const description = document.createElement('p');
     description.className = 'item-description';
     description.textContent = item.description;
+    
+    contentContainer.appendChild(title);
+    contentContainer.appendChild(description);
+    
+    // Price and actions container (price + buttons on same line) - below the main content
+    const priceActionsContainer = document.createElement('div');
+    priceActionsContainer.className = 'item-price-actions';
     
     const price = document.createElement('div');
     price.className = 'item-price';
@@ -569,19 +592,39 @@ function createItemCard(item) {
     const addBtn = document.createElement('button');
     addBtn.className = 'btn-add-cart';
     addBtn.setAttribute('data-item-id', item.id);
-    addBtn.textContent = 'Adicionar ao Carrinho';
+    addBtn.setAttribute('aria-label', 'Adicionar ao Carrinho');
+    addBtn.setAttribute('title', 'Adicionar ao Carrinho');
+    // Add text and cart icon SVG
+    addBtn.innerHTML = '<span>Adicionar</span><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>';
     addBtn.addEventListener('click', () => {
         handleAddToCart(item.id);
     });
     
-    contentContainer.appendChild(title);
-    contentContainer.appendChild(description);
-    contentContainer.appendChild(price);
-    contentContainer.appendChild(buyNowBtn);
-    contentContainer.appendChild(addBtn);
+    // Buttons container
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.className = 'item-buttons';
+    buttonsContainer.appendChild(buyNowBtn);
+    buttonsContainer.appendChild(addBtn);
     
-    card.appendChild(imageContainer);
-    card.appendChild(contentContainer);
+    // Add price and buttons to price-actions container
+    priceActionsContainer.appendChild(price);
+    priceActionsContainer.appendChild(buttonsContainer);
+    
+    // For horizontal layout: create top section with content and image, then price-actions below
+    if (currentLayout === 'horizontal') {
+        const topSection = document.createElement('div');
+        topSection.className = 'item-top-section';
+        topSection.appendChild(contentContainer);
+        topSection.appendChild(imageContainer);
+        
+        card.appendChild(topSection);
+        card.appendChild(priceActionsContainer);
+    } else {
+        // Vertical layout: normal structure
+        card.appendChild(imageContainer);
+        card.appendChild(contentContainer);
+        card.appendChild(priceActionsContainer);
+    }
     
     return card;
 }
@@ -606,6 +649,83 @@ function setupCategoryListeners() {
             currentCategory = category;
             renderCategories();
             renderItems();
+        }
+    });
+}
+
+/**
+ * Save layout preference to localStorage
+ */
+function saveLayoutPreference(layout) {
+    try {
+        localStorage.setItem('pediragora_layout', layout);
+    } catch (error) {
+        console.error('Error saving layout preference:', error);
+    }
+}
+
+/**
+ * Load layout preference from localStorage
+ */
+function loadLayoutPreference() {
+    try {
+        return localStorage.getItem('pediragora_layout') || 'vertical';
+    } catch (error) {
+        console.error('Error loading layout preference:', error);
+        return 'vertical';
+    }
+}
+
+/**
+ * Set layout and update UI
+ */
+function setLayout(layout, savePreference = true) {
+    if (layout !== 'vertical' && layout !== 'horizontal') {
+        return;
+    }
+    
+    currentLayout = layout;
+    
+    // Update grid class
+    if (layout === 'horizontal') {
+        itemsGrid.classList.add('horizontal');
+    } else {
+        itemsGrid.classList.remove('horizontal');
+    }
+    
+    // Update button states
+    if (layoutBtnVertical && layoutBtnHorizontal) {
+        if (layout === 'vertical') {
+            layoutBtnVertical.classList.add('active');
+            layoutBtnHorizontal.classList.remove('active');
+        } else {
+            layoutBtnVertical.classList.remove('active');
+            layoutBtnHorizontal.classList.add('active');
+        }
+    }
+    
+    // Save preference
+    if (savePreference) {
+        saveLayoutPreference(layout);
+    }
+    
+    // Re-render items with new layout
+    renderItems();
+}
+
+/**
+ * Setup layout selector listeners
+ */
+function setupLayoutSelectorListeners() {
+    if (!layoutSelector) return;
+    
+    layoutSelector.addEventListener('click', (e) => {
+        if (e.target.closest('.layout-btn')) {
+            const btn = e.target.closest('.layout-btn');
+            const layout = btn.getAttribute('data-layout');
+            if (layout && layout !== currentLayout) {
+                setLayout(layout);
+            }
         }
     });
 }
