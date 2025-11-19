@@ -925,11 +925,37 @@ function renderOrderSummary() {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'summary-item';
                 
+                const itemNameContainer = document.createElement('div');
+                itemNameContainer.className = 'summary-item-name-container';
+                
                 const itemName = document.createElement('span');
                 itemName.className = 'summary-item-name';
                 const itemNameText = formatItemName ? formatItemName(item) : item.name;
-                const customizationsText = item.customizations ? formatCustomizationsText(item.customizations) : '';
-                itemName.textContent = itemNameText + customizationsText;
+                itemName.textContent = itemNameText;
+                itemNameContainer.appendChild(itemName);
+                
+                // Add customizations as separate elements below the name
+                const customizationsData = item.customizations ? getCustomizationsData(item.customizations) : { removed: [], added: [] };
+                if (customizationsData.removed.length > 0 || customizationsData.added.length > 0) {
+                    const customizationsDiv = document.createElement('div');
+                    customizationsDiv.className = 'summary-item-customizations';
+                    
+                    if (customizationsData.removed.length > 0) {
+                        const removedDiv = document.createElement('div');
+                        removedDiv.className = 'summary-item-removed';
+                        removedDiv.textContent = `Remover: ${customizationsData.removed.join(', ')}`;
+                        customizationsDiv.appendChild(removedDiv);
+                    }
+                    
+                    if (customizationsData.added.length > 0) {
+                        const addedDiv = document.createElement('div');
+                        addedDiv.className = 'summary-item-added';
+                        addedDiv.textContent = `Adicionar: ${customizationsData.added.join(', ')}`;
+                        customizationsDiv.appendChild(addedDiv);
+                    }
+                    
+                    itemNameContainer.appendChild(customizationsDiv);
+                }
                 
                 const itemDetails = document.createElement('span');
                 itemDetails.className = 'summary-item-details';
@@ -937,7 +963,7 @@ function renderOrderSummary() {
                 const itemSubtotal = itemTotalPrice * item.quantity;
                 itemDetails.textContent = `${item.quantity}x R$ ${itemTotalPrice.toFixed(2)} = R$ ${itemSubtotal.toFixed(2)}`;
                 
-                itemDiv.appendChild(itemName);
+                itemDiv.appendChild(itemNameContainer);
                 itemDiv.appendChild(itemDetails);
                 summaryItems.appendChild(itemDiv);
             });
@@ -2693,43 +2719,65 @@ function getIngredientName(ingredientId) {
  * @param {Object} customizations - Customizations object
  * @returns {string} Formatted text
  */
-function formatCustomizationsText(customizations) {
+/**
+ * Get customizations as structured object
+ * @param {Object} customizations - Customizations object
+ * @returns {Object} Object with removed and added arrays
+ */
+function getCustomizationsData(customizations) {
     if (!customizations) {
-        return '';
+        return { removed: [], added: [] };
     }
     
-    const parts = [];
+    const removed = [];
+    const added = [];
+    
+    // Handle removed ingredients
+    if (customizations.removedIngredients && customizations.removedIngredients.length > 0) {
+        customizations.removedIngredients.forEach(id => {
+            removed.push(getIngredientName(id));
+        });
+    }
     
     // Handle addedIngredients as object { ingredientId: quantity }
     if (customizations.addedIngredients) {
         if (Array.isArray(customizations.addedIngredients)) {
             // Legacy format: array of IDs
-            if (customizations.addedIngredients.length > 0) {
-                const added = customizations.addedIngredients.map(id => getIngredientName(id)).join(', ');
-                parts.push(`+ ${added}`);
-            }
+            customizations.addedIngredients.forEach(id => {
+                added.push(getIngredientName(id));
+            });
         } else if (typeof customizations.addedIngredients === 'object') {
             // New format: object with quantities
-            const addedList = [];
             Object.entries(customizations.addedIngredients).forEach(([id, quantity]) => {
                 if (quantity > 0) {
                     const name = getIngredientName(id);
                     if (quantity === 1) {
-                        addedList.push(name);
+                        added.push(name);
                     } else {
-                        addedList.push(`${name} (${quantity}x)`);
+                        added.push(`${name} (${quantity}x)`);
                     }
                 }
             });
-            if (addedList.length > 0) {
-                parts.push(`+ ${addedList.join(', ')}`);
-            }
         }
     }
     
-    if (customizations.removedIngredients && customizations.removedIngredients.length > 0) {
-        const removed = customizations.removedIngredients.map(id => getIngredientName(id)).join(', ');
-        parts.push(`- ${removed}`);
+    return { removed, added };
+}
+
+/**
+ * Format customizations text (legacy - for backward compatibility)
+ * @param {Object} customizations - Customizations object
+ * @returns {string} Formatted text
+ */
+function formatCustomizationsText(customizations) {
+    const data = getCustomizationsData(customizations);
+    const parts = [];
+    
+    if (data.removed.length > 0) {
+        parts.push(`- ${data.removed.join(', ')}`);
+    }
+    if (data.added.length > 0) {
+        parts.push(`+ ${data.added.join(', ')}`);
     }
     
     return parts.length > 0 ? ` (${parts.join(' | ')})` : '';
@@ -2743,7 +2791,7 @@ function createCartItemElement(item) {
     div.className = 'cart-item';
     
     const formattedName = formatItemName(item);
-    const customizationsText = item.customizations ? formatCustomizationsText(item.customizations) : '';
+    const customizationsData = item.customizations ? getCustomizationsData(item.customizations) : { removed: [], added: [] };
     
     // Formatar preço: se quantidade > 1, mostrar cálculo; senão, apenas o preço unitário
     // Include extras in price calculation
@@ -2773,7 +2821,29 @@ function createCartItemElement(item) {
     
     const nameDiv = document.createElement('div');
     nameDiv.className = 'cart-item-name';
-    nameDiv.textContent = formattedName + customizationsText;
+    nameDiv.textContent = formattedName;
+    
+    // Add customizations as separate elements below the name
+    if (customizationsData.removed.length > 0 || customizationsData.added.length > 0) {
+        const customizationsDiv = document.createElement('div');
+        customizationsDiv.className = 'cart-item-customizations';
+        
+        if (customizationsData.removed.length > 0) {
+            const removedDiv = document.createElement('div');
+            removedDiv.className = 'cart-item-removed';
+            removedDiv.textContent = `Remover: ${customizationsData.removed.join(', ')}`;
+            customizationsDiv.appendChild(removedDiv);
+        }
+        
+        if (customizationsData.added.length > 0) {
+            const addedDiv = document.createElement('div');
+            addedDiv.className = 'cart-item-added';
+            addedDiv.textContent = `Adicionar: ${customizationsData.added.join(', ')}`;
+            customizationsDiv.appendChild(addedDiv);
+        }
+        
+        nameDiv.appendChild(customizationsDiv);
+    }
     
     const priceDiv = document.createElement('div');
     priceDiv.className = 'cart-item-price';

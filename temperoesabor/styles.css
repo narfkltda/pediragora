@@ -1676,6 +1676,23 @@ html.hours-open {
     margin-bottom: 5px;
 }
 
+.cart-item-customizations {
+    margin-top: 8px;
+    font-size: 0.9rem;
+}
+
+.cart-item-removed {
+    color: #df4c2d;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.cart-item-added {
+    color: #28a745;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
 .cart-item-price {
     color: #eeb534;
     font-weight: 600;
@@ -2026,11 +2043,32 @@ html.hours-open {
     border-bottom: none;
 }
 
-.summary-item-name {
+.summary-item-name-container {
     flex: 1;
+    margin-right: 1rem;
+}
+
+.summary-item-name {
     font-weight: 500;
     color: #303030;
-    margin-right: 1rem;
+    display: block;
+}
+
+.summary-item-customizations {
+    margin-top: 6px;
+    font-size: 0.9rem;
+}
+
+.summary-item-removed {
+    color: #df4c2d;
+    margin-top: 3px;
+    font-weight: 500;
+}
+
+.summary-item-added {
+    color: #28a745;
+    margin-top: 3px;
+    font-weight: 500;
 }
 
 .summary-item-details {

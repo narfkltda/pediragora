@@ -74,19 +74,34 @@ function sendToWhatsApp(phoneNumber, orderObject) {
         // Add customizations if present
         if (item.customizations) {
             const customizations = item.customizations;
-            const parts = [];
+            const removed = [];
+            const added = [];
             
+            // Handle removed ingredients
+            if (customizations.removedIngredients && customizations.removedIngredients.length > 0) {
+                customizations.removedIngredients.forEach(id => {
+                    let name = id;
+                    if (typeof window !== 'undefined' && window.AVAILABLE_INGREDIENTS) {
+                        const ingredient = window.AVAILABLE_INGREDIENTS.find(ing => ing.id === id);
+                        name = ingredient ? ingredient.name : id;
+                    } else if (typeof id === 'object' && id.name) {
+                        name = id.name;
+                    }
+                    removed.push(name);
+                });
+            }
+            
+            // Handle added ingredients
             if (customizations.addedIngredients) {
-                let added = [];
-                
                 if (Array.isArray(customizations.addedIngredients)) {
                     // Legacy format: array of IDs
-                    added = customizations.addedIngredients.map(id => {
+                    customizations.addedIngredients.forEach(id => {
+                        let name = id;
                         if (typeof window !== 'undefined' && window.AVAILABLE_INGREDIENTS) {
                             const ingredient = window.AVAILABLE_INGREDIENTS.find(ing => ing.id === id);
-                            return ingredient ? ingredient.name : id;
+                            name = ingredient ? ingredient.name : id;
                         }
-                        return id;
+                        added.push(name);
                     });
                 } else if (typeof customizations.addedIngredients === 'object') {
                     // New format: object with quantities { ingredientId: quantity }
@@ -105,30 +120,16 @@ function sendToWhatsApp(phoneNumber, orderObject) {
                         }
                     });
                 }
-                
-                if (added.length > 0) {
-                    parts.push(`+ ${added.join(', ')}`);
+            }
+            
+            // Format customizations with separate lines
+            if (removed.length > 0 || added.length > 0) {
+                if (removed.length > 0) {
+                    message += `   Remover: ${removed.join(', ')}\n`;
                 }
-            }
-            
-            if (customizations.removedIngredients && customizations.removedIngredients.length > 0) {
-                const removed = customizations.removedIngredients.map(id => {
-                    // Try to find ingredient name from global scope or use ID
-                    if (typeof window !== 'undefined' && window.AVAILABLE_INGREDIENTS) {
-                        const ingredient = window.AVAILABLE_INGREDIENTS.find(ing => ing.id === id);
-                        return ingredient ? ingredient.name : id;
-                    }
-                    // If ingredient names are already in the array, use them
-                    if (typeof id === 'object' && id.name) {
-                        return id.name;
-                    }
-                    return id;
-                }).join(', ');
-                parts.push(`- ${removed}`);
-            }
-            
-            if (parts.length > 0) {
-                message += `   Personalização: ${parts.join(' | ')}\n`;
+                if (added.length > 0) {
+                    message += `   Adicionar: ${added.join(', ')}\n`;
+                }
             }
         }
     });
