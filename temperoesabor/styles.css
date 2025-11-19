@@ -2517,11 +2517,13 @@ html.hours-open {
     border-radius: 12px;
     overflow: hidden;
     background: #f0f0f0;
+    max-height: 300px;
 }
 
 .quantity-modal-item-image img {
     width: 100%;
     height: auto;
+    max-height: 300px;
     display: block;
     object-fit: cover;
 }
