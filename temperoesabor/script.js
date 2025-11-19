@@ -1886,8 +1886,12 @@ function renderIngredientsSection(item) {
     // Extract default ingredients from item description
     const defaultIngredients = extractDefaultIngredients(item);
     
-    // Render default ingredients (can be removed)
-    defaultIngredients.forEach(ingredientId => {
+    // Check if item is a beverage (Bebidas category)
+    const isBeverage = item.category === 'Bebidas';
+    
+    // Render default ingredients (can be removed) - skip for beverages
+    if (!isBeverage) {
+        defaultIngredients.forEach(ingredientId => {
         const ingredient = AVAILABLE_INGREDIENTS.find(ing => ing.id === ingredientId);
         if (!ingredient) return;
         
@@ -1913,83 +1917,120 @@ function renderIngredientsSection(item) {
         itemDiv.appendChild(checkbox);
         itemDiv.appendChild(label);
         defaultList.appendChild(itemDiv);
-    });
+        });
+    } else {
+        // Hide default ingredients section for beverages
+        const defaultSection = document.getElementById('ingredients-default-section');
+        if (defaultSection) {
+            defaultSection.style.display = 'none';
+        }
+    }
     
     // Render extra ingredients (can be added with quantity)
-    AVAILABLE_INGREDIENTS.forEach(ingredient => {
-        // Skip if already in default ingredients
-        if (defaultIngredients.includes(ingredient.id)) {
-            return;
+    // Skip if item is a beverage (Bebidas category)
+    
+    if (!isBeverage) {
+        AVAILABLE_INGREDIENTS.forEach(ingredient => {
+            // Skip if already in default ingredients
+            if (defaultIngredients.includes(ingredient.id)) {
+                return;
+            }
+            
+            const quantity = currentQuantityModalCustomizations.addedIngredients[ingredient.id] || 0;
+            const isSelected = quantity > 0;
+            
+            const itemDiv = document.createElement('div');
+            itemDiv.className = `ingredient-item ${isSelected ? 'selected' : ''}`;
+            itemDiv.setAttribute('data-ingredient-id', ingredient.id);
+            itemDiv.setAttribute('data-ingredient-type', 'extra');
+            
+            const labelContainer = document.createElement('div');
+            labelContainer.className = 'ingredient-info';
+            
+            const label = document.createElement('label');
+            label.className = 'ingredient-label';
+            label.textContent = ingredient.name;
+            
+            const priceSpan = document.createElement('span');
+            priceSpan.className = 'ingredient-price';
+            priceSpan.textContent = `R$ ${ingredient.price.toFixed(2)}`;
+            
+            labelContainer.appendChild(label);
+            labelContainer.appendChild(priceSpan);
+            
+            const quantityContainer = document.createElement('div');
+            quantityContainer.className = 'ingredient-quantity-controls';
+            
+            const decreaseBtn = document.createElement('button');
+            decreaseBtn.type = 'button';
+            decreaseBtn.className = 'ingredient-qty-btn ingredient-qty-decrease';
+            decreaseBtn.textContent = '−';
+            decreaseBtn.disabled = quantity === 0;
+            decreaseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                updateIngredientQuantity(ingredient.id, quantity - 1);
+            });
+            
+            const quantityInput = document.createElement('input');
+            quantityInput.type = 'number';
+            quantityInput.className = 'ingredient-qty-input';
+            quantityInput.min = '0';
+            quantityInput.value = quantity;
+            quantityInput.readOnly = true;
+            
+            const increaseBtn = document.createElement('button');
+            increaseBtn.type = 'button';
+            increaseBtn.className = 'ingredient-qty-btn ingredient-qty-increase';
+            increaseBtn.textContent = '+';
+            increaseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                updateIngredientQuantity(ingredient.id, quantity + 1);
+            });
+            
+            quantityContainer.appendChild(decreaseBtn);
+            quantityContainer.appendChild(quantityInput);
+            quantityContainer.appendChild(increaseBtn);
+            
+            const totalPriceSpan = document.createElement('span');
+            totalPriceSpan.className = 'ingredient-total-price';
+            const totalPrice = ingredient.price * quantity;
+            totalPriceSpan.textContent = quantity > 0 ? `R$ ${totalPrice.toFixed(2)}` : '';
+            
+            itemDiv.appendChild(labelContainer);
+            itemDiv.appendChild(quantityContainer);
+            itemDiv.appendChild(totalPriceSpan);
+            extraList.appendChild(itemDiv);
+        });
+    } else {
+        // Hide extra ingredients section for beverages
+        if (extraList.parentElement) {
+            extraList.parentElement.style.display = 'none';
         }
-        
-        const quantity = currentQuantityModalCustomizations.addedIngredients[ingredient.id] || 0;
-        const isSelected = quantity > 0;
-        
-        const itemDiv = document.createElement('div');
-        itemDiv.className = `ingredient-item ${isSelected ? 'selected' : ''}`;
-        itemDiv.setAttribute('data-ingredient-id', ingredient.id);
-        itemDiv.setAttribute('data-ingredient-type', 'extra');
-        
-        const labelContainer = document.createElement('div');
-        labelContainer.className = 'ingredient-info';
-        
-        const label = document.createElement('label');
-        label.className = 'ingredient-label';
-        label.textContent = ingredient.name;
-        
-        const priceSpan = document.createElement('span');
-        priceSpan.className = 'ingredient-price';
-        priceSpan.textContent = `R$ ${ingredient.price.toFixed(2)}`;
-        
-        labelContainer.appendChild(label);
-        labelContainer.appendChild(priceSpan);
-        
-        const quantityContainer = document.createElement('div');
-        quantityContainer.className = 'ingredient-quantity-controls';
-        
-        const decreaseBtn = document.createElement('button');
-        decreaseBtn.type = 'button';
-        decreaseBtn.className = 'ingredient-qty-btn ingredient-qty-decrease';
-        decreaseBtn.textContent = '−';
-        decreaseBtn.disabled = quantity === 0;
-        decreaseBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            updateIngredientQuantity(ingredient.id, quantity - 1);
-        });
-        
-        const quantityInput = document.createElement('input');
-        quantityInput.type = 'number';
-        quantityInput.className = 'ingredient-qty-input';
-        quantityInput.min = '0';
-        quantityInput.value = quantity;
-        quantityInput.readOnly = true;
-        
-        const increaseBtn = document.createElement('button');
-        increaseBtn.type = 'button';
-        increaseBtn.className = 'ingredient-qty-btn ingredient-qty-increase';
-        increaseBtn.textContent = '+';
-        increaseBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            updateIngredientQuantity(ingredient.id, quantity + 1);
-        });
-        
-        quantityContainer.appendChild(decreaseBtn);
-        quantityContainer.appendChild(quantityInput);
-        quantityContainer.appendChild(increaseBtn);
-        
-        const totalPriceSpan = document.createElement('span');
-        totalPriceSpan.className = 'ingredient-total-price';
-        const totalPrice = ingredient.price * quantity;
-        totalPriceSpan.textContent = quantity > 0 ? `R$ ${totalPrice.toFixed(2)}` : '';
-        
-        itemDiv.appendChild(labelContainer);
-        itemDiv.appendChild(quantityContainer);
-        itemDiv.appendChild(totalPriceSpan);
-        extraList.appendChild(itemDiv);
-    });
+    }
     
     // Update modal price display with extras total
     updateModalPriceDisplay();
+    
+    // Show/hide entire ingredients section based on item category
+    const ingredientsSection = document.getElementById('quantity-modal-ingredients');
+    if (ingredientsSection) {
+        if (isBeverage) {
+            // Hide entire section for beverages
+            ingredientsSection.style.display = 'none';
+        } else {
+            // Show section for non-beverages
+            ingredientsSection.style.display = 'block';
+            // Make sure subsections are visible
+            const defaultSection = document.getElementById('ingredients-default-section');
+            const extraSection = document.getElementById('ingredients-extra-section');
+            if (defaultSection) {
+                defaultSection.style.display = defaultIngredients.length > 0 ? 'block' : 'none';
+            }
+            if (extraSection) {
+                extraSection.style.display = 'block';
+            }
+        }
+    }
 }
 
 /**
@@ -2173,6 +2214,12 @@ function showQuantityModal(item, isBuyNow) {
     
     if (quantityModalPriceValue) {
         quantityModalPriceValue.textContent = item.price ? item.price.toFixed(2) : '0.00';
+    }
+    
+    // Show ingredients section before rendering (will be hidden if beverage)
+    const ingredientsSection = document.getElementById('quantity-modal-ingredients');
+    if (ingredientsSection) {
+        ingredientsSection.style.display = 'block';
     }
     
     // Render ingredients section
