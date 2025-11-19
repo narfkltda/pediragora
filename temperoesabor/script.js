@@ -2169,29 +2169,8 @@ function showQuantityModal(item, isBuyNow) {
     currentQuantityModalItem = item;
     currentQuantityModalIsBuyNow = isBuyNow;
     
-    // Reset customizations
-    currentQuantityModalCustomizations = {
-        addedIngredients: {},
-        removedIngredients: []
-    };
-    
-    // Load existing customizations if item is in cart (for editing)
-    const cart = getCart();
-    const existingItem = cart.find(cartItem => {
-        if (cartItem.id !== item.id) return false;
-        // Only load if it has customizations (items with customizations are separate)
-        return cartItem.customizations && (
-            (cartItem.customizations.removedIngredients && cartItem.customizations.removedIngredients.length > 0) ||
-            (cartItem.customizations.addedIngredients && Object.keys(cartItem.customizations.addedIngredients).length > 0)
-        );
-    });
-    
-    if (existingItem && existingItem.customizations) {
-        currentQuantityModalCustomizations = {
-            addedIngredients: existingItem.customizations.addedIngredients || {},
-            removedIngredients: existingItem.customizations.removedIngredients || []
-        };
-    }
+    // Reset customizations (always start fresh - never load from cart)
+    resetModalCustomizations();
     
     // Fill modal with item data
     if (quantityModalImage) {
@@ -2232,6 +2211,16 @@ function showQuantityModal(item, isBuyNow) {
 }
 
 /**
+ * Reset modal customizations
+ */
+function resetModalCustomizations() {
+    currentQuantityModalCustomizations = {
+        addedIngredients: {},
+        removedIngredients: []
+    };
+}
+
+/**
  * Hide quantity modal
  */
 function hideQuantityModal() {
@@ -2241,13 +2230,10 @@ function hideQuantityModal() {
         document.body.style.overflow = '';
     }
     
-    // Clear state
+    // Clear state and reset customizations
     currentQuantityModalItem = null;
     currentQuantityModalIsBuyNow = false;
-    currentQuantityModalCustomizations = {
-        addedIngredients: {},
-        removedIngredients: []
-    };
+    resetModalCustomizations();
 }
 
 // updateQuantityButtons, incrementQuantity and decrementQuantity removed - always add quantity 1
@@ -2460,6 +2446,9 @@ function confirmQuantityModal() {
         
         console.log('Item added/updated successfully');
         
+        // Reset customizations before closing modal
+        resetModalCustomizations();
+        
         // Close modal
         hideQuantityModal();
         
@@ -2473,6 +2462,8 @@ function confirmQuantityModal() {
         console.error('Error in confirmQuantityModal:', error);
         console.error('Error stack:', error.stack);
         alert('Erro ao adicionar item ao carrinho: ' + error.message);
+        // Reset customizations even on error
+        resetModalCustomizations();
     }
 }
 
