@@ -2641,18 +2641,19 @@ function renderCartItems() {
     const cart = getCart();
     const cartItemsAlterations = document.getElementById('cart-items-alterations');
     const cartAlterationsSection = document.getElementById('cart-alterations-section');
+    const cartItemsSection = document.getElementById('cart-items-section');
     
     if (cart.length === 0) {
-        const emptyCartEl = document.createElement('div');
-        emptyCartEl.className = 'empty-cart';
-        emptyCartEl.textContent = 'Carrinho vazio';
-        cartItems.innerHTML = '';
-        cartItems.appendChild(emptyCartEl);
-        if (cartItemsAlterations) {
-            cartItemsAlterations.innerHTML = '';
+        // Hide both sections when cart is empty
+        if (cartItemsSection) {
+            cartItemsSection.style.display = 'none';
         }
         if (cartAlterationsSection) {
             cartAlterationsSection.style.display = 'none';
+        }
+        cartItems.innerHTML = '';
+        if (cartItemsAlterations) {
+            cartItemsAlterations.innerHTML = '';
         }
         return;
     }
@@ -2674,21 +2675,22 @@ function renderCartItems() {
         }
     });
     
-    // Render items without customizations
-    cartItems.innerHTML = '';
-    if (itemsWithoutCustomizations.length === 0) {
-        const emptyCartEl = document.createElement('div');
-        emptyCartEl.className = 'empty-cart';
-        emptyCartEl.textContent = 'Nenhum item';
-        cartItems.appendChild(emptyCartEl);
-    } else {
-        itemsWithoutCustomizations.forEach(item => {
-            const cartItemEl = createCartItemElement(item);
-            cartItems.appendChild(cartItemEl);
-        });
+    // Show/hide "Itens" section based on items without customizations
+    if (cartItemsSection) {
+        if (itemsWithoutCustomizations.length > 0) {
+            cartItemsSection.style.display = 'block';
+            cartItems.innerHTML = '';
+            itemsWithoutCustomizations.forEach(item => {
+                const cartItemEl = createCartItemElement(item);
+                cartItems.appendChild(cartItemEl);
+            });
+        } else {
+            cartItemsSection.style.display = 'none';
+            cartItems.innerHTML = '';
+        }
     }
     
-    // Render items with customizations
+    // Show/hide "Com Alterações" section based on items with customizations
     if (cartItemsAlterations && cartAlterationsSection) {
         if (itemsWithCustomizations.length > 0) {
             cartAlterationsSection.style.display = 'block';
