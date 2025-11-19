@@ -127,6 +127,9 @@
                         <label for="delivery-complement">Complemento</label>
                         <input type="text" id="delivery-complement" class="customer-input" placeholder="Apto, bloco, referência (opcional)">
                     </div>
+                    <div class="delivery-fee-display" id="delivery-fee-display" style="display: none;">
+                        <p class="delivery-fee-text">Taxa de entrega: R$ <span id="delivery-fee-value">3,00</span></p>
+                    </div>
                 </div>
             </div>
             <div class="cart-step-footer">
@@ -134,7 +137,7 @@
             </div>
         </div>
         
-        <!-- Step 3: Identification and Payment -->
+        <!-- Step 3: Customer Data -->
         <div class="cart-step cart-step-3" id="cart-step-3" style="display: none;">
             <div class="cart-step-content">
                 <div class="field-group">
@@ -149,6 +152,15 @@
                     <label for="customer-notes">Observações</label>
                     <textarea id="customer-notes" class="customer-textarea" placeholder="Observações sobre o pedido" rows="3"></textarea>
                 </div>
+            </div>
+            <div class="cart-step-footer">
+                <button class="btn-continue" id="btn-continue-step3">Continuar</button>
+            </div>
+        </div>
+        
+        <!-- Step 4: Payment -->
+        <div class="cart-step cart-step-4" id="cart-step-4" style="display: none;">
+            <div class="cart-step-content">
                 <div class="field-group">
                     <label>Forma de Pagamento</label>
                     <div class="payment-methods">
@@ -177,9 +189,98 @@
             </div>
             <div class="cart-step-footer">
                 <div class="cart-total">
-                    <strong>Total: R$ <span id="cart-total-step3">0.00</span></strong>
+                    <strong>Total: R$ <span id="cart-total-step4">0.00</span></strong>
                 </div>
-                <button class="btn-checkout" id="btn-checkout">Finalizar Pedido</button>
+                <button class="btn-continue" id="btn-continue-step4">Continuar</button>
+            </div>
+        </div>
+        
+        <!-- Step 5: Order Summary -->
+        <div class="cart-step cart-step-5" id="cart-step-5" style="display: none;">
+            <div class="cart-step-content">
+                <div class="order-summary">
+                    <h3 class="summary-title">Resumo do Pedido</h3>
+                    
+                    <!-- Items Section -->
+                    <div class="summary-section">
+                        <h4 class="summary-section-title">Itens</h4>
+                        <div class="summary-items" id="summary-items">
+                            <!-- Items will be rendered here -->
+                        </div>
+                        <div class="summary-subtotal">
+                            <span>Subtotal:</span>
+                            <span id="summary-subtotal">R$ 0,00</span>
+                        </div>
+                        <div class="summary-delivery-fee" id="summary-delivery-fee" style="display: none;">
+                            <span>Taxa de entrega:</span>
+                            <span id="summary-delivery-fee-value">R$ 3,00</span>
+                        </div>
+                        <div class="summary-total">
+                            <strong>Total:</strong>
+                            <strong id="summary-total">R$ 0,00</strong>
+                        </div>
+                    </div>
+                    
+                    <!-- Customer Data Section -->
+                    <div class="summary-section">
+                        <h4 class="summary-section-title">Dados do Cliente</h4>
+                        <div class="summary-data">
+                            <div class="summary-data-item">
+                                <span class="summary-label">Nome:</span>
+                                <span id="summary-customer-name">-</span>
+                            </div>
+                            <div class="summary-data-item">
+                                <span class="summary-label">Telefone:</span>
+                                <span id="summary-customer-phone">-</span>
+                            </div>
+                            <div class="summary-data-item" id="summary-notes-item" style="display: none;">
+                                <span class="summary-label">Observações:</span>
+                                <span id="summary-customer-notes">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Delivery Section -->
+                    <div class="summary-section">
+                        <h4 class="summary-section-title">Entrega</h4>
+                        <div class="summary-data">
+                            <div class="summary-data-item">
+                                <span class="summary-label">Forma:</span>
+                                <span id="summary-delivery-method">-</span>
+                            </div>
+                            <div class="summary-data-item" id="summary-address-item" style="display: none;">
+                                <span class="summary-label">Endereço:</span>
+                                <span id="summary-delivery-address">-</span>
+                            </div>
+                            <div class="summary-data-item" id="summary-complement-item" style="display: none;">
+                                <span class="summary-label">Complemento:</span>
+                                <span id="summary-delivery-complement">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Section -->
+                    <div class="summary-section">
+                        <h4 class="summary-section-title">Pagamento</h4>
+                        <div class="summary-data">
+                            <div class="summary-data-item">
+                                <span class="summary-label">Forma:</span>
+                                <span id="summary-payment-method">-</span>
+                            </div>
+                            <div class="summary-data-item" id="summary-change-item" style="display: none;">
+                                <span class="summary-label">Valor pago:</span>
+                                <span id="summary-change-amount">-</span>
+                            </div>
+                            <div class="summary-data-item" id="summary-change-value-item" style="display: none;">
+                                <span class="summary-label">Troco:</span>
+                                <span id="summary-change-value">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="cart-step-footer">
+                <button class="btn-checkout" id="btn-checkout-summary">Confirmar Pedido</button>
             </div>
         </div>
     </aside>

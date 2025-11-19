@@ -74,6 +74,12 @@ function sendToWhatsApp(phoneNumber, orderObject) {
     
     message += '─'.repeat(30) + '\n';
     
+    // Add delivery fee if applicable
+    if (orderObject.deliveryFee && orderObject.deliveryFee > 0) {
+        message += `Taxa de entrega: R$ ${orderObject.deliveryFee.toFixed(2)}\n`;
+        message += '─'.repeat(30) + '\n';
+    }
+    
     // Add total
     message += `*TOTAL: R$ ${orderObject.total.toFixed(2)}*\n\n`;
     

@@ -320,7 +320,8 @@ const pickupMapImage = document.getElementById('pickup-map-image');
 const pickupMapLink = document.getElementById('pickup-map-link');
 const pickupMapBtnGoogle = document.getElementById('pickup-map-btn-google');
 const pickupMapBtnApple = document.getElementById('pickup-map-btn-apple');
-const checkoutBtn = document.getElementById('btn-checkout');
+// checkoutBtn removed - now using btnCheckoutSummary in step 5
+const checkoutBtn = null; // Deprecated - button moved to step 5
 const customerNameInput = document.getElementById('customer-name');
 const customerNotesInput = document.getElementById('customer-notes');
 const searchInput = document.getElementById('search-input');
@@ -337,18 +338,47 @@ const hoursContent = document.getElementById('hours-content');
 const closeHoursBtn = document.getElementById('close-hours');
 const cartOverlay = document.getElementById('cart-overlay');
 const cartBackBtn = document.getElementById('cart-back-btn');
+// Delivery fee constant
+const DELIVERY_FEE = 3.00;
+
 const cartHeaderTitle = document.getElementById('cart-header-title');
 const cartStep1 = document.getElementById('cart-step-1');
 const cartStep2 = document.getElementById('cart-step-2');
 const cartStep3 = document.getElementById('cart-step-3');
+const cartStep4 = document.getElementById('cart-step-4');
+const cartStep5 = document.getElementById('cart-step-5');
 const btnContinueStep1 = document.getElementById('btn-continue-step1');
 const btnContinueStep2 = document.getElementById('btn-continue-step2');
+const btnContinueStep3 = document.getElementById('btn-continue-step3');
+const btnContinueStep4 = document.getElementById('btn-continue-step4');
+const btnCheckoutSummary = document.getElementById('btn-checkout-summary');
 const deliveryMethodInputs = document.querySelectorAll('input[name="delivery-method"]');
 const deliveryAddressField = document.getElementById('delivery-address-field');
 const deliveryAddressInput = document.getElementById('delivery-address');
 const deliveryComplementInput = document.getElementById('delivery-complement');
+const deliveryFeeDisplay = document.getElementById('delivery-fee-display');
 const customerPhoneInput = document.getElementById('customer-phone');
-const cartTotalStep3 = document.getElementById('cart-total-step3');
+const cartTotalStep4 = document.getElementById('cart-total-step4');
+// Summary elements
+const summaryItems = document.getElementById('summary-items');
+const summarySubtotal = document.getElementById('summary-subtotal');
+const summaryDeliveryFee = document.getElementById('summary-delivery-fee');
+const summaryDeliveryFeeValue = document.getElementById('summary-delivery-fee-value');
+const summaryTotal = document.getElementById('summary-total');
+const summaryCustomerName = document.getElementById('summary-customer-name');
+const summaryCustomerPhone = document.getElementById('summary-customer-phone');
+const summaryCustomerNotes = document.getElementById('summary-customer-notes');
+const summaryNotesItem = document.getElementById('summary-notes-item');
+const summaryDeliveryMethod = document.getElementById('summary-delivery-method');
+const summaryDeliveryAddress = document.getElementById('summary-delivery-address');
+const summaryDeliveryComplement = document.getElementById('summary-delivery-complement');
+const summaryAddressItem = document.getElementById('summary-address-item');
+const summaryComplementItem = document.getElementById('summary-complement-item');
+const summaryPaymentMethod = document.getElementById('summary-payment-method');
+const summaryChangeAmount = document.getElementById('summary-change-amount');
+const summaryChangeValue = document.getElementById('summary-change-value');
+const summaryChangeItem = document.getElementById('summary-change-item');
+const summaryChangeValueItem = document.getElementById('summary-change-value-item');
 const layoutSelector = document.getElementById('layout-selector');
 const layoutBtnVertical = document.getElementById('layout-btn-vertical');
 const layoutBtnHorizontal = document.getElementById('layout-btn-horizontal');
@@ -369,8 +399,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const paymentMethod = loadPaymentMethod();
     const changeAmount = loadChangeAmount();
     
-    customerNameInput.value = customerData.name || '';
-    customerNotesInput.value = customerData.notes || '';
+    const customerNameInput = document.getElementById('customer-name');
+    const customerNotesInput = document.getElementById('customer-notes');
+    const changeField = document.getElementById('change-field');
+    const changeAmountInput = document.getElementById('change-amount');
+    
+    if (customerNameInput) {
+        customerNameInput.value = customerData.name || '';
+    }
+    if (customerNotesInput) {
+        customerNotesInput.value = customerData.notes || '';
+    }
     
     const customerPhone = loadCustomerPhone();
     if (customerPhoneInput && customerPhone) {
@@ -381,9 +420,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedInput = document.querySelector(`input[name="payment-method"][value="${paymentMethod}"]`);
         if (selectedInput) {
             selectedInput.checked = true;
-            if (paymentMethod === 'Dinheiro') {
+            if (paymentMethod === 'Dinheiro' && changeField) {
                 changeField.style.display = 'block';
-                if (changeAmount) {
+                if (changeAmount && changeAmountInput) {
                     changeAmountInput.value = changeAmount;
                     calculateChange();
                 }
@@ -753,28 +792,227 @@ function updateSearchClearButton() {
  */
 function goToCartStep(step) {
     // Hide all steps
-    cartStep1.style.display = 'none';
-    cartStep2.style.display = 'none';
-    cartStep3.style.display = 'none';
+    if (cartStep1) cartStep1.style.display = 'none';
+    if (cartStep2) cartStep2.style.display = 'none';
+    if (cartStep3) cartStep3.style.display = 'none';
+    if (cartStep4) cartStep4.style.display = 'none';
+    if (cartStep5) cartStep5.style.display = 'none';
     
     // Show selected step
-    if (step === 1) {
+    if (step === 1 && cartStep1) {
         cartStep1.style.display = 'flex';
-        cartHeaderTitle.textContent = 'Carrinho';
-        cartBackBtn.style.display = 'none';
+        if (cartHeaderTitle) cartHeaderTitle.textContent = 'Carrinho';
+        if (cartBackBtn) cartBackBtn.style.display = 'none';
         currentCartStep = 1;
-    } else if (step === 2) {
+    } else if (step === 2 && cartStep2) {
         cartStep2.style.display = 'flex';
-        cartHeaderTitle.textContent = 'Forma de Entrega';
-        cartBackBtn.style.display = 'flex';
+        if (cartHeaderTitle) cartHeaderTitle.textContent = 'Forma de Entrega';
+        if (cartBackBtn) cartBackBtn.style.display = 'flex';
         currentCartStep = 2;
-    } else if (step === 3) {
+        // Update delivery fee display
+        updateDeliveryFeeDisplay();
+    } else if (step === 3 && cartStep3) {
         cartStep3.style.display = 'flex';
-        cartHeaderTitle.textContent = 'Finalizar Pedido';
-        cartBackBtn.style.display = 'flex';
+        if (cartHeaderTitle) cartHeaderTitle.textContent = 'Seus Dados';
+        if (cartBackBtn) cartBackBtn.style.display = 'flex';
         currentCartStep = 3;
-        // Update total in step 3
-        cartTotalStep3.textContent = getTotal().toFixed(2);
+    } else if (step === 4 && cartStep4) {
+        cartStep4.style.display = 'flex';
+        if (cartHeaderTitle) cartHeaderTitle.textContent = 'Pagamento';
+        if (cartBackBtn) cartBackBtn.style.display = 'flex';
+        currentCartStep = 4;
+        // Update total in step 4
+        if (cartTotalStep4) cartTotalStep4.textContent = getTotalWithDeliveryFee().toFixed(2);
+    } else if (step === 5 && cartStep5) {
+        cartStep5.style.display = 'flex';
+        if (cartHeaderTitle) cartHeaderTitle.textContent = 'Resumo do Pedido';
+        if (cartBackBtn) cartBackBtn.style.display = 'flex';
+        currentCartStep = 5;
+        // Render order summary
+        renderOrderSummary();
+    }
+}
+
+/**
+ * Render order summary in step 5
+ */
+function renderOrderSummary() {
+    try {
+        const cart = getCart();
+        const baseTotal = getTotal();
+        const totalWithFee = getTotalWithDeliveryFee();
+        const selectedDelivery = document.querySelector('input[name="delivery-method"]:checked');
+        const isDelivery = selectedDelivery && selectedDelivery.value === 'Entrega';
+        const deliveryFee = isDelivery ? DELIVERY_FEE : 0;
+        
+        // Render items
+        if (summaryItems) {
+            summaryItems.innerHTML = '';
+            cart.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'summary-item';
+                
+                const itemName = document.createElement('span');
+                itemName.className = 'summary-item-name';
+                itemName.textContent = formatItemName ? formatItemName(item) : item.name;
+                
+                const itemDetails = document.createElement('span');
+                itemDetails.className = 'summary-item-details';
+                const itemSubtotal = item.price * item.quantity;
+                itemDetails.textContent = `${item.quantity}x R$ ${item.price.toFixed(2)} = R$ ${itemSubtotal.toFixed(2)}`;
+                
+                itemDiv.appendChild(itemName);
+                itemDiv.appendChild(itemDetails);
+                summaryItems.appendChild(itemDiv);
+            });
+        }
+        
+        // Render subtotal
+        if (summarySubtotal) {
+            summarySubtotal.textContent = `R$ ${baseTotal.toFixed(2).replace('.', ',')}`;
+        }
+        
+        // Render delivery fee
+        if (summaryDeliveryFee && summaryDeliveryFeeValue) {
+            if (isDelivery) {
+                summaryDeliveryFee.style.display = 'flex';
+                summaryDeliveryFeeValue.textContent = `R$ ${deliveryFee.toFixed(2).replace('.', ',')}`;
+            } else {
+                summaryDeliveryFee.style.display = 'none';
+            }
+        }
+        
+        // Render total
+        if (summaryTotal) {
+            summaryTotal.textContent = `R$ ${totalWithFee.toFixed(2).replace('.', ',')}`;
+        }
+        
+        // Render customer data
+        const customerNameInput = document.getElementById('customer-name');
+        const customerPhoneInput = document.getElementById('customer-phone');
+        const customerNotesInput = document.getElementById('customer-notes');
+        
+        if (summaryCustomerName && customerNameInput) {
+            const name = sanitizeInput(customerNameInput.value.trim()).toUpperCase();
+            summaryCustomerName.textContent = name || '-';
+        }
+        
+        if (summaryCustomerPhone && customerPhoneInput) {
+            const phone = sanitizeInput(customerPhoneInput.value.trim());
+            summaryCustomerPhone.textContent = phone || '-';
+        }
+        
+        if (summaryCustomerNotes && summaryNotesItem && customerNotesInput) {
+            const notes = sanitizeInput(customerNotesInput.value.trim()).toUpperCase();
+            if (notes) {
+                summaryCustomerNotes.textContent = notes;
+                summaryNotesItem.style.display = 'flex';
+            } else {
+                summaryNotesItem.style.display = 'none';
+            }
+        }
+        
+        // Render delivery info
+        if (summaryDeliveryMethod && selectedDelivery) {
+            summaryDeliveryMethod.textContent = selectedDelivery.value;
+        }
+        
+        if (isDelivery && deliveryAddressInput) {
+            const address = sanitizeInput(deliveryAddressInput.value.trim()).toUpperCase();
+            const complement = deliveryComplementInput ? sanitizeInput(deliveryComplementInput.value.trim()).toUpperCase() : '';
+            
+            if (summaryDeliveryAddress && summaryAddressItem) {
+                summaryDeliveryAddress.textContent = address || '-';
+                summaryAddressItem.style.display = 'flex';
+            }
+            
+            if (summaryDeliveryComplement && summaryComplementItem) {
+                if (complement) {
+                    summaryDeliveryComplement.textContent = complement;
+                    summaryComplementItem.style.display = 'flex';
+                } else {
+                    summaryComplementItem.style.display = 'none';
+                }
+            }
+        } else {
+            if (summaryAddressItem) summaryAddressItem.style.display = 'none';
+            if (summaryComplementItem) summaryComplementItem.style.display = 'none';
+        }
+        
+        // Render payment info
+        const selectedPaymentMethod = document.querySelector('input[name="payment-method"]:checked');
+        if (summaryPaymentMethod && selectedPaymentMethod) {
+            summaryPaymentMethod.textContent = selectedPaymentMethod.value;
+        }
+        
+        // Render change info if cash
+        if (selectedPaymentMethod && selectedPaymentMethod.value === 'Dinheiro') {
+            const changeAmountInput = document.getElementById('change-amount');
+            if (changeAmountInput && changeAmountInput.value) {
+                const amountStr = changeAmountInput.value.replace(',', '.').trim();
+                const amount = parseFloat(amountStr);
+                
+                if (!isNaN(amount) && amount > 0) {
+                    if (summaryChangeAmount && summaryChangeItem) {
+                        summaryChangeAmount.textContent = `R$ ${amount.toFixed(2).replace('.', ',')}`;
+                        summaryChangeItem.style.display = 'flex';
+                    }
+                    
+                    if (summaryChangeValue && summaryChangeValueItem) {
+                        if (amount >= totalWithFee) {
+                            const change = amount - totalWithFee;
+                            summaryChangeValue.textContent = `R$ ${change.toFixed(2).replace('.', ',')}`;
+                            summaryChangeValueItem.style.display = 'flex';
+                        } else {
+                            summaryChangeValue.textContent = 'Valor insuficiente';
+                            summaryChangeValueItem.style.display = 'flex';
+                        }
+                    }
+                } else {
+                    if (summaryChangeItem) summaryChangeItem.style.display = 'none';
+                    if (summaryChangeValueItem) summaryChangeValueItem.style.display = 'none';
+                }
+            } else {
+                if (summaryChangeItem) summaryChangeItem.style.display = 'none';
+                if (summaryChangeValueItem) summaryChangeValueItem.style.display = 'none';
+            }
+        } else {
+            if (summaryChangeItem) summaryChangeItem.style.display = 'none';
+            if (summaryChangeValueItem) summaryChangeValueItem.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error rendering order summary:', error);
+    }
+}
+
+/**
+ * Get total with delivery fee if delivery is selected
+ */
+function getTotalWithDeliveryFee() {
+    const baseTotal = getTotal();
+    const selectedDelivery = document.querySelector('input[name="delivery-method"]:checked');
+    const isDelivery = selectedDelivery && selectedDelivery.value === 'Entrega';
+    return baseTotal + (isDelivery ? DELIVERY_FEE : 0);
+}
+
+/**
+ * Update delivery fee display based on selected delivery method
+ */
+function updateDeliveryFeeDisplay() {
+    const selectedDelivery = document.querySelector('input[name="delivery-method"]:checked');
+    const isDelivery = selectedDelivery && selectedDelivery.value === 'Entrega';
+    
+    if (deliveryFeeDisplay) {
+        if (isDelivery) {
+            deliveryFeeDisplay.style.display = 'block';
+        } else {
+            deliveryFeeDisplay.style.display = 'none';
+        }
+    }
+    
+    // Update total display in step 1 if visible
+    if (cartTotal && cartStep1.style.display !== 'none') {
+        cartTotal.textContent = getTotalWithDeliveryFee().toFixed(2);
     }
 }
 
@@ -802,6 +1040,37 @@ function nextCartStep() {
             }
         }
         goToCartStep(3);
+    } else if (currentCartStep === 3) {
+        const customerNameInput = document.getElementById('customer-name');
+        const customerPhoneInput = document.getElementById('customer-phone');
+        
+        const sanitizedName = sanitizeInput(customerNameInput.value.trim());
+        const sanitizedPhone = customerPhoneInput ? sanitizeInput(customerPhoneInput.value.trim()) : '';
+        
+        if (!sanitizedName) {
+            showAlertModal('Aviso', 'Informe seu nome');
+            return;
+        }
+        
+        if (!sanitizedPhone) {
+            showAlertModal('Aviso', 'Informe seu telefone');
+            return;
+        }
+        
+        // Validate phone format
+        if (!validatePhone(sanitizedPhone)) {
+            showAlertModal('Aviso', 'Telefone inválido. Informe um telefone válido (10 ou 11 dígitos)');
+            return;
+        }
+        
+        goToCartStep(4);
+    } else if (currentCartStep === 4) {
+        const selectedPaymentMethod = document.querySelector('input[name="payment-method"]:checked');
+        if (!selectedPaymentMethod) {
+            showAlertModal('Aviso', 'Selecione uma forma de pagamento');
+            return;
+        }
+        goToCartStep(5);
     }
 }
 
@@ -813,6 +1082,10 @@ function prevCartStep() {
         goToCartStep(1);
     } else if (currentCartStep === 3) {
         goToCartStep(2);
+    } else if (currentCartStep === 4) {
+        goToCartStep(3);
+    } else if (currentCartStep === 5) {
+        goToCartStep(4);
     }
 }
 
@@ -820,6 +1093,12 @@ function prevCartStep() {
  * Open cart
  */
 function openCart() {
+    // Check if cartSidebar exists
+    if (!cartSidebar) {
+        console.error('Cart sidebar not found');
+        return;
+    }
+    
     // Save current scroll position
     scrollPosition = window.pageYOffset || document.documentElement.scrollTop || window.scrollY;
     
@@ -848,6 +1127,10 @@ function openCart() {
  * Close cart
  */
 function closeCart() {
+    if (!cartSidebar) {
+        return;
+    }
+    
     cartSidebar.classList.remove('open');
     if (cartOverlay) {
         cartOverlay.classList.remove('active');
@@ -896,6 +1179,21 @@ function setupDeliveryMethodListeners() {
                     saveDeliveryAddress('');
                     saveDeliveryComplement('');
                 }
+                // Update delivery fee display and total
+                updateDeliveryFeeDisplay();
+                // Update total in step 1 if visible
+                if (cartTotal && cartStep1.style.display !== 'none') {
+                    cartTotal.textContent = getTotalWithDeliveryFee().toFixed(2);
+                }
+                // Update total in step 4 if visible
+                if (cartTotalStep4 && cartStep4.style.display !== 'none') {
+                    cartTotalStep4.textContent = getTotalWithDeliveryFee().toFixed(2);
+                }
+                // Recalculate change if payment method is cash and amount is entered
+                const paymentMethod = document.querySelector('input[name="payment-method"]:checked');
+                if (paymentMethod && paymentMethod.value === 'Dinheiro' && changeAmountInput && changeAmountInput.value) {
+                    calculateChange();
+                }
             }
         });
     });
@@ -921,6 +1219,7 @@ function setupDeliveryMethodListeners() {
             savedInput.checked = true;
             if (savedDeliveryMethod === 'Entrega') {
                 deliveryAddressField.style.display = 'block';
+                updateDeliveryFeeDisplay();
                 const savedAddress = loadDeliveryAddress();
                 const savedComplement = loadDeliveryComplement();
                 if (deliveryAddressInput && savedAddress) {
@@ -938,6 +1237,11 @@ function setupDeliveryMethodListeners() {
  * Setup cart toggle listeners
  */
 function setupCartToggleListeners() {
+    if (!cartToggle) {
+        console.error('Cart toggle button not found');
+        return;
+    }
+    
     cartToggle.addEventListener('click', () => {
         // Verificar se pode comprar (horário de atendimento) antes de abrir carrinho
         const purchaseCheck = checkIfCanPurchase();
@@ -948,9 +1252,11 @@ function setupCartToggleListeners() {
         openCart();
     });
     
-    closeCartBtn.addEventListener('click', () => {
-        closeCart();
-    });
+    if (closeCartBtn) {
+        closeCartBtn.addEventListener('click', () => {
+            closeCart();
+        });
+    }
     
     // Close cart when clicking overlay
     if (cartOverlay) {
@@ -1262,15 +1568,30 @@ function setupCartNavigationButtons() {
         });
     }
     
+    if (btnContinueStep3) {
+        btnContinueStep3.addEventListener('click', () => {
+            nextCartStep();
+        });
+    }
+    
+    if (btnContinueStep4) {
+        btnContinueStep4.addEventListener('click', () => {
+            nextCartStep();
+        });
+    }
+    
     if (cartBackBtn) {
         cartBackBtn.addEventListener('click', () => {
             prevCartStep();
         });
     }
     
-    checkoutBtn.addEventListener('click', () => {
-        handleCheckout();
-    });
+    // checkoutBtn removed - button is now in step 5
+    if (btnCheckoutSummary) {
+        btnCheckoutSummary.addEventListener('click', () => {
+            handleCheckout();
+        });
+    }
 }
 
 /**
@@ -1332,7 +1653,7 @@ function setupPaymentMethodListeners() {
 function calculateChange() {
     const amountStr = changeAmountInput.value.replace(',', '.').trim();
     const amount = parseFloat(amountStr);
-    const total = getTotal();
+    const total = getTotalWithDeliveryFee();
     
     if (!amountStr || isNaN(amount) || amount <= 0) {
         changeResult.style.display = 'none';
@@ -1437,8 +1758,10 @@ function renderCartUI() {
     
     // Update count
     cartCount.textContent = totalItems;
-    cartTotal.textContent = getTotal().toFixed(2);
-    checkoutBtn.disabled = cart.length === 0;
+    cartTotal.textContent = getTotalWithDeliveryFee().toFixed(2);
+    if (checkoutBtn) {
+        checkoutBtn.disabled = cart.length === 0;
+    }
     
     // Add pulse animation if count changed
     if (totalItems !== previousCount && totalItems > 0) {
@@ -1587,22 +1910,7 @@ function handleCheckout() {
         savePaymentMethod(paymentMethod);
     }
     
-    const total = getTotal();
-    let changeAmount = '';
-    let change = 0;
-    
-    if (paymentMethod === 'Dinheiro' && changeAmountInput.value) {
-        const amountStr = changeAmountInput.value.replace(',', '.').trim();
-        const amount = parseFloat(amountStr);
-        if (!isNaN(amount) && amount > 0) {
-            changeAmount = amountStr;
-            if (amount >= total) {
-                change = amount - total;
-            }
-        }
-    }
-    
-    // Get delivery method
+    // Get delivery method first to calculate total with fee
     const selectedDeliveryMethod = document.querySelector('input[name="delivery-method"]:checked');
     const deliveryMethod = selectedDeliveryMethod ? selectedDeliveryMethod.value : '';
     
@@ -1615,6 +1923,25 @@ function handleCheckout() {
         if (!deliveryAddress) {
             showAlertModal('Aviso', 'Informe o endereço de entrega');
             return;
+        }
+    }
+    
+    // Calculate total with delivery fee
+    const total = getTotalWithDeliveryFee();
+    const isDelivery = deliveryMethod === 'Entrega';
+    const deliveryFee = isDelivery ? DELIVERY_FEE : 0;
+    
+    let changeAmount = '';
+    let change = 0;
+    
+    if (paymentMethod === 'Dinheiro' && changeAmountInput.value) {
+        const amountStr = changeAmountInput.value.replace(',', '.').trim();
+        const amount = parseFloat(amountStr);
+        if (!isNaN(amount) && amount > 0) {
+            changeAmount = amountStr;
+            if (amount >= total) {
+                change = amount - total;
+            }
         }
     }
     
@@ -1667,6 +1994,7 @@ function handleCheckout() {
             price: item.price
         })),
         total: total,
+        deliveryFee: deliveryFee,
         customerName: sanitizedName,
         customerPhone: sanitizedPhone,
         notes: sanitizedNotes,
