@@ -858,6 +858,10 @@ function goToCartStep(step) {
         if (cartHeaderTitle) cartHeaderTitle.textContent = 'Carrinho';
         if (cartBackBtn) cartBackBtn.style.display = 'none';
         currentCartStep = 1;
+        // Step 1: Always show total without delivery fee
+        if (cartTotal) {
+            cartTotal.textContent = getTotal().toFixed(2);
+        }
     } else if (step === 2 && cartStep2) {
         cartStep2.style.display = 'flex';
         if (cartHeaderTitle) cartHeaderTitle.textContent = 'Forma de Entrega';
@@ -1067,9 +1071,9 @@ function updateDeliveryFeeDisplay() {
         }
     }
     
-    // Update total display in step 1 if visible
-    if (cartTotal && cartStep1.style.display !== 'none') {
-        cartTotal.textContent = getTotalWithDeliveryFee().toFixed(2);
+    // Update total display in step 1 if visible (without delivery fee)
+    if (cartTotal && cartStep1 && cartStep1.style.display !== 'none') {
+        cartTotal.textContent = getTotal().toFixed(2);
     }
 }
 
@@ -1238,9 +1242,9 @@ function setupDeliveryMethodListeners() {
                 }
                 // Update delivery fee display and total
                 updateDeliveryFeeDisplay();
-                // Update total in step 1 if visible
-                if (cartTotal && cartStep1.style.display !== 'none') {
-                    cartTotal.textContent = getTotalWithDeliveryFee().toFixed(2);
+                // Update total in step 1 if visible (without delivery fee)
+                if (cartTotal && cartStep1 && cartStep1.style.display !== 'none') {
+                    cartTotal.textContent = getTotal().toFixed(2);
                 }
                 // Update total in step 4 if visible
                 if (cartTotalStep4 && cartStep4.style.display !== 'none') {
@@ -2446,17 +2450,20 @@ function confirmQuantityModal() {
         
         console.log('Item added/updated successfully');
         
+        // Save isBuyNow state before closing modal (hideQuantityModal resets it)
+        const wasBuyNow = currentQuantityModalIsBuyNow;
+        
         // Reset customizations before closing modal
         resetModalCustomizations();
         
         // Close modal
         hideQuantityModal();
         
-        // If "Pedir Agora", open cart
-        if (currentQuantityModalIsBuyNow) {
+        // If "Pedir Agora", open cart after modal is closed
+        if (wasBuyNow) {
             setTimeout(() => {
                 openCart();
-            }, 100);
+            }, 200);
         }
     } catch (error) {
         console.error('Error in confirmQuantityModal:', error);
@@ -2486,10 +2493,54 @@ function handleDecrease(itemId) {
 }
 
 /**
- * Handle remove item
+ * Remove item with customizations from cart
+ * @param {Object} item - Item to remove (must include id and customizations)
  */
-function handleRemove(itemId) {
-    removeItem(itemId);
+function removeItemWithCustomizations(item) {
+    if (!item || !item.id) {
+        console.error('Invalid item: item must have an id');
+        return;
+    }
+    
+    const cart = getCart();
+    const customizationsStr = JSON.stringify(item.customizations || { addedIngredients: {}, removedIngredients: [] });
+    
+    // Filter out the specific item (matching ID and customizations)
+    const filteredCart = cart.filter(cartItem => {
+        if (cartItem.id !== item.id) return true;
+        const existingCustomizationsStr = JSON.stringify(cartItem.customizations || { addedIngredients: {}, removedIngredients: [] });
+        return existingCustomizationsStr !== customizationsStr;
+    });
+    
+    // Update localStorage
+    try {
+        localStorage.setItem('pediragora_cart', JSON.stringify(filteredCart));
+        // Reload cart from storage
+        if (typeof loadCartFromStorage === 'function') {
+            loadCartFromStorage();
+        }
+        console.log('Item removed from cart:', item.id, 'with customizations');
+    } catch (error) {
+        console.error('Error removing item from cart:', error);
+    }
+}
+
+/**
+ * Handle remove item
+ * @param {string|Object} itemIdOrItem - Item ID (string) or full item object
+ */
+function handleRemove(itemIdOrItem) {
+    // If it's a string (old format), try to find the item in the cart
+    if (typeof itemIdOrItem === 'string') {
+        // Legacy support: remove all items with this ID (may remove multiple if customizations differ)
+        removeItem(itemIdOrItem);
+    } else if (typeof itemIdOrItem === 'object' && itemIdOrItem.id) {
+        // New format: remove specific item with customizations
+        removeItemWithCustomizations(itemIdOrItem);
+    } else {
+        console.error('Invalid argument: must be item ID (string) or item object');
+        return;
+    }
     renderCartUI();
 }
 
@@ -2503,7 +2554,20 @@ function renderCartUI() {
     
     // Update count
     cartCount.textContent = totalItems;
-    cartTotal.textContent = getTotalWithDeliveryFee().toFixed(2);
+    
+    // Update total: Step 1 should show total WITHOUT delivery fee
+    // Only steps 2+ should show total WITH delivery fee (if delivery selected)
+    if (cartTotal) {
+        const isStep1 = cartStep1 && cartStep1.style.display !== 'none';
+        if (isStep1) {
+            // Step 1: Always show total without delivery fee
+            cartTotal.textContent = getTotal().toFixed(2);
+        } else {
+            // Steps 2+: Show total with delivery fee if applicable
+            cartTotal.textContent = getTotalWithDeliveryFee().toFixed(2);
+        }
+    }
+    
     if (checkoutBtn) {
         checkoutBtn.disabled = cart.length === 0;
     }
@@ -2733,7 +2797,8 @@ function createCartItemElement(item) {
     removeBtn.className = 'cart-item-remove';
     removeBtn.setAttribute('data-item-id', item.id);
     removeBtn.textContent = 'Remover';
-    removeBtn.addEventListener('click', () => handleRemove(item.id));
+    // Pass the full item object to handleRemove so it can remove by ID + customizations
+    removeBtn.addEventListener('click', () => handleRemove(item));
     
     div.appendChild(img);
     div.appendChild(infoDiv);
