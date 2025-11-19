@@ -42,8 +42,14 @@ function sendToWhatsApp(phoneNumber, orderObject) {
     }
     
     // Build the message
-    // Using simpler emojis for better iOS compatibility
-    let message = '*NOVO PEDIDO*\n\n';
+    // Optimized for printing with ASCII characters and better formatting
+    const separator = '='.repeat(40);
+    const divider = '-'.repeat(40);
+    
+    // Header with ASCII borders
+    let message = separator + '\n';
+    message += '         *NOVO PEDIDO*\n';
+    message += separator + '\n\n';
     
     // Add date and time
     const now = new Date();
@@ -63,8 +69,9 @@ function sendToWhatsApp(phoneNumber, orderObject) {
     }
     
     // Add items list
+    message += divider + '\n';
     message += '*ITENS:*\n';
-    message += '─'.repeat(30) + '\n';
+    message += divider + '\n';
     
     orderObject.items.forEach((item, index) => {
         const itemTotal = item.price * item.quantity;
@@ -132,14 +139,15 @@ function sendToWhatsApp(phoneNumber, orderObject) {
                 }
             }
         }
+        message += '\n';
     });
     
-    message += '─'.repeat(30) + '\n';
+    message += divider + '\n';
     
     // Add delivery fee if applicable
     if (orderObject.deliveryFee && orderObject.deliveryFee > 0) {
         message += `Taxa de entrega: R$ ${orderObject.deliveryFee.toFixed(2)}\n`;
-        message += '─'.repeat(30) + '\n';
+        message += divider + '\n';
     }
     
     // Add total
@@ -195,9 +203,10 @@ function sendToWhatsApp(phoneNumber, orderObject) {
         message += '\n';
     }
     
-    // Add footer
-    message += '─'.repeat(30) + '\n';
-    message += 'Aguarde confirmação do pedido por favor!';
+    // Add footer with ASCII borders
+    message += separator + '\n';
+    message += 'Aguarde confirmação do pedido por favor!\n';
+    message += separator;
     
     // Encode the message for URL
     const encodedMessage = encodeURIComponent(message);

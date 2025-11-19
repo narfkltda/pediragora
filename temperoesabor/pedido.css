@@ -1,0 +1,277 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #f0e0d0 0%, #ffffff 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+}
+
+.input-section h1 {
+    color: #df4c2d;
+    margin-bottom: 10px;
+    font-size: 28px;
+}
+
+.instructions {
+    color: #666;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+#order-input {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    resize: vertical;
+    margin-bottom: 20px;
+}
+
+#order-input:focus {
+    outline: none;
+    border-color: #eeb534;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: #eeb534;
+    color: #303030;
+}
+
+.btn-primary:hover {
+    background: #d9a42e;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(238, 181, 52, 0.3);
+}
+
+.btn-secondary {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background: #d0d0d0;
+}
+
+.btn-print {
+    background: #df4c2d;
+    color: white;
+}
+
+.btn-print:hover {
+    background: #c43e24;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(223, 76, 45, 0.3);
+}
+
+.preview-section {
+    margin-top: 30px;
+}
+
+.preview-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    justify-content: center;
+}
+
+.order-preview {
+    background: white;
+    padding: 40px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    max-width: 100%;
+}
+
+/* Estilos do pedido formatado */
+.order-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid #eeb534;
+}
+
+.logo-container {
+    margin-bottom: 20px;
+}
+
+.logo-container img {
+    max-width: 200px;
+    height: auto;
+    background: transparent;
+    mix-blend-mode: multiply;
+}
+
+.order-title {
+    font-size: 32px;
+    color: #df4c2d;
+    font-weight: bold;
+    margin: 20px 0;
+    text-transform: uppercase;
+}
+
+.order-info {
+    margin: 20px 0;
+    line-height: 1.8;
+}
+
+.order-info p {
+    margin: 8px 0;
+    font-size: 16px;
+}
+
+.order-info strong {
+    color: #303030;
+    font-weight: 600;
+}
+
+.items-section {
+    margin: 30px 0;
+    border-top: 2px solid #e0e0e0;
+    border-bottom: 2px solid #e0e0e0;
+    padding: 20px 0;
+}
+
+.items-title {
+    font-size: 24px;
+    color: #303030;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.order-item {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border-left: 4px solid #eeb534;
+}
+
+.item-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #303030;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.item-details {
+    color: #666;
+    font-size: 15px;
+    margin: 5px 0;
+}
+
+.item-customizations {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #ddd;
+    font-size: 14px;
+    color: #888;
+}
+
+.total-section {
+    margin: 30px 0;
+    padding: 20px;
+    background: #f0e0d0;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.total-label {
+    font-size: 20px;
+    color: #303030;
+    margin-bottom: 10px;
+}
+
+.total-value {
+    font-size: 36px;
+    font-weight: bold;
+    color: #df4c2d;
+}
+
+.order-footer {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid #e0e0e0;
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+}
+
+/* Estilos para impressão */
+@media print {
+    body {
+        background: white;
+        padding: 0;
+    }
+
+    .container {
+        box-shadow: none;
+        padding: 0;
+    }
+
+    .input-section,
+    .preview-controls {
+        display: none !important;
+    }
+
+    .preview-section {
+        display: block !important;
+    }
+
+    .order-preview {
+        border: none;
+        padding: 20px;
+        page-break-inside: avoid;
+    }
+
+    .order-header {
+        page-break-after: avoid;
+    }
+
+    .order-item {
+        page-break-inside: avoid;
+    }
+
+    .logo-container img {
+        max-width: 150px;
+        background: transparent;
+        mix-blend-mode: multiply;
+    }
+
+    @page {
+        margin: 1cm;
+        size: A4;
+    }
+}
+
