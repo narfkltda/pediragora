@@ -422,7 +422,29 @@ function clearCart() {
  */
 function getTotal() {
     return cart.reduce((total, item) => {
-        return total + (item.price * item.quantity);
+        // Calculate base price
+        const basePrice = item.price || 0;
+        
+        // Calculate extras total if customizations exist
+        let extrasTotal = 0;
+        if (item.customizations && item.customizations.addedIngredients) {
+            if (typeof item.customizations.addedIngredients === 'object' && !Array.isArray(item.customizations.addedIngredients)) {
+                // New format: object with quantities
+                if (typeof window !== 'undefined' && window.AVAILABLE_INGREDIENTS) {
+                    Object.entries(item.customizations.addedIngredients).forEach(([ingredientId, quantity]) => {
+                        if (quantity > 0) {
+                            const ingredient = window.AVAILABLE_INGREDIENTS.find(ing => ing.id === ingredientId);
+                            if (ingredient && ingredient.price) {
+                                extrasTotal += ingredient.price * quantity;
+                            }
+                        }
+                    });
+                }
+            }
+        }
+        
+        const itemTotalPrice = basePrice + extrasTotal;
+        return total + (itemTotalPrice * item.quantity);
     }, 0);
 }
 

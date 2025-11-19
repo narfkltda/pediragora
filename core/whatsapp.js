@@ -70,6 +70,67 @@ function sendToWhatsApp(phoneNumber, orderObject) {
         const itemTotal = item.price * item.quantity;
         message += `${index + 1}. ${String(item.name).toUpperCase()}\n`;
         message += `   Qtd: ${item.quantity} x R$ ${item.price.toFixed(2)} = R$ ${itemTotal.toFixed(2)}\n`;
+        
+        // Add customizations if present
+        if (item.customizations) {
+            const customizations = item.customizations;
+            const parts = [];
+            
+            if (customizations.addedIngredients) {
+                let added = [];
+                
+                if (Array.isArray(customizations.addedIngredients)) {
+                    // Legacy format: array of IDs
+                    added = customizations.addedIngredients.map(id => {
+                        if (typeof window !== 'undefined' && window.AVAILABLE_INGREDIENTS) {
+                            const ingredient = window.AVAILABLE_INGREDIENTS.find(ing => ing.id === id);
+                            return ingredient ? ingredient.name : id;
+                        }
+                        return id;
+                    });
+                } else if (typeof customizations.addedIngredients === 'object') {
+                    // New format: object with quantities { ingredientId: quantity }
+                    Object.entries(customizations.addedIngredients).forEach(([id, quantity]) => {
+                        if (quantity > 0) {
+                            let name = id;
+                            if (typeof window !== 'undefined' && window.AVAILABLE_INGREDIENTS) {
+                                const ingredient = window.AVAILABLE_INGREDIENTS.find(ing => ing.id === id);
+                                name = ingredient ? ingredient.name : id;
+                            }
+                            if (quantity === 1) {
+                                added.push(name);
+                            } else {
+                                added.push(`${name} (${quantity}x)`);
+                            }
+                        }
+                    });
+                }
+                
+                if (added.length > 0) {
+                    parts.push(`+ ${added.join(', ')}`);
+                }
+            }
+            
+            if (customizations.removedIngredients && customizations.removedIngredients.length > 0) {
+                const removed = customizations.removedIngredients.map(id => {
+                    // Try to find ingredient name from global scope or use ID
+                    if (typeof window !== 'undefined' && window.AVAILABLE_INGREDIENTS) {
+                        const ingredient = window.AVAILABLE_INGREDIENTS.find(ing => ing.id === id);
+                        return ingredient ? ingredient.name : id;
+                    }
+                    // If ingredient names are already in the array, use them
+                    if (typeof id === 'object' && id.name) {
+                        return id.name;
+                    }
+                    return id;
+                }).join(', ');
+                parts.push(`- ${removed}`);
+            }
+            
+            if (parts.length > 0) {
+                message += `   Personalização: ${parts.join(' | ')}\n`;
+            }
+        }
     });
     
     message += '─'.repeat(30) + '\n';

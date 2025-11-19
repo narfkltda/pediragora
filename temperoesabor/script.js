@@ -249,6 +249,31 @@ const MENU_DATA = {
     ]
 };
 
+// Available ingredients for customization
+// Make it globally accessible for whatsapp.js
+const AVAILABLE_INGREDIENTS = [
+    { id: 'hamburger', name: 'Hamburger', price: 12.00 },
+    { id: 'mussarela', name: 'Mussarela', price: 4.00 },
+    { id: 'calabresa', name: 'Calabresa', price: 2.00 },
+    { id: 'catupiry', name: 'Catupiry', price: 4.00 },
+    { id: 'batata-palha', name: 'Batata Palha', price: 2.00 },
+    { id: 'cebola-caramelizada', name: 'Cebola Caramelizada', price: 3.00 },
+    { id: 'picles', name: 'Picles', price: 3.00 },
+    { id: 'cheddar', name: 'Cheddar', price: 3.00 },
+    { id: 'salada', name: 'Salada', price: 2.00 },
+    { id: 'bacon', name: 'Bacon', price: 4.00 },
+    { id: 'ovo', name: 'Ovo', price: 2.00 },
+    { id: 'salsicha', name: 'Salsicha', price: 2.00 },
+    { id: 'cebola-roxa', name: 'Cebola Roxa', price: 2.00 },
+    { id: 'onion-rings', name: 'Onion Rings', price: 3.00 },
+    { id: 'molho-mima', name: 'Molho Mima', price: 2.00 },
+    { id: 'molho-barbecue', name: 'Molho Barbecue', price: 2.00 },
+    { id: 'molho-churrasco', name: 'Molho de Churrasco', price: 2.00 }
+];
+
+// Make AVAILABLE_INGREDIENTS globally accessible for whatsapp.js
+window.AVAILABLE_INGREDIENTS = AVAILABLE_INGREDIENTS;
+
 // Security functions
 /**
  * Sanitize HTML string by escaping special characters
@@ -322,6 +347,19 @@ const pickupMapBtnGoogle = document.getElementById('pickup-map-btn-google');
 const pickupMapBtnApple = document.getElementById('pickup-map-btn-apple');
 // checkoutBtn removed - now using btnCheckoutSummary in step 5
 const checkoutBtn = null; // Deprecated - button moved to step 5
+// Quantity Modal elements
+const quantityModal = document.getElementById('quantity-modal');
+const quantityModalOverlay = document.getElementById('quantity-modal-overlay');
+const quantityModalClose = document.getElementById('quantity-modal-close');
+const quantityModalImage = document.getElementById('quantity-modal-image');
+const quantityModalName = document.getElementById('quantity-modal-name');
+const quantityModalDescription = document.getElementById('quantity-modal-description');
+const quantityModalPriceValue = document.getElementById('quantity-modal-price-value');
+// Quantity controls removed - always add quantity 1
+const quantityBtnConfirm = document.getElementById('quantity-btn-confirm');
+if (!quantityBtnConfirm) {
+    console.warn('quantity-btn-confirm button not found!');
+}
 const customerNameInput = document.getElementById('customer-name');
 const customerNotesInput = document.getElementById('customer-notes');
 const searchInput = document.getElementById('search-input');
@@ -340,6 +378,14 @@ const cartOverlay = document.getElementById('cart-overlay');
 const cartBackBtn = document.getElementById('cart-back-btn');
 // Delivery fee constant
 const DELIVERY_FEE = 3.00;
+
+// Quantity Modal state
+let currentQuantityModalItem = null;
+let currentQuantityModalIsBuyNow = false;
+let currentQuantityModalCustomizations = {
+    addedIngredients: {}, // { ingredientId: quantity }
+    removedIngredients: [] // Array of ingredient IDs
+};
 
 const cartHeaderTitle = document.getElementById('cart-header-title');
 const cartStep1 = document.getElementById('cart-step-1');
@@ -445,6 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupHoursModalListeners();
     setupAlertModalListeners();
     setupPickupMapModalListeners();
+    setupQuantityModalListeners();
     renderOpeningHours();
     
     // Always use horizontal layout
@@ -618,14 +665,14 @@ function createItemCard(item) {
     buyNowBtn.setAttribute('data-item-id', item.id);
     buyNowBtn.textContent = 'Pedir Agora';
     buyNowBtn.addEventListener('click', () => {
-            // Verificar se pode comprar antes de adicionar e abrir carrinho
-            const purchaseCheck = checkIfCanPurchase();
-            if (!purchaseCheck.canPurchase) {
-                showAlertModal('Aviso', purchaseCheck.message);
-                return;
-            }
-        handleAddToCart(item.id);
-        openCart();
+        // Verificar se pode comprar antes de abrir modal
+        const purchaseCheck = checkIfCanPurchase();
+        if (!purchaseCheck.canPurchase) {
+            showAlertModal('Aviso', purchaseCheck.message);
+            return;
+        }
+        // Abrir modal de quantidade
+        showQuantityModal(item, true);
     });
     
     const addBtn = document.createElement('button');
@@ -636,7 +683,14 @@ function createItemCard(item) {
     // Add text and cart icon SVG
     addBtn.innerHTML = '<span>Adicionar</span><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>';
     addBtn.addEventListener('click', () => {
-        handleAddToCart(item.id);
+        // Verificar se pode comprar antes de abrir modal
+        const purchaseCheck = checkIfCanPurchase();
+        if (!purchaseCheck.canPurchase) {
+            showAlertModal('Aviso', purchaseCheck.message);
+            return;
+        }
+        // Abrir modal de quantidade
+        showQuantityModal(item, false);
     });
     
     // Buttons container
@@ -854,12 +908,15 @@ function renderOrderSummary() {
                 
                 const itemName = document.createElement('span');
                 itemName.className = 'summary-item-name';
-                itemName.textContent = formatItemName ? formatItemName(item) : item.name;
+                const itemNameText = formatItemName ? formatItemName(item) : item.name;
+                const customizationsText = item.customizations ? formatCustomizationsText(item.customizations) : '';
+                itemName.textContent = itemNameText + customizationsText;
                 
                 const itemDetails = document.createElement('span');
                 itemDetails.className = 'summary-item-details';
-                const itemSubtotal = item.price * item.quantity;
-                itemDetails.textContent = `${item.quantity}x R$ ${item.price.toFixed(2)} = R$ ${itemSubtotal.toFixed(2)}`;
+                const itemTotalPrice = calculateItemTotalPrice(item);
+                const itemSubtotal = itemTotalPrice * item.quantity;
+                itemDetails.textContent = `${item.quantity}x R$ ${itemTotalPrice.toFixed(2)} = R$ ${itemSubtotal.toFixed(2)}`;
                 
                 itemDiv.appendChild(itemName);
                 itemDiv.appendChild(itemDetails);
@@ -1534,6 +1591,41 @@ function setupPickupMapModalListeners() {
 }
 
 /**
+ * Setup quantity modal listeners
+ */
+function setupQuantityModalListeners() {
+    // Close button
+    if (quantityModalClose) {
+        quantityModalClose.addEventListener('click', hideQuantityModal);
+    }
+    
+    // Overlay click
+    if (quantityModalOverlay) {
+        quantityModalOverlay.addEventListener('click', hideQuantityModal);
+    }
+    
+    // Confirm button
+    if (quantityBtnConfirm) {
+        console.log('Setting up confirm button listener');
+        quantityBtnConfirm.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Confirm button clicked');
+            confirmQuantityModal();
+        });
+    } else {
+        console.error('quantityBtnConfirm is null! Button not found in DOM.');
+    }
+    
+    // Close on ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && quantityModal && quantityModal.classList.contains('active')) {
+            hideQuantityModal();
+        }
+    });
+}
+
+/**
  * Setup hours modal listeners
  */
 function setupHoursModalListeners() {
@@ -1725,6 +1817,621 @@ function handleAddToCart(itemId) {
 }
 
 /**
+ * Extract default ingredients from item description
+ * @param {Object} item - Item to extract ingredients from
+ * @returns {Array} Array of ingredient IDs found in description
+ */
+function extractDefaultIngredients(item) {
+    if (!item || !item.description) {
+        return [];
+    }
+    
+    const description = item.description.toLowerCase();
+    const foundIngredients = [];
+    
+    // Map ingredient names to IDs
+    const ingredientMap = {
+        'hambúrguer de carne': 'hamburger',
+        'hambúrguer': 'hamburger',
+        'queijo mussarela': 'mussarela',
+        'mussarela': 'mussarela',
+        'queijo cheddar': 'cheddar',
+        'cheddar': 'cheddar',
+        'bacon': 'bacon',
+        'ovo': 'ovo',
+        'calabresa': 'calabresa',
+        'salada': 'salada',
+        'alface': 'salada',
+        'tomate': 'salada',
+        'cebola roxa': 'cebola-roxa',
+        'cebola caramelizada': 'cebola-caramelizada',
+        'picles': 'picles',
+        'salsicha': 'salsicha',
+        'onion rings': 'onion-rings',
+        'batata palha': 'batata-palha',
+        'molho mima': 'molho-mima',
+        'molho barbecue': 'molho-barbecue',
+        'molho de churrasco': 'molho-churrasco',
+        'catupiry': 'catupiry'
+    };
+    
+    // Check each ingredient (check longer names first to avoid partial matches)
+    const sortedEntries = Object.entries(ingredientMap).sort((a, b) => b[0].length - a[0].length);
+    
+    for (const [name, id] of sortedEntries) {
+        if (description.includes(name.toLowerCase()) && !foundIngredients.includes(id)) {
+            foundIngredients.push(id);
+        }
+    }
+    
+    return foundIngredients;
+}
+
+/**
+ * Render ingredients section in modal
+ * @param {Object} item - Item to render ingredients for
+ */
+function renderIngredientsSection(item) {
+    const defaultList = document.getElementById('ingredients-default-list');
+    const extraList = document.getElementById('ingredients-extra-list');
+    
+    if (!defaultList || !extraList) {
+        return;
+    }
+    
+    // Clear lists
+    defaultList.innerHTML = '';
+    extraList.innerHTML = '';
+    
+    // Extract default ingredients from item description
+    const defaultIngredients = extractDefaultIngredients(item);
+    
+    // Render default ingredients (can be removed)
+    defaultIngredients.forEach(ingredientId => {
+        const ingredient = AVAILABLE_INGREDIENTS.find(ing => ing.id === ingredientId);
+        if (!ingredient) return;
+        
+        const isRemoved = currentQuantityModalCustomizations.removedIngredients.includes(ingredientId);
+        
+        const itemDiv = document.createElement('div');
+        itemDiv.className = `ingredient-item ${isRemoved ? 'removed' : ''}`;
+        itemDiv.setAttribute('data-ingredient-id', ingredientId);
+        itemDiv.setAttribute('data-ingredient-type', 'default');
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'ingredient-checkbox';
+        checkbox.id = `ingredient-${ingredientId}`;
+        checkbox.checked = !isRemoved;
+        checkbox.addEventListener('change', () => toggleIngredient(ingredientId, 'default'));
+        
+        const label = document.createElement('label');
+        label.className = 'ingredient-label';
+        label.htmlFor = `ingredient-${ingredientId}`;
+        label.textContent = ingredient.name;
+        
+        itemDiv.appendChild(checkbox);
+        itemDiv.appendChild(label);
+        defaultList.appendChild(itemDiv);
+    });
+    
+    // Render extra ingredients (can be added with quantity)
+    AVAILABLE_INGREDIENTS.forEach(ingredient => {
+        // Skip if already in default ingredients
+        if (defaultIngredients.includes(ingredient.id)) {
+            return;
+        }
+        
+        const quantity = currentQuantityModalCustomizations.addedIngredients[ingredient.id] || 0;
+        const isSelected = quantity > 0;
+        
+        const itemDiv = document.createElement('div');
+        itemDiv.className = `ingredient-item ${isSelected ? 'selected' : ''}`;
+        itemDiv.setAttribute('data-ingredient-id', ingredient.id);
+        itemDiv.setAttribute('data-ingredient-type', 'extra');
+        
+        const labelContainer = document.createElement('div');
+        labelContainer.className = 'ingredient-info';
+        
+        const label = document.createElement('label');
+        label.className = 'ingredient-label';
+        label.textContent = ingredient.name;
+        
+        const priceSpan = document.createElement('span');
+        priceSpan.className = 'ingredient-price';
+        priceSpan.textContent = `R$ ${ingredient.price.toFixed(2)}`;
+        
+        labelContainer.appendChild(label);
+        labelContainer.appendChild(priceSpan);
+        
+        const quantityContainer = document.createElement('div');
+        quantityContainer.className = 'ingredient-quantity-controls';
+        
+        const decreaseBtn = document.createElement('button');
+        decreaseBtn.type = 'button';
+        decreaseBtn.className = 'ingredient-qty-btn ingredient-qty-decrease';
+        decreaseBtn.textContent = '−';
+        decreaseBtn.disabled = quantity === 0;
+        decreaseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            updateIngredientQuantity(ingredient.id, quantity - 1);
+        });
+        
+        const quantityInput = document.createElement('input');
+        quantityInput.type = 'number';
+        quantityInput.className = 'ingredient-qty-input';
+        quantityInput.min = '0';
+        quantityInput.value = quantity;
+        quantityInput.readOnly = true;
+        
+        const increaseBtn = document.createElement('button');
+        increaseBtn.type = 'button';
+        increaseBtn.className = 'ingredient-qty-btn ingredient-qty-increase';
+        increaseBtn.textContent = '+';
+        increaseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            updateIngredientQuantity(ingredient.id, quantity + 1);
+        });
+        
+        quantityContainer.appendChild(decreaseBtn);
+        quantityContainer.appendChild(quantityInput);
+        quantityContainer.appendChild(increaseBtn);
+        
+        const totalPriceSpan = document.createElement('span');
+        totalPriceSpan.className = 'ingredient-total-price';
+        const totalPrice = ingredient.price * quantity;
+        totalPriceSpan.textContent = quantity > 0 ? `R$ ${totalPrice.toFixed(2)}` : '';
+        
+        itemDiv.appendChild(labelContainer);
+        itemDiv.appendChild(quantityContainer);
+        itemDiv.appendChild(totalPriceSpan);
+        extraList.appendChild(itemDiv);
+    });
+    
+    // Update modal price display with extras total
+    updateModalPriceDisplay();
+}
+
+/**
+ * Toggle ingredient in customizations (for default ingredients only)
+ * @param {string} ingredientId - ID of ingredient to toggle
+ * @param {string} type - Type: 'default' (can remove) or 'extra' (can add)
+ */
+function toggleIngredient(ingredientId, type) {
+    if (type === 'default') {
+        // Toggle in removedIngredients
+        const index = currentQuantityModalCustomizations.removedIngredients.indexOf(ingredientId);
+        if (index > -1) {
+            // Remove from removed list (ingredient is now included)
+            currentQuantityModalCustomizations.removedIngredients.splice(index, 1);
+        } else {
+            // Add to removed list (ingredient is now removed)
+            currentQuantityModalCustomizations.removedIngredients.push(ingredientId);
+        }
+        
+        // Re-render to update UI
+        if (currentQuantityModalItem) {
+            renderIngredientsSection(currentQuantityModalItem);
+        }
+    }
+    // Extra ingredients are handled by updateIngredientQuantity
+}
+
+/**
+ * Update ingredient quantity
+ * @param {string} ingredientId - ID of ingredient
+ * @param {number} quantity - New quantity (min 0)
+ */
+function updateIngredientQuantity(ingredientId, quantity) {
+    if (quantity < 0) {
+        quantity = 0;
+    }
+    
+    if (quantity === 0) {
+        // Remove from addedIngredients
+        delete currentQuantityModalCustomizations.addedIngredients[ingredientId];
+    } else {
+        // Set quantity
+        currentQuantityModalCustomizations.addedIngredients[ingredientId] = quantity;
+    }
+    
+    // Re-render to update UI
+    if (currentQuantityModalItem) {
+        renderIngredientsSection(currentQuantityModalItem);
+    }
+}
+
+/**
+ * Calculate total price of extra ingredients
+ * @param {Object} customizations - Optional customizations object (uses currentQuantityModalCustomizations if not provided)
+ * @returns {number} Total price
+ */
+function calculateExtrasTotal(customizations = null) {
+    let total = 0;
+    const addedIngredients = customizations?.addedIngredients || currentQuantityModalCustomizations.addedIngredients || {};
+    
+    if (Array.isArray(addedIngredients)) {
+        // Legacy format: array of IDs (no price calculation for legacy)
+        return 0;
+    }
+    
+    Object.entries(addedIngredients).forEach(([ingredientId, quantity]) => {
+        if (quantity > 0) {
+            const ingredient = AVAILABLE_INGREDIENTS.find(ing => ing.id === ingredientId);
+            if (ingredient) {
+                total += ingredient.price * quantity;
+            }
+        }
+    });
+    
+    return total;
+}
+
+/**
+ * Calculate total price of an item including extras
+ * @param {Object} item - Item object
+ * @returns {number} Total price (base price + extras)
+ */
+function calculateItemTotalPrice(item) {
+    if (!item) return 0;
+    
+    const basePrice = item.price || 0;
+    const extrasTotal = item.customizations ? calculateExtrasTotal(item.customizations) : 0;
+    
+    return basePrice + extrasTotal;
+}
+
+/**
+ * Update modal price display with base price + extras total
+ */
+function updateModalPriceDisplay() {
+    if (!currentQuantityModalItem || !quantityModalPriceValue) {
+        return;
+    }
+    
+    const basePrice = currentQuantityModalItem.price || 0;
+    const extrasTotal = calculateExtrasTotal();
+    const totalPrice = basePrice + extrasTotal;
+    
+    quantityModalPriceValue.textContent = totalPrice.toFixed(2);
+    
+    // Show extras total if > 0
+    let extrasDisplay = document.getElementById('quantity-modal-extras-total');
+    if (extrasTotal > 0) {
+        if (!extrasDisplay) {
+            extrasDisplay = document.createElement('div');
+            extrasDisplay.id = 'quantity-modal-extras-total';
+            extrasDisplay.className = 'quantity-modal-extras-total';
+            const priceContainer = quantityModalPriceValue.parentElement;
+            if (priceContainer) {
+                priceContainer.appendChild(extrasDisplay);
+            }
+        }
+        extrasDisplay.textContent = `(+ R$ ${extrasTotal.toFixed(2)} em extras)`;
+        extrasDisplay.style.display = 'block';
+    } else if (extrasDisplay) {
+        extrasDisplay.style.display = 'none';
+    }
+}
+
+/**
+ * Show quantity modal
+ * @param {Object} item - Item to add to cart
+ * @param {boolean} isBuyNow - Whether to open cart after confirming
+ */
+function showQuantityModal(item, isBuyNow) {
+    if (!item || !quantityModal || !quantityModalOverlay) {
+        return;
+    }
+    
+    // Store current item and mode
+    currentQuantityModalItem = item;
+    currentQuantityModalIsBuyNow = isBuyNow;
+    
+    // Reset customizations
+    currentQuantityModalCustomizations = {
+        addedIngredients: {},
+        removedIngredients: []
+    };
+    
+    // Load existing customizations if item is in cart (for editing)
+    const cart = getCart();
+    const existingItem = cart.find(cartItem => {
+        if (cartItem.id !== item.id) return false;
+        // Only load if it has customizations (items with customizations are separate)
+        return cartItem.customizations && (
+            (cartItem.customizations.removedIngredients && cartItem.customizations.removedIngredients.length > 0) ||
+            (cartItem.customizations.addedIngredients && Object.keys(cartItem.customizations.addedIngredients).length > 0)
+        );
+    });
+    
+    if (existingItem && existingItem.customizations) {
+        currentQuantityModalCustomizations = {
+            addedIngredients: existingItem.customizations.addedIngredients || {},
+            removedIngredients: existingItem.customizations.removedIngredients || []
+        };
+    }
+    
+    // Fill modal with item data
+    if (quantityModalImage) {
+        quantityModalImage.src = item.image || '';
+        quantityModalImage.alt = item.name || '';
+    }
+    
+    if (quantityModalName) {
+        quantityModalName.textContent = item.name || '';
+    }
+    
+    if (quantityModalDescription) {
+        if (item.description) {
+            quantityModalDescription.textContent = item.description;
+            quantityModalDescription.style.display = 'block';
+        } else {
+            quantityModalDescription.style.display = 'none';
+        }
+    }
+    
+    if (quantityModalPriceValue) {
+        quantityModalPriceValue.textContent = item.price ? item.price.toFixed(2) : '0.00';
+    }
+    
+    // Render ingredients section
+    renderIngredientsSection(item);
+    
+    // Show modal
+    quantityModal.classList.add('active');
+    quantityModalOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+/**
+ * Hide quantity modal
+ */
+function hideQuantityModal() {
+    if (quantityModal && quantityModalOverlay) {
+        quantityModal.classList.remove('active');
+        quantityModalOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    
+    // Clear state
+    currentQuantityModalItem = null;
+    currentQuantityModalIsBuyNow = false;
+    currentQuantityModalCustomizations = {
+        addedIngredients: {},
+        removedIngredients: []
+    };
+}
+
+// updateQuantityButtons, incrementQuantity and decrementQuantity removed - always add quantity 1
+
+/**
+ * Set item quantity in cart directly
+ * @param {Object} item - Item to update
+ * @param {number} quantity - New quantity
+ * @param {Object} customizations - Customizations object with addedIngredients and removedIngredients
+ */
+function setItemQuantity(item, quantity, customizations = null) {
+    if (!item || !item.id || quantity < 0) {
+        return;
+    }
+    
+    // Prepare customizations
+    const itemCustomizations = customizations || {
+        addedIngredients: {}, // { ingredientId: quantity }
+        removedIngredients: [] // Array of ingredient IDs
+    };
+    
+    if (quantity === 0) {
+        // Remove item if quantity is 0 - find by ID and customizations
+        const cart = getCart();
+        const customizationsStr = JSON.stringify(itemCustomizations);
+        const itemToRemove = cart.find(cartItem => {
+            if (cartItem.id !== item.id) return false;
+            const existingCustomizationsStr = JSON.stringify(cartItem.customizations || { addedIngredients: {}, removedIngredients: [] });
+            return existingCustomizationsStr === customizationsStr;
+        });
+        if (itemToRemove) {
+            // Remove item from localStorage
+            const cartArray = JSON.parse(localStorage.getItem('pediragora_cart') || '[]');
+            const filteredArray = cartArray.filter(cartItem => {
+                if (cartItem.id !== item.id) return true;
+                const existingCustomizationsStr = JSON.stringify(cartItem.customizations || { addedIngredients: {}, removedIngredients: [] });
+                return existingCustomizationsStr !== customizationsStr;
+            });
+            localStorage.setItem('pediragora_cart', JSON.stringify(filteredArray));
+            if (typeof loadCartFromStorage === 'function') {
+                loadCartFromStorage();
+            }
+        }
+        return;
+    }
+    
+    // Check if item has customizations
+    const hasCustomizations = (
+        (itemCustomizations.removedIngredients && itemCustomizations.removedIngredients.length > 0) ||
+        (itemCustomizations.addedIngredients && Object.keys(itemCustomizations.addedIngredients).length > 0)
+    );
+    
+    // If item has customizations, always add as new item (never merge)
+    // If no customizations, check if same item exists without customizations
+    const cart = getCart();
+    let existingItem = null;
+    
+    if (hasCustomizations) {
+        // Items with customizations are always unique - check by ID + customizations
+        const customizationsStr = JSON.stringify(itemCustomizations);
+        existingItem = cart.find(cartItem => {
+            if (cartItem.id !== item.id) return false;
+            const existingCustomizationsStr = JSON.stringify(cartItem.customizations || { addedIngredients: {}, removedIngredients: [] });
+            return existingCustomizationsStr === customizationsStr;
+        });
+    } else {
+        // Items without customizations - check by ID only (no customizations)
+        existingItem = cart.find(cartItem => {
+            if (cartItem.id !== item.id) return false;
+            const existingHasCustomizations = cartItem.customizations && (
+                (cartItem.customizations.removedIngredients && cartItem.customizations.removedIngredients.length > 0) ||
+                (cartItem.customizations.addedIngredients && Object.keys(cartItem.customizations.addedIngredients).length > 0)
+            );
+            return !existingHasCustomizations; // Only match if existing item also has no customizations
+        });
+    }
+    
+    if (existingItem) {
+        // Update existing item quantity (same item with same customizations)
+        // Get current cart from localStorage directly
+        let cartArray = [];
+        try {
+            const savedCart = localStorage.getItem('pediragora_cart');
+            if (savedCart) {
+                cartArray = JSON.parse(savedCart);
+            }
+        } catch (error) {
+            console.error('Error loading cart:', error);
+            cartArray = [];
+        }
+        
+        // Find item with same ID and customizations
+        const customizationsStr = JSON.stringify(itemCustomizations);
+        const itemIndex = cartArray.findIndex(cartItem => {
+            if (cartItem.id !== item.id) return false;
+            const existingCustomizationsStr = JSON.stringify(cartItem.customizations || { addedIngredients: {}, removedIngredients: [] });
+            return existingCustomizationsStr === customizationsStr;
+        });
+        
+        if (itemIndex !== -1) {
+            cartArray[itemIndex].quantity = quantity;
+            cartArray[itemIndex].customizations = itemCustomizations;
+            
+            try {
+                localStorage.setItem('pediragora_cart', JSON.stringify(cartArray));
+                console.log('Item updated in cart:', item.name, 'quantity:', quantity);
+            } catch (error) {
+                console.error('Error saving cart:', error);
+            }
+        } else {
+            // Item exists but with different customizations, add as new item
+            cartArray.push({
+                ...item,
+                quantity: quantity,
+                customizations: itemCustomizations
+            });
+            
+            try {
+                localStorage.setItem('pediragora_cart', JSON.stringify(cartArray));
+                console.log('Item added to cart (different customizations):', item.name, 'quantity:', quantity);
+            } catch (error) {
+                console.error('Error saving cart:', error);
+            }
+        }
+    } else {
+        // Add new item with specified quantity and customizations
+        // Get current cart from localStorage directly
+        let cartArray = [];
+        try {
+            const savedCart = localStorage.getItem('pediragora_cart');
+            if (savedCart) {
+                cartArray = JSON.parse(savedCart);
+            }
+        } catch (error) {
+            console.error('Error loading cart:', error);
+            cartArray = [];
+        }
+        
+        cartArray.push({
+            ...item,
+            quantity: quantity,
+            customizations: itemCustomizations
+        });
+        
+        // Save to localStorage
+        try {
+            localStorage.setItem('pediragora_cart', JSON.stringify(cartArray));
+            console.log('Item added to cart:', item.name, 'quantity:', quantity);
+        } catch (error) {
+            console.error('Error saving cart:', error);
+        }
+    }
+    
+    // Verify item was saved
+    const verifyCart = JSON.parse(localStorage.getItem('pediragora_cart') || '[]');
+    const savedItem = verifyCart.find(cartItem => cartItem.id === item.id);
+    if (savedItem) {
+        console.log('Item verified in cart:', savedItem);
+    } else {
+        console.error('Item NOT found in cart after save!');
+    }
+}
+
+/**
+ * Confirm quantity modal and add to cart
+ */
+function confirmQuantityModal() {
+    console.log('confirmQuantityModal called', {
+        currentQuantityModalItem,
+        customizations: currentQuantityModalCustomizations,
+        isBuyNow: currentQuantityModalIsBuyNow
+    });
+    
+    if (!currentQuantityModalItem) {
+        console.error('Missing currentQuantityModalItem');
+        alert('Erro: Item não encontrado. Por favor, tente novamente.');
+        return;
+    }
+    
+    // Always add quantity 1
+    const quantity = 1;
+    
+    // Check if has customizations
+    const hasCustomizations = (
+        (currentQuantityModalCustomizations.removedIngredients && currentQuantityModalCustomizations.removedIngredients.length > 0) ||
+        (currentQuantityModalCustomizations.addedIngredients && Object.keys(currentQuantityModalCustomizations.addedIngredients).length > 0)
+    );
+    
+    console.log('Confirming modal:', {
+        item: currentQuantityModalItem,
+        quantity: quantity,
+        customizations: currentQuantityModalCustomizations,
+        hasCustomizations: hasCustomizations,
+        isBuyNow: currentQuantityModalIsBuyNow
+    });
+    
+    try {
+        // Set item quantity in cart with customizations (always quantity 1)
+        setItemQuantity(currentQuantityModalItem, quantity, currentQuantityModalCustomizations);
+        
+        console.log('setItemQuantity called, reloading cart...');
+        
+        // Force reload cart from storage to ensure sync
+        if (typeof loadCartFromStorage === 'function') {
+            loadCartFromStorage();
+        }
+        
+        // Update cart UI
+        renderCartUI();
+        
+        console.log('Item added/updated successfully');
+        
+        // Close modal
+        hideQuantityModal();
+        
+        // If "Pedir Agora", open cart
+        if (currentQuantityModalIsBuyNow) {
+            setTimeout(() => {
+                openCart();
+            }, 100);
+        }
+    } catch (error) {
+        console.error('Error in confirmQuantityModal:', error);
+        console.error('Error stack:', error.stack);
+        alert('Erro ao adicionar item ao carrinho: ' + error.message);
+    }
+}
+
+// removeItemFromCartModal removed - no remove button in modal
+
+/**
  * Handle increase quantity
  */
 function handleIncrease(itemId) {
@@ -1789,6 +2496,8 @@ function renderCartUI() {
  */
 function renderCartItems() {
     const cart = getCart();
+    const cartItemsAlterations = document.getElementById('cart-items-alterations');
+    const cartAlterationsSection = document.getElementById('cart-alterations-section');
     
     if (cart.length === 0) {
         const emptyCartEl = document.createElement('div');
@@ -1796,15 +2505,117 @@ function renderCartItems() {
         emptyCartEl.textContent = 'Carrinho vazio';
         cartItems.innerHTML = '';
         cartItems.appendChild(emptyCartEl);
+        if (cartItemsAlterations) {
+            cartItemsAlterations.innerHTML = '';
+        }
+        if (cartAlterationsSection) {
+            cartAlterationsSection.style.display = 'none';
+        }
         return;
     }
     
-    cartItems.innerHTML = '';
+    // Separate items with and without customizations
+    const itemsWithoutCustomizations = [];
+    const itemsWithCustomizations = [];
     
     cart.forEach(item => {
-        const cartItemEl = createCartItemElement(item);
-        cartItems.appendChild(cartItemEl);
+        const hasCustomizations = item.customizations && (
+            (item.customizations.removedIngredients && item.customizations.removedIngredients.length > 0) ||
+            (item.customizations.addedIngredients && Object.keys(item.customizations.addedIngredients).length > 0)
+        );
+        
+        if (hasCustomizations) {
+            itemsWithCustomizations.push(item);
+        } else {
+            itemsWithoutCustomizations.push(item);
+        }
     });
+    
+    // Render items without customizations
+    cartItems.innerHTML = '';
+    if (itemsWithoutCustomizations.length === 0) {
+        const emptyCartEl = document.createElement('div');
+        emptyCartEl.className = 'empty-cart';
+        emptyCartEl.textContent = 'Nenhum item';
+        cartItems.appendChild(emptyCartEl);
+    } else {
+        itemsWithoutCustomizations.forEach(item => {
+            const cartItemEl = createCartItemElement(item);
+            cartItems.appendChild(cartItemEl);
+        });
+    }
+    
+    // Render items with customizations
+    if (cartItemsAlterations && cartAlterationsSection) {
+        if (itemsWithCustomizations.length > 0) {
+            cartAlterationsSection.style.display = 'block';
+            cartItemsAlterations.innerHTML = '';
+            itemsWithCustomizations.forEach(item => {
+                const cartItemEl = createCartItemElement(item);
+                cartItemsAlterations.appendChild(cartItemEl);
+            });
+        } else {
+            cartAlterationsSection.style.display = 'none';
+            cartItemsAlterations.innerHTML = '';
+        }
+    }
+}
+
+/**
+ * Get ingredient name by ID
+ * @param {string} ingredientId - ID of ingredient
+ * @returns {string} Name of ingredient
+ */
+function getIngredientName(ingredientId) {
+    const ingredient = AVAILABLE_INGREDIENTS.find(ing => ing.id === ingredientId);
+    return ingredient ? ingredient.name : ingredientId;
+}
+
+/**
+ * Format customizations text for display
+ * @param {Object} customizations - Customizations object
+ * @returns {string} Formatted text
+ */
+function formatCustomizationsText(customizations) {
+    if (!customizations) {
+        return '';
+    }
+    
+    const parts = [];
+    
+    // Handle addedIngredients as object { ingredientId: quantity }
+    if (customizations.addedIngredients) {
+        if (Array.isArray(customizations.addedIngredients)) {
+            // Legacy format: array of IDs
+            if (customizations.addedIngredients.length > 0) {
+                const added = customizations.addedIngredients.map(id => getIngredientName(id)).join(', ');
+                parts.push(`+ ${added}`);
+            }
+        } else if (typeof customizations.addedIngredients === 'object') {
+            // New format: object with quantities
+            const addedList = [];
+            Object.entries(customizations.addedIngredients).forEach(([id, quantity]) => {
+                if (quantity > 0) {
+                    const name = getIngredientName(id);
+                    if (quantity === 1) {
+                        addedList.push(name);
+                    } else {
+                        addedList.push(`${name} (${quantity}x)`);
+                    }
+                }
+            });
+            if (addedList.length > 0) {
+                parts.push(`+ ${addedList.join(', ')}`);
+            }
+        }
+    }
+    
+    if (customizations.removedIngredients && customizations.removedIngredients.length > 0) {
+        const removed = customizations.removedIngredients.map(id => getIngredientName(id)).join(', ');
+        parts.push(`- ${removed}`);
+    }
+    
+    return parts.length > 0 ? ` (${parts.join(' | ')})` : '';
 }
 
 /**
@@ -1815,14 +2626,17 @@ function createCartItemElement(item) {
     div.className = 'cart-item';
     
     const formattedName = formatItemName(item);
+    const customizationsText = item.customizations ? formatCustomizationsText(item.customizations) : '';
     
     // Formatar preço: se quantidade > 1, mostrar cálculo; senão, apenas o preço unitário
+    // Include extras in price calculation
+    const itemTotalPrice = calculateItemTotalPrice(item);
     let priceDisplay;
     if (item.quantity > 1) {
-        const total = item.price * item.quantity;
-        priceDisplay = `R$ ${item.price.toFixed(2)} x ${item.quantity} = R$ ${total.toFixed(2)}`;
+        const total = itemTotalPrice * item.quantity;
+        priceDisplay = `R$ ${itemTotalPrice.toFixed(2)} x ${item.quantity} = R$ ${total.toFixed(2)}`;
     } else {
-        priceDisplay = `R$ ${item.price.toFixed(2)}`;
+        priceDisplay = `R$ ${itemTotalPrice.toFixed(2)}`;
     }
     
     const img = document.createElement('img');
@@ -1842,7 +2656,7 @@ function createCartItemElement(item) {
     
     const nameDiv = document.createElement('div');
     nameDiv.className = 'cart-item-name';
-    nameDiv.textContent = formattedName;
+    nameDiv.textContent = formattedName + customizationsText;
     
     const priceDiv = document.createElement('div');
     priceDiv.className = 'cart-item-price';
@@ -1991,7 +2805,8 @@ function handleCheckout() {
         items: cart.map(item => ({
             name: item.name,
             quantity: item.quantity,
-            price: item.price
+            price: item.price,
+            customizations: item.customizations || null
         })),
         total: total,
         deliveryFee: deliveryFee,
@@ -2441,4 +3256,5 @@ function renderHoursModal() {
         hoursContent.appendChild(dayItem);
     });
 }
+
 

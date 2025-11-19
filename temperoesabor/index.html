@@ -91,8 +91,17 @@
         
         <!-- Step 1: Cart Items -->
         <div class="cart-step cart-step-1" id="cart-step-1">
-            <div class="cart-items" id="cart-items">
-                <!-- Cart items will be dynamically generated -->
+            <div class="cart-items-section">
+                <h4 class="cart-section-title">Itens</h4>
+                <div class="cart-items" id="cart-items">
+                    <!-- Cart items will be dynamically generated -->
+                </div>
+            </div>
+            <div class="cart-items-section cart-alterations-section" id="cart-alterations-section" style="display: none;">
+                <h4 class="cart-section-title">Com Alterações</h4>
+                <div class="cart-items" id="cart-items-alterations">
+                    <!-- Items with customizations will be rendered here -->
+                </div>
             </div>
             <div class="cart-step-footer">
                 <div class="cart-total">
@@ -336,6 +345,41 @@
         </div>
         <div class="alert-modal-footer">
             <button class="alert-modal-ok" id="alert-modal-ok">OK</button>
+        </div>
+    </div>
+
+    <!-- Quantity Modal -->
+    <div class="quantity-modal-overlay" id="quantity-modal-overlay"></div>
+    <div class="quantity-modal" id="quantity-modal">
+        <div class="quantity-modal-header">
+            <h3 id="quantity-modal-title">Adicionar ao Carrinho</h3>
+            <button class="quantity-modal-close" id="quantity-modal-close">&times;</button>
+        </div>
+        <div class="quantity-modal-content">
+            <div class="quantity-modal-item-image">
+                <img id="quantity-modal-image" src="" alt="">
+            </div>
+            <div class="quantity-modal-item-info">
+                <h4 id="quantity-modal-name"></h4>
+                <p id="quantity-modal-description" class="quantity-modal-description"></p>
+                <div class="quantity-modal-price">
+                    <span>R$ <span id="quantity-modal-price-value">0.00</span></span>
+                </div>
+            </div>
+            <div class="quantity-modal-ingredients" id="quantity-modal-ingredients">
+                <h5 class="ingredients-title">Personalizar Ingredientes</h5>
+                <div class="ingredients-section" id="ingredients-default-section">
+                    <h6 class="ingredients-section-title">Ingredientes Padrão</h6>
+                    <div class="ingredients-list" id="ingredients-default-list"></div>
+                </div>
+                <div class="ingredients-section" id="ingredients-extra-section">
+                    <h6 class="ingredients-section-title">Ingredientes Extras</h6>
+                    <div class="ingredients-list" id="ingredients-extra-list"></div>
+                </div>
+            </div>
+        </div>
+        <div class="quantity-modal-footer">
+            <button type="button" class="quantity-btn-confirm" id="quantity-btn-confirm">Confirmar</button>
         </div>
     </div>
 
