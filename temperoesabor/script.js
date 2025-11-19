@@ -317,65 +317,28 @@ let currentCategory = 'Todos';
 let searchTerm = '';
 let currentLayout = 'horizontal'; // Always horizontal
 
-// DOM Elements
-const categoryButtons = document.getElementById('category-buttons');
-const itemsGrid = document.getElementById('items-grid');
-const cartSidebar = document.getElementById('cart-sidebar');
-const cartItems = document.getElementById('cart-items');
-const cartTotal = document.getElementById('cart-total');
-const cartCount = document.getElementById('cart-count');
-const cartToggle = document.getElementById('cart-toggle');
-const mapToggle = document.getElementById('map-toggle');
-const closeCartBtn = document.getElementById('close-cart');
-const mapsModal = document.getElementById('maps-modal');
-const mapsModalOverlay = document.getElementById('maps-modal-overlay');
-const mapsModalClose = document.getElementById('maps-modal-close');
-const mapsOptionGoogle = document.getElementById('maps-option-google');
-const mapsOptionApple = document.getElementById('maps-option-apple');
-const alertModal = document.getElementById('alert-modal');
-const alertModalOverlay = document.getElementById('alert-modal-overlay');
-const alertModalClose = document.getElementById('alert-modal-close');
-const alertModalOk = document.getElementById('alert-modal-ok');
-const alertModalTitle = document.getElementById('alert-modal-title');
-const alertModalMessage = document.getElementById('alert-modal-message');
-const pickupMapModal = document.getElementById('pickup-map-modal');
-const pickupMapModalOverlay = document.getElementById('pickup-map-modal-overlay');
-const pickupMapModalClose = document.getElementById('pickup-map-modal-close');
-const pickupMapImage = document.getElementById('pickup-map-image');
-const pickupMapLink = document.getElementById('pickup-map-link');
-const pickupMapBtnGoogle = document.getElementById('pickup-map-btn-google');
-const pickupMapBtnApple = document.getElementById('pickup-map-btn-apple');
-// checkoutBtn removed - now using btnCheckoutSummary in step 5
-const checkoutBtn = null; // Deprecated - button moved to step 5
-// Quantity Modal elements
-const quantityModal = document.getElementById('quantity-modal');
-const quantityModalOverlay = document.getElementById('quantity-modal-overlay');
-const quantityModalClose = document.getElementById('quantity-modal-close');
-const quantityModalImage = document.getElementById('quantity-modal-image');
-const quantityModalName = document.getElementById('quantity-modal-name');
-const quantityModalDescription = document.getElementById('quantity-modal-description');
-const quantityModalPriceValue = document.getElementById('quantity-modal-price-value');
-// Quantity controls removed - always add quantity 1
-const quantityBtnConfirm = document.getElementById('quantity-btn-confirm');
-if (!quantityBtnConfirm) {
-    console.warn('quantity-btn-confirm button not found!');
-}
-const customerNameInput = document.getElementById('customer-name');
-const customerNotesInput = document.getElementById('customer-notes');
-const searchInput = document.getElementById('search-input');
-const searchClearBtn = document.getElementById('search-clear');
-const paymentMethodInputs = document.querySelectorAll('input[name="payment-method"]');
-const changeField = document.getElementById('change-field');
-const changeAmountInput = document.getElementById('change-amount');
-const changeResult = document.getElementById('change-result');
-const changeValue = document.getElementById('change-value');
-const openingHoursInfo = document.getElementById('opening-hours-info');
-const hoursOverlay = document.getElementById('hours-overlay');
-const hoursSidebar = document.getElementById('hours-sidebar');
-const hoursContent = document.getElementById('hours-content');
-const closeHoursBtn = document.getElementById('close-hours');
-const cartOverlay = document.getElementById('cart-overlay');
-const cartBackBtn = document.getElementById('cart-back-btn');
+// DOM Elements - Will be initialized in DOMContentLoaded
+let categoryButtons, itemsGrid, cartSidebar, cartItems, cartTotal, cartCount, cartToggle;
+let mapToggle, closeCartBtn, mapsModal, mapsModalOverlay, mapsModalClose;
+let mapsOptionGoogle, mapsOptionApple, alertModal, alertModalOverlay, alertModalClose;
+let alertModalOk, alertModalTitle, alertModalMessage, pickupMapModal, pickupMapModalOverlay;
+let pickupMapModalClose, pickupMapImage, pickupMapLink, pickupMapBtnGoogle, pickupMapBtnApple;
+let quantityModal, quantityModalOverlay, quantityModalClose, quantityModalImage;
+let quantityModalName, quantityModalDescription, quantityModalPriceValue, quantityBtnConfirm;
+let customerNameInput, customerNotesInput, searchInput, searchClearBtn, paymentMethodInputs;
+let changeField, changeAmountInput, changeResult, changeValue, openingHoursInfo;
+let hoursOverlay, hoursSidebar, hoursContent, closeHoursBtn, cartOverlay, cartBackBtn;
+let cartHeaderTitle, cartStep1, cartStep2, cartStep3, cartStep4, cartStep5;
+let btnContinueStep1, btnContinueStep2, btnContinueStep3, btnContinueStep4, btnCheckoutSummary;
+let deliveryMethodInputs, deliveryAddressField, deliveryAddressInput, deliveryComplementInput;
+let deliveryFeeDisplay, customerPhoneInput, cartTotalStep4;
+let summaryItems, summarySubtotal, summaryDeliveryFee, summaryDeliveryFeeValue, summaryTotal;
+let summaryCustomerName, summaryCustomerPhone, summaryCustomerNotes, summaryNotesItem;
+let summaryDeliveryMethod, summaryDeliveryAddress, summaryDeliveryComplement;
+let summaryAddressItem, summaryComplementItem, summaryPaymentMethod, summaryChangeAmount;
+let summaryChangeValue, summaryChangeItem, summaryChangeValueItem;
+let layoutSelector, layoutBtnVertical, layoutBtnHorizontal;
+
 // Delivery fee constant
 const DELIVERY_FEE = 3.00;
 
@@ -387,47 +350,8 @@ let currentQuantityModalCustomizations = {
     removedIngredients: [] // Array of ingredient IDs
 };
 
-const cartHeaderTitle = document.getElementById('cart-header-title');
-const cartStep1 = document.getElementById('cart-step-1');
-const cartStep2 = document.getElementById('cart-step-2');
-const cartStep3 = document.getElementById('cart-step-3');
-const cartStep4 = document.getElementById('cart-step-4');
-const cartStep5 = document.getElementById('cart-step-5');
-const btnContinueStep1 = document.getElementById('btn-continue-step1');
-const btnContinueStep2 = document.getElementById('btn-continue-step2');
-const btnContinueStep3 = document.getElementById('btn-continue-step3');
-const btnContinueStep4 = document.getElementById('btn-continue-step4');
-const btnCheckoutSummary = document.getElementById('btn-checkout-summary');
-const deliveryMethodInputs = document.querySelectorAll('input[name="delivery-method"]');
-const deliveryAddressField = document.getElementById('delivery-address-field');
-const deliveryAddressInput = document.getElementById('delivery-address');
-const deliveryComplementInput = document.getElementById('delivery-complement');
-const deliveryFeeDisplay = document.getElementById('delivery-fee-display');
-const customerPhoneInput = document.getElementById('customer-phone');
-const cartTotalStep4 = document.getElementById('cart-total-step4');
-// Summary elements
-const summaryItems = document.getElementById('summary-items');
-const summarySubtotal = document.getElementById('summary-subtotal');
-const summaryDeliveryFee = document.getElementById('summary-delivery-fee');
-const summaryDeliveryFeeValue = document.getElementById('summary-delivery-fee-value');
-const summaryTotal = document.getElementById('summary-total');
-const summaryCustomerName = document.getElementById('summary-customer-name');
-const summaryCustomerPhone = document.getElementById('summary-customer-phone');
-const summaryCustomerNotes = document.getElementById('summary-customer-notes');
-const summaryNotesItem = document.getElementById('summary-notes-item');
-const summaryDeliveryMethod = document.getElementById('summary-delivery-method');
-const summaryDeliveryAddress = document.getElementById('summary-delivery-address');
-const summaryDeliveryComplement = document.getElementById('summary-delivery-complement');
-const summaryAddressItem = document.getElementById('summary-address-item');
-const summaryComplementItem = document.getElementById('summary-complement-item');
-const summaryPaymentMethod = document.getElementById('summary-payment-method');
-const summaryChangeAmount = document.getElementById('summary-change-amount');
-const summaryChangeValue = document.getElementById('summary-change-value');
-const summaryChangeItem = document.getElementById('summary-change-item');
-const summaryChangeValueItem = document.getElementById('summary-change-value-item');
-const layoutSelector = document.getElementById('layout-selector');
-const layoutBtnVertical = document.getElementById('layout-btn-vertical');
-const layoutBtnHorizontal = document.getElementById('layout-btn-horizontal');
+// checkoutBtn removed - now using btnCheckoutSummary in step 5
+const checkoutBtn = null; // Deprecated - button moved to step 5
 
 // Cart step state
 let currentCartStep = 1;
@@ -435,6 +359,102 @@ let scrollPosition = 0;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize all DOM elements
+    categoryButtons = document.getElementById('category-buttons');
+    itemsGrid = document.getElementById('items-grid');
+    cartSidebar = document.getElementById('cart-sidebar');
+    cartItems = document.getElementById('cart-items');
+    cartTotal = document.getElementById('cart-total');
+    cartCount = document.getElementById('cart-count');
+    cartToggle = document.getElementById('cart-toggle');
+    mapToggle = document.getElementById('map-toggle');
+    closeCartBtn = document.getElementById('close-cart');
+    mapsModal = document.getElementById('maps-modal');
+    mapsModalOverlay = document.getElementById('maps-modal-overlay');
+    mapsModalClose = document.getElementById('maps-modal-close');
+    mapsOptionGoogle = document.getElementById('maps-option-google');
+    mapsOptionApple = document.getElementById('maps-option-apple');
+    alertModal = document.getElementById('alert-modal');
+    alertModalOverlay = document.getElementById('alert-modal-overlay');
+    alertModalClose = document.getElementById('alert-modal-close');
+    alertModalOk = document.getElementById('alert-modal-ok');
+    alertModalTitle = document.getElementById('alert-modal-title');
+    alertModalMessage = document.getElementById('alert-modal-message');
+    pickupMapModal = document.getElementById('pickup-map-modal');
+    pickupMapModalOverlay = document.getElementById('pickup-map-modal-overlay');
+    pickupMapModalClose = document.getElementById('pickup-map-modal-close');
+    pickupMapImage = document.getElementById('pickup-map-image');
+    pickupMapLink = document.getElementById('pickup-map-link');
+    pickupMapBtnGoogle = document.getElementById('pickup-map-btn-google');
+    pickupMapBtnApple = document.getElementById('pickup-map-btn-apple');
+    quantityModal = document.getElementById('quantity-modal');
+    quantityModalOverlay = document.getElementById('quantity-modal-overlay');
+    quantityModalClose = document.getElementById('quantity-modal-close');
+    quantityModalImage = document.getElementById('quantity-modal-image');
+    quantityModalName = document.getElementById('quantity-modal-name');
+    quantityModalDescription = document.getElementById('quantity-modal-description');
+    quantityModalPriceValue = document.getElementById('quantity-modal-price-value');
+    quantityBtnConfirm = document.getElementById('quantity-btn-confirm');
+    if (!quantityBtnConfirm) {
+        console.warn('quantity-btn-confirm button not found!');
+    }
+    customerNameInput = document.getElementById('customer-name');
+    customerNotesInput = document.getElementById('customer-notes');
+    searchInput = document.getElementById('search-input');
+    searchClearBtn = document.getElementById('search-clear');
+    paymentMethodInputs = document.querySelectorAll('input[name="payment-method"]');
+    changeField = document.getElementById('change-field');
+    changeAmountInput = document.getElementById('change-amount');
+    changeResult = document.getElementById('change-result');
+    changeValue = document.getElementById('change-value');
+    openingHoursInfo = document.getElementById('opening-hours-info');
+    hoursOverlay = document.getElementById('hours-overlay');
+    hoursSidebar = document.getElementById('hours-sidebar');
+    hoursContent = document.getElementById('hours-content');
+    closeHoursBtn = document.getElementById('close-hours');
+    cartOverlay = document.getElementById('cart-overlay');
+    cartBackBtn = document.getElementById('cart-back-btn');
+    cartHeaderTitle = document.getElementById('cart-header-title');
+    cartStep1 = document.getElementById('cart-step-1');
+    cartStep2 = document.getElementById('cart-step-2');
+    cartStep3 = document.getElementById('cart-step-3');
+    cartStep4 = document.getElementById('cart-step-4');
+    cartStep5 = document.getElementById('cart-step-5');
+    btnContinueStep1 = document.getElementById('btn-continue-step1');
+    btnContinueStep2 = document.getElementById('btn-continue-step2');
+    btnContinueStep3 = document.getElementById('btn-continue-step3');
+    btnContinueStep4 = document.getElementById('btn-continue-step4');
+    btnCheckoutSummary = document.getElementById('btn-checkout-summary');
+    deliveryMethodInputs = document.querySelectorAll('input[name="delivery-method"]');
+    deliveryAddressField = document.getElementById('delivery-address-field');
+    deliveryAddressInput = document.getElementById('delivery-address');
+    deliveryComplementInput = document.getElementById('delivery-complement');
+    deliveryFeeDisplay = document.getElementById('delivery-fee-display');
+    customerPhoneInput = document.getElementById('customer-phone');
+    cartTotalStep4 = document.getElementById('cart-total-step4');
+    summaryItems = document.getElementById('summary-items');
+    summarySubtotal = document.getElementById('summary-subtotal');
+    summaryDeliveryFee = document.getElementById('summary-delivery-fee');
+    summaryDeliveryFeeValue = document.getElementById('summary-delivery-fee-value');
+    summaryTotal = document.getElementById('summary-total');
+    summaryCustomerName = document.getElementById('summary-customer-name');
+    summaryCustomerPhone = document.getElementById('summary-customer-phone');
+    summaryCustomerNotes = document.getElementById('summary-customer-notes');
+    summaryNotesItem = document.getElementById('summary-notes-item');
+    summaryDeliveryMethod = document.getElementById('summary-delivery-method');
+    summaryDeliveryAddress = document.getElementById('summary-delivery-address');
+    summaryDeliveryComplement = document.getElementById('summary-delivery-complement');
+    summaryAddressItem = document.getElementById('summary-address-item');
+    summaryComplementItem = document.getElementById('summary-complement-item');
+    summaryPaymentMethod = document.getElementById('summary-payment-method');
+    summaryChangeAmount = document.getElementById('summary-change-amount');
+    summaryChangeValue = document.getElementById('summary-change-value');
+    summaryChangeItem = document.getElementById('summary-change-item');
+    summaryChangeValueItem = document.getElementById('summary-change-value-item');
+    layoutSelector = document.getElementById('layout-selector');
+    layoutBtnVertical = document.getElementById('layout-btn-vertical');
+    layoutBtnHorizontal = document.getElementById('layout-btn-horizontal');
+    
     const restaurantNameEl = document.querySelector('.restaurant-name');
     if (restaurantNameEl) {
         restaurantNameEl.textContent = CONFIG.restaurantName;
@@ -444,11 +464,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const customerData = loadCustomerData();
     const paymentMethod = loadPaymentMethod();
     const changeAmount = loadChangeAmount();
-    
-    const customerNameInput = document.getElementById('customer-name');
-    const customerNotesInput = document.getElementById('customer-notes');
-    const changeField = document.getElementById('change-field');
-    const changeAmountInput = document.getElementById('change-amount');
     
     if (customerNameInput) {
         customerNameInput.value = customerData.name || '';
