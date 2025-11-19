@@ -8,6 +8,3 @@ Thumbs.db
 # Node modules (se adicionar dependências no futuro)
 node_modules/
 
-# Vercel
-.vercel
-
