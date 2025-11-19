@@ -30,8 +30,8 @@ const CONFIG = {
 
 // Test Mode - Para testar horários diferentes
 const TEST_MODE = {
-    enabled: false, // Modo teste desativado
-    simulatedTime: null // Sem horário simulado
+    enabled: true, // Modo teste ativado
+    simulatedTime: '20:00' // Horário simulado para teste (formato HH:MM)
 };
 
 // Menu data
@@ -1760,11 +1760,14 @@ function getBrasiliaTime() {
 function getCurrentTimeString() {
     // Verificar modo teste primeiro
     if (typeof TEST_MODE !== 'undefined' && TEST_MODE.enabled && TEST_MODE.simulatedTime) {
+        console.log('[TEST MODE] Usando horário simulado:', TEST_MODE.simulatedTime);
         return TEST_MODE.simulatedTime;
     }
     // Se não estiver em modo teste, usar horário real
     const brasiliaTime = getBrasiliaTime();
-    return `${brasiliaTime.getHours().toString().padStart(2, '0')}:${brasiliaTime.getMinutes().toString().padStart(2, '0')}`;
+    const realTime = `${brasiliaTime.getHours().toString().padStart(2, '0')}:${brasiliaTime.getMinutes().toString().padStart(2, '0')}`;
+    console.log('[REAL TIME] Horário real de Brasília:', realTime);
+    return realTime;
 }
 
 /**
@@ -1791,7 +1794,10 @@ function getCurrentDayStatus() {
     const currentDay = getCurrentDayInPortuguese();
     const dayHours = CONFIG.openingHours[currentDay.key];
     
+    console.log('[DEBUG] Dia atual:', currentDay.key, 'Horários:', dayHours);
+    
     if (!dayHours || !dayHours.open || !dayHours.close) {
+        console.log('[DEBUG] Dia fechado - sem horários');
         return {
             isOpen: false,
             status: 'Fechado',
@@ -1803,6 +1809,8 @@ function getCurrentDayStatus() {
     
     // Verificar horário atual (Brasília) ou simulado (modo teste)
     const currentTime = getCurrentTimeString();
+    console.log('[DEBUG] Horário atual usado:', currentTime);
+    console.log('[DEBUG] Horário de abertura:', dayHours.open, 'Fechamento:', dayHours.close);
     
     const [openHour, openMin] = dayHours.open.split(':').map(Number);
     const [closeHour, closeMin] = dayHours.close.split(':').map(Number);
@@ -1812,9 +1820,19 @@ function getCurrentDayStatus() {
     const closeMinutes = closeHour * 60 + closeMin;
     const currentMinutes = currentHour * 60 + currentMin;
     
+    console.log('[DEBUG] Comparação:', {
+        currentMinutes,
+        openMinutes,
+        closeMinutes,
+        isBeforeOpen: currentMinutes < openMinutes,
+        isDuringHours: currentMinutes >= openMinutes && currentMinutes < closeMinutes,
+        isAfterClose: currentMinutes >= closeMinutes
+    });
+    
     // Verificar status baseado no horário atual
     if (currentMinutes < openMinutes) {
         // Ainda não iniciou
+        console.log('[DEBUG] Status: Não iniciou ainda');
         return {
             isOpen: false,
             status: 'Não iniciado',
@@ -1824,6 +1842,7 @@ function getCurrentDayStatus() {
         };
     } else if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
         // Dentro do horário
+        console.log('[DEBUG] Status: ABERTO');
         return {
             isOpen: true,
             status: 'Aberto',
@@ -1833,6 +1852,7 @@ function getCurrentDayStatus() {
         };
     } else {
         // Já finalizou
+        console.log('[DEBUG] Status: Já finalizou');
         return {
             isOpen: false,
             status: 'Finalizado',
