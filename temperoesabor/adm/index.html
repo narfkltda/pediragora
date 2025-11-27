@@ -260,6 +260,22 @@
     <script type="module" src="../services/products-service.js"></script>
     <script type="module" src="../services/ingredients-service.js"></script>
     <script type="module" src="../services/config-service.js"></script>
+    <!-- Modal de Feedback -->
+    <div id="feedback-modal" class="modal-overlay">
+        <div class="modal-content feedback-modal-content">
+            <div class="modal-header">
+                <h3 id="feedback-modal-title">Resultado da Criação</h3>
+                <button class="modal-close" id="feedback-modal-close">&times;</button>
+            </div>
+            <div class="feedback-modal-body" id="feedback-modal-body">
+                <!-- Conteúdo será inserido dinamicamente -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-primary" id="feedback-modal-ok">OK</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="admin.js"></script>
 </body>
 </html>

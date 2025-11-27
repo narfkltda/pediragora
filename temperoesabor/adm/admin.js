@@ -39,6 +39,11 @@ const productIngredientsList = document.getElementById('product-ingredients-list
 const productDefaultIngredientsList = document.getElementById('product-default-ingredients-list');
 const productDescriptionInput = document.getElementById('product-description');
 const selectAllAvailableBtn = document.getElementById('select-all-available-btn');
+const feedbackModal = document.getElementById('feedback-modal');
+const feedbackModalClose = document.getElementById('feedback-modal-close');
+const feedbackModalOk = document.getElementById('feedback-modal-ok');
+const feedbackModalBody = document.getElementById('feedback-modal-body');
+const feedbackModalTitle = document.getElementById('feedback-modal-title');
 
 // Elementos DOM - Ingredientes
 const ingredientsGrid = document.getElementById('ingredients-grid');
@@ -446,6 +451,30 @@ if (ingredientForm) {
     });
 }
 
+// Função para normalizar nome de ingrediente (trim + lowercase)
+function normalizeIngredientName(name) {
+    return name.trim().toLowerCase();
+}
+
+// Função para remover duplicatas da lista de ingredientes (case-insensitive)
+function removeDuplicateIngredients(ingredientsList) {
+    const seen = new Set();
+    const unique = [];
+    const duplicates = [];
+    
+    for (const ingredient of ingredientsList) {
+        const normalized = normalizeIngredientName(ingredient);
+        if (!seen.has(normalized)) {
+            seen.add(normalized);
+            unique.push(ingredient);
+        } else {
+            duplicates.push(ingredient);
+        }
+    }
+    
+    return { unique, duplicates };
+}
+
 // Salvar ingredientes em lote
 if (ingredientBatchForm) {
     ingredientBatchForm.addEventListener('submit', async (e) => {
@@ -469,12 +498,52 @@ if (ingredientBatchForm) {
             return;
         }
         
+        // Remover duplicatas da lista fornecida
+        const { unique: uniqueIngredients, duplicates: duplicateNames } = removeDuplicateIngredients(ingredientsList);
+        
+        if (uniqueIngredients.length === 0) {
+            showToast('Todos os ingredientes são duplicados. Nenhum ingrediente será criado.', 'error');
+            return;
+        }
+        
         try {
-            let successCount = 0;
-            let errorCount = 0;
+            // Buscar ingredientes existentes no Firebase
+            const existingIngredients = await getIngredients();
+            const existingNames = new Set(
+                existingIngredients.map(ing => normalizeIngredientName(ing.name))
+            );
             
-            // Criar cada ingrediente
-            for (const ingredientName of ingredientsList) {
+            // Filtrar ingredientes que já existem
+            const ingredientsToCreate = [];
+            const alreadyExisting = [];
+            
+            for (const ingredientName of uniqueIngredients) {
+                const normalized = normalizeIngredientName(ingredientName);
+                if (existingNames.has(normalized)) {
+                    alreadyExisting.push(ingredientName);
+                } else {
+                    ingredientsToCreate.push(ingredientName);
+                }
+            }
+            
+            if (ingredientsToCreate.length === 0) {
+                // Exibir modal mesmo quando não há nada para criar
+                showFeedbackModal({
+                    title: 'Resultado da Criação de Ingredientes',
+                    created: [],
+                    duplicates: duplicateNames,
+                    existing: alreadyExisting,
+                    errors: []
+                });
+                showToast('Nenhum ingrediente novo para criar.', 'warning');
+                return;
+            }
+            
+            // Criar ingredientes
+            const created = [];
+            const errors = [];
+            
+            for (const ingredientName of ingredientsToCreate) {
                 try {
                     const ingredientData = {
                         name: ingredientName,
@@ -483,17 +552,26 @@ if (ingredientBatchForm) {
                     };
                     
                     await addIngredient(ingredientData);
-                    successCount++;
+                    created.push(ingredientName);
                 } catch (error) {
                     console.error(`Erro ao criar ingrediente "${ingredientName}":`, error);
-                    errorCount++;
+                    errors.push(`${ingredientName}: ${error.message}`);
                 }
             }
             
-            // Feedback
-            if (successCount > 0) {
-                showToast(`${successCount} ingrediente(s) criado(s) com sucesso!${errorCount > 0 ? ` (${errorCount} erro(s))` : ''}`, 'success');
-            } else {
+            // Exibir modal de feedback
+            showFeedbackModal({
+                title: 'Resultado da Criação de Ingredientes',
+                created: created,
+                duplicates: duplicateNames,
+                existing: alreadyExisting,
+                errors: errors
+            });
+            
+            // Toast rápido para feedback imediato
+            if (created.length > 0) {
+                showToast(`${created.length} ingrediente(s) criado(s) com sucesso!`, 'success');
+            } else if (errors.length > 0) {
                 showToast('Erro ao criar ingredientes.', 'error');
             }
             
@@ -509,7 +587,7 @@ if (ingredientBatchForm) {
             }
             
             // Fechar modal se todos foram criados com sucesso
-            if (errorCount === 0) {
+            if (errorCount === 0 && alreadyExisting.length === 0) {
                 ingredientModal.classList.remove('active');
             }
         } catch (error) {
@@ -930,6 +1008,27 @@ function setupEventListeners() {
             toggleSelectAllAvailable();
         });
     }
+    
+    // Fechar modal de feedback
+    if (feedbackModalClose) {
+        feedbackModalClose.addEventListener('click', () => {
+            feedbackModal.classList.remove('active');
+        });
+    }
+    
+    if (feedbackModalOk) {
+        feedbackModalOk.addEventListener('click', () => {
+            feedbackModal.classList.remove('active');
+        });
+    }
+    
+    if (feedbackModal) {
+        feedbackModal.addEventListener('click', (e) => {
+            if (e.target === feedbackModal) {
+                feedbackModal.classList.remove('active');
+            }
+        });
+    }
 }
 
 // Navegação entre seções
@@ -965,5 +1064,76 @@ function showToast(message, type = 'info') {
     setTimeout(() => {
         toast.classList.remove('show');
     }, 3000);
+}
+
+// Exibir modal de feedback
+function showFeedbackModal(data) {
+    if (!feedbackModal || !feedbackModalBody) return;
+    
+    const {
+        title = 'Resultado da Criação',
+        created = [],
+        duplicates = [],
+        existing = [],
+        errors = []
+    } = data;
+    
+    feedbackModalTitle.textContent = title;
+    feedbackModalBody.innerHTML = '';
+    
+    // Seção: Ingredientes criados
+    if (created.length > 0) {
+        const section = createFeedbackSection('success', '✓ Ingredientes Criados', created);
+        feedbackModalBody.appendChild(section);
+    }
+    
+    // Seção: Duplicatas removidas
+    if (duplicates.length > 0) {
+        const section = createFeedbackSection('warning', '⚠ Duplicatas Removidas', duplicates);
+        feedbackModalBody.appendChild(section);
+    }
+    
+    // Seção: Já existentes
+    if (existing.length > 0) {
+        const section = createFeedbackSection('info', 'ℹ Já Existentes', existing);
+        feedbackModalBody.appendChild(section);
+    }
+    
+    // Seção: Erros
+    if (errors.length > 0) {
+        const section = createFeedbackSection('error', '✗ Erros', errors);
+        feedbackModalBody.appendChild(section);
+    }
+    
+    // Se não houver nenhuma informação, mostrar mensagem
+    if (created.length === 0 && duplicates.length === 0 && existing.length === 0 && errors.length === 0) {
+        feedbackModalBody.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Nenhuma informação disponível.</p>';
+    }
+    
+    feedbackModal.classList.add('active');
+}
+
+// Criar seção de feedback
+function createFeedbackSection(type, title, items) {
+    const section = document.createElement('div');
+    section.className = `feedback-section ${type}`;
+    
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'feedback-section-title';
+    titleDiv.textContent = `${title} (${items.length})`;
+    
+    const list = document.createElement('ul');
+    list.className = 'feedback-list';
+    
+    items.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = escapeHtml(item);
+        list.appendChild(li);
+    });
+    
+    section.appendChild(titleDiv);
+    section.appendChild(list);
+    
+    return section;
 }
 
