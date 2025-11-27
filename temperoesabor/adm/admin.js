@@ -46,6 +46,14 @@ const feedbackModalOk = document.getElementById('feedback-modal-ok');
 const feedbackModalBody = document.getElementById('feedback-modal-body');
 const feedbackModalTitle = document.getElementById('feedback-modal-title');
 
+// Elementos DOM - Modal de Confirmação
+const confirmModal = document.getElementById('confirm-modal');
+const confirmModalClose = document.getElementById('confirm-modal-close');
+const confirmModalCancel = document.getElementById('confirm-modal-cancel');
+const confirmModalConfirm = document.getElementById('confirm-modal-confirm');
+const confirmModalMessage = document.getElementById('confirm-modal-message');
+const confirmModalTitle = document.getElementById('confirm-modal-title');
+
 // Elementos DOM - Upload de Imagem (serão inicializados após DOM carregar)
 let productImageInput;
 let productImageUrl;
@@ -83,6 +91,8 @@ let ingredients = [];
 let editingProductId = null;
 let editingIngredientId = null;
 let currentImageFile = null;
+let defaultIngredientsOrder = [];
+let confirmCallback = null;
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
@@ -152,29 +162,90 @@ function renderProducts() {
     
     products.forEach(product => {
         const card = document.createElement('div');
-        card.className = 'product-card';
-        card.innerHTML = `
-            <div class="product-image">
-                <img src="${product.image || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3ESem Imagem%3C/text%3E%3C/svg%3E'}" 
-                     alt="${product.name}" 
-                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3C/svg%3E'">
-            </div>
-            <div class="product-info">
-                <h3>${escapeHtml(product.name)}</h3>
-                <p class="product-description">${escapeHtml(product.description || '')}</p>
-                <div class="product-meta">
-                    <span class="product-price">R$ ${product.price.toFixed(2)}</span>
-                    <span class="product-category">${escapeHtml(product.category)}</span>
-                    <span class="product-status ${product.available ? 'available' : 'unavailable'}">
-                        ${product.available ? '✓ Disponível' : '✗ Indisponível'}
-                    </span>
-                </div>
-            </div>
-            <div class="product-actions">
-                <button class="btn-edit" onclick="editProduct('${product.id}')">✏️ Editar</button>
-                <button class="btn-delete" onclick="deleteProductConfirm('${product.id}')">🗑️ Excluir</button>
-            </div>
-        `;
+        card.className = 'item-card horizontal';
+        
+        // Top section: content + image
+        const topSection = document.createElement('div');
+        topSection.className = 'item-top-section';
+        
+        // Content container
+        const contentContainer = document.createElement('div');
+        contentContainer.className = 'item-content';
+        
+        const title = document.createElement('h3');
+        title.className = 'item-title';
+        title.textContent = escapeHtml(product.name);
+        
+        const description = document.createElement('p');
+        description.className = 'item-description';
+        description.textContent = escapeHtml(product.description || '');
+        
+        // Meta info: category and status
+        const metaInfo = document.createElement('div');
+        metaInfo.className = 'product-meta-info';
+        
+        const category = document.createElement('span');
+        category.className = 'product-category-badge';
+        category.textContent = escapeHtml(product.category);
+        
+        const status = document.createElement('span');
+        status.className = `product-status-badge ${product.available ? 'available' : 'unavailable'}`;
+        status.textContent = product.available ? '✓ Disponível' : '✗ Indisponível';
+        
+        metaInfo.appendChild(category);
+        metaInfo.appendChild(status);
+        
+        contentContainer.appendChild(title);
+        contentContainer.appendChild(description);
+        contentContainer.appendChild(metaInfo);
+        
+        // Image container
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'item-image-container';
+        
+        const img = document.createElement('img');
+        img.className = 'item-image';
+        img.src = product.image || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3ESem Imagem%3C/text%3E%3C/svg%3E';
+        img.alt = escapeHtml(product.name);
+        img.onerror = function() {
+            this.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3C/svg%3E';
+        };
+        
+        imageContainer.appendChild(img);
+        
+        topSection.appendChild(contentContainer);
+        topSection.appendChild(imageContainer);
+        
+        // Price and actions container
+        const priceActionsContainer = document.createElement('div');
+        priceActionsContainer.className = 'item-price-actions';
+        
+        const price = document.createElement('div');
+        price.className = 'item-price';
+        price.textContent = `R$ ${product.price.toFixed(2)}`;
+        
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.className = 'item-buttons';
+        
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-edit';
+        editBtn.textContent = '✏️ Editar';
+        editBtn.onclick = () => editProduct(product.id);
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-delete';
+        deleteBtn.textContent = '🗑️ Excluir';
+        deleteBtn.onclick = () => deleteProductConfirm(product.id);
+        
+        buttonsContainer.appendChild(editBtn);
+        buttonsContainer.appendChild(deleteBtn);
+        
+        priceActionsContainer.appendChild(price);
+        priceActionsContainer.appendChild(buttonsContainer);
+        
+        card.appendChild(topSection);
+        card.appendChild(priceActionsContainer);
+        
         productsGrid.appendChild(card);
     });
 }
@@ -385,23 +456,35 @@ window.editProduct = async (id) => {
     productModal.classList.add('active');
 };
 
+// Função para exibir modal de confirmação
+function showConfirmModal(title, message, onConfirm) {
+    if (confirmModalTitle) confirmModalTitle.textContent = title;
+    if (confirmModalMessage) confirmModalMessage.textContent = message;
+    if (confirmModal) confirmModal.classList.add('active');
+    
+    // Armazenar callback
+    confirmCallback = onConfirm;
+}
+
 // Deletar produto
 window.deleteProductConfirm = async (id) => {
     const product = products.find(p => p.id === id);
     if (!product) return;
     
-    if (!confirm(`Tem certeza que deseja excluir o produto "${product.name}"?`)) {
-        return;
-    }
-    
-    try {
-        await deleteProduct(id);
-        showToast('Produto excluído com sucesso!', 'success');
-        await loadProducts();
-    } catch (error) {
-        console.error('Erro ao excluir produto:', error);
-        showToast('Erro ao excluir produto: ' + error.message, 'error');
-    }
+    showConfirmModal(
+        'Confirmar Exclusão',
+        `Tem certeza que deseja excluir o produto "${product.name}"?`,
+        async () => {
+            try {
+                await deleteProduct(id);
+                showToast('Produto excluído com sucesso!', 'success');
+                await loadProducts();
+            } catch (error) {
+                console.error('Erro ao excluir produto:', error);
+                showToast('Erro ao excluir produto: ' + error.message, 'error');
+            }
+        }
+    );
 };
 
 // Carregar configurações
@@ -978,7 +1061,7 @@ window.deleteIngredientConfirm = async (id) => {
 };
 
 // Variável para rastrear a ordem de seleção dos ingredientes padrão
-let defaultIngredientsOrder = [];
+// defaultIngredientsOrder já declarado acima no estado
 
 // Carregar ingredientes padrão no formulário de produto
 async function loadProductDefaultIngredients(selectedIds = []) {
@@ -1368,6 +1451,30 @@ function setupEventListeners() {
     if (feedbackModalOk) {
         feedbackModalOk.addEventListener('click', () => {
             feedbackModal.classList.remove('active');
+        });
+    }
+    
+    // Fechar modal de confirmação
+    if (confirmModalClose) {
+        confirmModalClose.addEventListener('click', () => {
+            confirmModal.classList.remove('active');
+        });
+    }
+    
+    if (confirmModalCancel) {
+        confirmModalCancel.addEventListener('click', () => {
+            confirmModal.classList.remove('active');
+            confirmCallback = null;
+        });
+    }
+    
+    if (confirmModalConfirm) {
+        confirmModalConfirm.addEventListener('click', () => {
+            confirmModal.classList.remove('active');
+            if (confirmCallback) {
+                confirmCallback();
+                confirmCallback = null;
+            }
         });
     }
     
