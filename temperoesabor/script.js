@@ -8,7 +8,12 @@
  * - Cart system integration
  * - Customer data persistence
  * - WhatsApp checkout
+ * - Firebase integration for dynamic menu loading
  */
+
+// Import Firebase services
+import { getAvailableProducts } from './services/products-service.js';
+import { getRestaurantConfig } from './services/config-service.js';
 
 // Configuration
 const CONFIG = {
@@ -34,8 +39,8 @@ const TEST_MODE = {
     simulatedTime: '20:00' // Horário simulado para teste (formato HH:MM)
 };
 
-// Menu data
-const MENU_DATA = {
+// Menu data - será carregado do Firebase ou usado como fallback
+let MENU_DATA = {
     categories: ['Todos', 'Burguers', 'Hot-Dogs', 'Porções', 'Bebidas'],
     items: [
         {
@@ -248,6 +253,80 @@ const MENU_DATA = {
         }
     ]
 };
+
+// Flag para indicar se os dados foram carregados do Firebase
+let menuLoadedFromFirebase = false;
+
+/**
+ * Carregar menu do Firebase
+ * Atualiza MENU_DATA com produtos do Firestore
+ */
+async function loadMenuFromFirebase() {
+    try {
+        console.log('Carregando produtos do Firebase...');
+        const products = await getAvailableProducts();
+        
+        if (products && products.length > 0) {
+            // Converter produtos do Firebase para o formato esperado
+            MENU_DATA.items = products.map(product => ({
+                id: product.id,
+                name: product.name,
+                description: product.description || '',
+                price: product.price,
+                category: product.category,
+                image: product.image || ''
+            }));
+            
+            // Extrair categorias únicas dos produtos
+            const uniqueCategories = ['Todos', ...new Set(products.map(p => p.category).filter(Boolean))];
+            MENU_DATA.categories = uniqueCategories;
+            
+            menuLoadedFromFirebase = true;
+            console.log(`✅ ${products.length} produtos carregados do Firebase`);
+            
+            // Renderizar após carregar
+            if (categoryButtons && itemsGrid) {
+                renderCategories();
+                renderItems();
+            }
+        } else {
+            console.warn('Nenhum produto encontrado no Firebase. Usando dados estáticos como fallback.');
+            menuLoadedFromFirebase = false;
+        }
+    } catch (error) {
+        console.error('Erro ao carregar produtos do Firebase:', error);
+        console.log('Usando dados estáticos como fallback.');
+        menuLoadedFromFirebase = false;
+    }
+}
+
+/**
+ * Carregar configurações do Firebase
+ * Atualiza CONFIG com dados do Firestore
+ */
+async function loadConfigFromFirebase() {
+    try {
+        const config = await getRestaurantConfig();
+        
+        // Atualizar CONFIG com dados do Firebase
+        if (config.restaurantName) CONFIG.restaurantName = config.restaurantName;
+        if (config.whatsappNumber) CONFIG.whatsappNumber = config.whatsappNumber;
+        if (config.restaurantLatitude) CONFIG.restaurantLatitude = config.restaurantLatitude;
+        if (config.restaurantLongitude) CONFIG.restaurantLongitude = config.restaurantLongitude;
+        if (config.openingHours) CONFIG.openingHours = config.openingHours;
+        
+        // Atualizar nome do restaurante na página se já estiver renderizado
+        const restaurantNameEl = document.querySelector('.restaurant-name');
+        if (restaurantNameEl) {
+            restaurantNameEl.textContent = CONFIG.restaurantName;
+        }
+        
+        console.log('✅ Configurações carregadas do Firebase');
+    } catch (error) {
+        console.error('Erro ao carregar configurações do Firebase:', error);
+        console.log('Usando configurações estáticas.');
+    }
+}
 
 // Available ingredients for customization
 // Make it globally accessible for whatsapp.js
@@ -491,6 +570,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // Carregar dados do Firebase (assíncrono)
+    loadMenuFromFirebase();
+    loadConfigFromFirebase();
+    
+    // Renderizar com dados estáticos inicialmente (fallback)
     renderCategories();
     renderItems();
     renderCartUI();
