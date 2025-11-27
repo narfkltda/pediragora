@@ -326,7 +326,7 @@ function validatePhone(phone) {
 }
 
 // State
-let currentCategory = 'Todos';
+let currentCategory = 'Burguers';
 let searchTerm = '';
 let currentLayout = 'horizontal'; // Always horizontal
 
@@ -616,6 +616,13 @@ async function loadProductsFromFirebase() {
     
     // Renderizar após carregar dados (garantir que seja assíncrono)
     setTimeout(() => {
+        // Garantir que Burguers seja a categoria padrão
+        if (MENU_DATA.categories.includes('Burguers')) {
+            currentCategory = 'Burguers';
+        } else if (MENU_DATA.categories.length > 1) {
+            // Se não houver Burguers, usar a primeira categoria (após 'Todos')
+            currentCategory = MENU_DATA.categories.find(cat => cat !== 'Todos') || 'Todos';
+        }
         renderCategories();
         renderItems();
         renderCartUI();
