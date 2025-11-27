@@ -9,7 +9,8 @@ import {
 import { auth } from '../firebase-config.js';
 import { 
   getProducts, 
-  addProduct 
+  addProduct,
+  updateProduct
 } from '../services/products-service.js';
 
 // Dados estáticos dos produtos (copiados de script.js)
@@ -235,6 +236,11 @@ const progressFill = document.getElementById('progress-fill');
 const progressText = document.getElementById('progress-text');
 const importResults = document.getElementById('import-results');
 const logoutBtn = document.getElementById('logout-btn');
+const fixPricesBtn = document.getElementById('fix-prices-btn');
+const fixPricesProgress = document.getElementById('fix-prices-progress');
+const fixPricesProgressFill = document.getElementById('fix-prices-progress-fill');
+const fixPricesProgressText = document.getElementById('fix-prices-progress-text');
+const fixPricesResults = document.getElementById('fix-prices-results');
 
 // Estado
 let selectedProducts = new Set();
@@ -378,6 +384,31 @@ if (selectAllCheckbox) {
     });
 }
 
+// Funções auxiliares (definidas antes de serem usadas)
+
+// Validar se preço é válido
+function isValidPrice(price) {
+    if (price === null || price === undefined) return false;
+    const numPrice = typeof price === 'number' ? price : parseFloat(price);
+    return !isNaN(numPrice) && numPrice > 0;
+}
+
+// Criar mapa de preços dos dados estáticos (por nome, case-insensitive)
+function createStaticPricesMap() {
+    const priceMap = new Map();
+    STATIC_PRODUCTS.forEach(product => {
+        const key = product.name.toLowerCase().trim();
+        priceMap.set(key, product.price);
+    });
+    return priceMap;
+}
+
+// Encontrar preço correspondente nos dados estáticos
+function findStaticPrice(productName, priceMap) {
+    const key = productName.toLowerCase().trim();
+    return priceMap.get(key);
+}
+
 // Importar produtos
 if (importBtn) {
     importBtn.addEventListener('click', async () => {
@@ -390,6 +421,13 @@ if (importBtn) {
         }
         
         await importProducts(productsToImport);
+    });
+}
+
+// Corrigir preços dos produtos importados
+if (fixPricesBtn) {
+    fixPricesBtn.addEventListener('click', async () => {
+        await fixProductPrices();
     });
 }
 
@@ -420,11 +458,20 @@ async function importProducts(products) {
                 continue;
             }
             
+            // Validar preço antes de importar
+            let productPrice = product.price;
+            if (!isValidPrice(productPrice)) {
+                console.warn(`⚠️ Preço inválido para ${product.name}: ${productPrice}, usando 0 como fallback`);
+                productPrice = 0;
+            } else {
+                productPrice = typeof productPrice === 'number' ? productPrice : parseFloat(productPrice);
+            }
+            
             // Preparar dados do produto
             const productData = {
                 name: product.name,
                 description: product.description || '',
-                price: product.price,
+                price: productPrice,
                 category: product.category,
                 image: product.image || '',
                 available: true,
@@ -490,6 +537,104 @@ function formatProductName(product) {
     }
     const number = product.id.padStart(2, '0');
     return `${number} - ${product.name}`;
+}
+
+// Corrigir preços dos produtos importados
+async function fixProductPrices() {
+    if (!confirm('Tem certeza que deseja corrigir os preços dos produtos importados? Isso atualizará os preços no Firebase baseado nos dados estáticos.')) {
+        return;
+    }
+    
+    fixPricesProgress.style.display = 'block';
+    fixPricesResults.style.display = 'none';
+    fixPricesResults.innerHTML = '';
+    
+    try {
+        // 1. Carregar produtos do Firebase
+        console.log('🔄 Carregando produtos do Firebase...');
+        const firebaseProducts = await getProducts();
+        
+        if (!firebaseProducts || firebaseProducts.length === 0) {
+            fixPricesProgressText.textContent = 'Nenhum produto encontrado no Firebase.';
+            fixPricesProgress.style.display = 'none';
+            return;
+        }
+        
+        // 2. Criar mapa de preços dos dados estáticos
+        const staticPricesMap = createStaticPricesMap();
+        
+        // 3. Filtrar produtos que precisam correção
+        const productsToFix = firebaseProducts.filter(product => {
+            return !isValidPrice(product.price);
+        });
+        
+        if (productsToFix.length === 0) {
+            fixPricesProgressText.textContent = '✅ Todos os produtos já têm preços válidos!';
+            fixPricesProgress.style.display = 'none';
+            return;
+        }
+        
+        console.log(`📦 ${productsToFix.length} produtos precisam de correção de preço`);
+        
+        // 4. Corrigir preços
+        const total = productsToFix.length;
+        let success = 0;
+        let errors = 0;
+        let notFound = 0;
+        
+        for (let i = 0; i < productsToFix.length; i++) {
+            const product = productsToFix[i];
+            const progress = ((i + 1) / total) * 100;
+            
+            fixPricesProgressFill.style.width = `${progress}%`;
+            fixPricesProgressFill.textContent = `${Math.round(progress)}%`;
+            fixPricesProgressText.textContent = `Corrigindo ${i + 1} de ${total}: ${product.name}...`;
+            
+            try {
+                // Buscar preço nos dados estáticos
+                const staticPrice = findStaticPrice(product.name, staticPricesMap);
+                
+                if (staticPrice && isValidPrice(staticPrice)) {
+                    // Atualizar produto com preço correto
+                    await updateProduct(product.id, { price: staticPrice });
+                    success++;
+                    addFixPriceResult(product.name, 'success', `Preço atualizado: R$ ${staticPrice.toFixed(2)}`);
+                } else {
+                    notFound++;
+                    addFixPriceResult(product.name, 'error', 'Preço não encontrado nos dados estáticos');
+                }
+            } catch (error) {
+                console.error(`Erro ao corrigir preço de ${product.name}:`, error);
+                errors++;
+                addFixPriceResult(product.name, 'error', `Erro: ${error.message}`);
+            }
+            
+            // Pequeno delay
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        fixPricesProgressText.textContent = `Correção concluída! ${success} atualizados, ${errors} erros, ${notFound} não encontrados.`;
+        fixPricesResults.style.display = 'block';
+        
+        // Recarregar lista de produtos
+        await loadProducts();
+        
+        // Scroll para resultados
+        fixPricesResults.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        
+    } catch (error) {
+        console.error('Erro ao corrigir preços:', error);
+        fixPricesProgressText.textContent = `Erro: ${error.message}`;
+        fixPricesResults.style.display = 'block';
+    }
+}
+
+// Adicionar resultado da correção de preços
+function addFixPriceResult(productName, type, message) {
+    const resultItem = document.createElement('div');
+    resultItem.className = `result-item ${type}`;
+    resultItem.textContent = `${productName}: ${message}`;
+    fixPricesResults.appendChild(resultItem);
 }
 
 // Função de escape HTML

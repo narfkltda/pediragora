@@ -73,9 +73,34 @@ export async function getAvailableProducts() {
     const availableProducts = allProducts
       .filter(p => p.available !== false && p.available !== undefined)
       .sort((a, b) => {
+        // Primeiro, ordenar por categoria
         if (a.category !== b.category) {
           return (a.category || '').localeCompare(b.category || '');
         }
+        
+        // Para Bebidas, ordenar apenas por nome
+        if (a.category === 'Bebidas') {
+          return (a.name || '').localeCompare(b.name || '');
+        }
+        
+        // Para outras categorias, ordenar por número se disponível
+        const aNumber = a.number !== null && a.number !== undefined ? Number(a.number) : null;
+        const bNumber = b.number !== null && b.number !== undefined ? Number(b.number) : null;
+        
+        // Se ambos têm número, ordenar por número
+        if (aNumber !== null && bNumber !== null) {
+          return aNumber - bNumber;
+        }
+        
+        // Se apenas um tem número, o que tem número vem primeiro
+        if (aNumber !== null && bNumber === null) {
+          return -1;
+        }
+        if (aNumber === null && bNumber !== null) {
+          return 1;
+        }
+        
+        // Se nenhum tem número, ordenar por nome
         return (a.name || '').localeCompare(b.name || '');
       });
     
@@ -112,10 +137,23 @@ export async function getProductById(id) {
  */
 export async function addProduct(product) {
   try {
+    // Validar e converter preço
+    let productPrice = product.price;
+    if (productPrice === null || productPrice === undefined) {
+      console.warn('⚠️ Preço não fornecido para produto:', product.name);
+      productPrice = 0;
+    } else {
+      productPrice = typeof productPrice === 'number' ? productPrice : parseFloat(productPrice);
+      if (isNaN(productPrice) || productPrice < 0) {
+        console.warn('⚠️ Preço inválido para produto:', product.name, 'valor:', product.price);
+        productPrice = 0;
+      }
+    }
+    
     const productData = {
       name: product.name,
       description: product.description || '',
-      price: parseFloat(product.price),
+      price: productPrice,
       category: product.category,
       image: product.image || '',
       available: product.available !== undefined ? product.available : true,
@@ -142,15 +180,35 @@ export async function addProduct(product) {
  */
 export async function updateProduct(id, product) {
   try {
+    // Validar e converter preço se fornecido
+    let productPrice = product.price;
+    if (product.price !== undefined) {
+      if (productPrice === null || productPrice === undefined) {
+        console.warn('⚠️ Preço não fornecido para atualização do produto:', id);
+        productPrice = 0;
+      } else {
+        productPrice = typeof productPrice === 'number' ? productPrice : parseFloat(productPrice);
+        if (isNaN(productPrice) || productPrice < 0) {
+          console.warn('⚠️ Preço inválido para atualização do produto:', id, 'valor:', product.price);
+          productPrice = 0;
+        }
+      }
+    }
+    
     const docRef = doc(db, PRODUCTS_COLLECTION, id);
     const updateData = {
       ...product,
-      price: parseFloat(product.price),
+      price: product.price !== undefined ? productPrice : undefined, // Só atualizar se fornecido
       defaultIngredients: product.defaultIngredients || [], // Array de IDs de ingredientes padrão
       availableIngredients: product.availableIngredients || [], // Array de IDs de ingredientes disponíveis
       number: product.number !== undefined ? product.number : null, // Preservar número se fornecido
       updatedAt: serverTimestamp()
     };
+    
+    // Remover price se não foi fornecido (não atualizar)
+    if (product.price === undefined) {
+      delete updateData.price;
+    }
     await updateDoc(docRef, updateData);
     console.log('Produto atualizado:', id);
   } catch (error) {

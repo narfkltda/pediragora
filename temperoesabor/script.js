@@ -555,6 +555,39 @@ async function loadProductsFromFirebase() {
             // Filtrar apenas produtos disponíveis (dupla verificação)
             MENU_DATA.items = MENU_DATA.items.filter(item => item.available !== false);
             
+            // Ordenar produtos: por categoria, depois por número (quando disponível) ou nome
+            MENU_DATA.items.sort((a, b) => {
+                // Primeiro, ordenar por categoria
+                if (a.category !== b.category) {
+                    return (a.category || '').localeCompare(b.category || '');
+                }
+                
+                // Para Bebidas, ordenar apenas por nome
+                if (a.category === 'Bebidas') {
+                    return (a.name || '').localeCompare(b.name || '');
+                }
+                
+                // Para outras categorias, ordenar por número se disponível
+                const aNumber = a.number !== null && a.number !== undefined ? Number(a.number) : null;
+                const bNumber = b.number !== null && b.number !== undefined ? Number(b.number) : null;
+                
+                // Se ambos têm número, ordenar por número
+                if (aNumber !== null && bNumber !== null) {
+                    return aNumber - bNumber;
+                }
+                
+                // Se apenas um tem número, o que tem número vem primeiro
+                if (aNumber !== null && bNumber === null) {
+                    return -1;
+                }
+                if (aNumber === null && bNumber !== null) {
+                    return 1;
+                }
+                
+                // Se nenhum tem número, ordenar por nome
+                return (a.name || '').localeCompare(b.name || '');
+            });
+            
             // Extrair categorias únicas dos produtos
             const categories = ['Todos', ...new Set(MENU_DATA.items.map(item => item.category).filter(Boolean))];
             MENU_DATA.categories = categories;

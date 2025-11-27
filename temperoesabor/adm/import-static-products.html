@@ -228,6 +228,9 @@
                     <button id="import-btn" class="btn-primary" disabled>
                         Importar Selecionados (<span id="selected-count">0</span>)
                     </button>
+                    <button id="fix-prices-btn" class="btn-primary" style="background: #ff9800;">
+                        🔧 Corrigir Preços dos Produtos Importados
+                    </button>
                     <div id="loading-indicator" style="display: none;">
                         <span>Carregando produtos...</span>
                     </div>
@@ -247,6 +250,15 @@
                 </div>
                 <div class="progress-text" id="progress-text">Preparando importação...</div>
                 <div id="import-results" class="import-results" style="display: none;"></div>
+            </div>
+
+            <div id="fix-prices-progress" class="import-progress" style="display: none;">
+                <h3>Corrigindo Preços dos Produtos...</h3>
+                <div class="progress-bar">
+                    <div id="fix-prices-progress-fill" class="progress-fill" style="width: 0%">0%</div>
+                </div>
+                <div class="progress-text" id="fix-prices-progress-text">Preparando correção...</div>
+                <div id="fix-prices-results" class="import-results" style="display: none;"></div>
             </div>
         </div>
     </div>

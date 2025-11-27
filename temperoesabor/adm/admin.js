@@ -155,6 +155,17 @@ async function loadProducts() {
         
         allProducts = await getProducts();
         products = allProducts;
+        
+        // Debug: verificar imagens dos produtos
+        console.log('Produtos carregados:', allProducts.length);
+        allProducts.forEach(product => {
+            if (!product.image || product.image.trim() === '') {
+                console.warn(`Produto "${product.name}" não tem imagem`);
+            } else {
+                console.log(`Produto "${product.name}" tem imagem:`, product.image.substring(0, 50) + '...');
+            }
+        });
+        
         populateCategoryFilter();
         applyFilters();
         
@@ -197,13 +208,43 @@ function renderProducts() {
         productsByCategory[product.category].push(product);
     });
     
+    // Ordenar produtos dentro de cada categoria por número (quando disponível)
+    Object.keys(productsByCategory).forEach(category => {
+        productsByCategory[category].sort((a, b) => {
+            // Para Bebidas, ordenar apenas por nome
+            if (category === 'Bebidas') {
+                return (a.name || '').localeCompare(b.name || '');
+            }
+            
+            // Para outras categorias, ordenar por número se disponível
+            const aNumber = a.number !== null && a.number !== undefined ? Number(a.number) : null;
+            const bNumber = b.number !== null && b.number !== undefined ? Number(b.number) : null;
+            
+            // Se ambos têm número, ordenar por número
+            if (aNumber !== null && bNumber !== null) {
+                return aNumber - bNumber;
+            }
+            
+            // Se apenas um tem número, o que tem número vem primeiro
+            if (aNumber !== null && bNumber === null) {
+                return -1;
+            }
+            if (aNumber === null && bNumber !== null) {
+                return 1;
+            }
+            
+            // Se nenhum tem número, ordenar por nome
+            return (a.name || '').localeCompare(b.name || '');
+        });
+    });
+    
     // Renderizar produtos agrupados por categoria
     Object.keys(productsByCategory).sort().forEach(category => {
-        productsByCategory[category].forEach((product, index) => {
+        productsByCategory[category].forEach((product) => {
         const card = document.createElement('div');
         card.className = 'item-card horizontal';
         
-        // Checkbox de seleção
+        // 1. Checkbox de seleção
         const checkboxContainer = document.createElement('div');
         checkboxContainer.className = 'product-checkbox-container';
         const checkbox = document.createElement('input');
@@ -214,68 +255,77 @@ function renderProducts() {
         checkbox.addEventListener('change', () => toggleProductSelection(product.id));
         checkboxContainer.appendChild(checkbox);
         
-        // Top section: content + image
-        const topSection = document.createElement('div');
-        topSection.className = 'item-top-section';
+        // 2. Status (disponibilidade)
+        const status = document.createElement('span');
+        status.className = `product-status-badge ${product.available ? 'available' : 'unavailable'}`;
+        status.textContent = product.available ? '✓ Disponível' : '✗ Indisponível';
         
-        // Content container
+        // 3. Categoria
+        const categoryBadge = document.createElement('span');
+        categoryBadge.className = 'product-category-badge';
+        categoryBadge.textContent = escapeHtml(product.category);
+        
+        // 4. Imagem (pequena)
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'item-image-container';
+        
+        const img = document.createElement('img');
+        img.className = 'item-image';
+        const imageUrl = product.image || '';
+        
+        // Configurar imagem - mesma abordagem do site público (sem crossOrigin)
+        // O Firebase Storage permite leitura pública, então não precisa de crossOrigin
+        if (imageUrl && imageUrl.trim() !== '' && imageUrl.startsWith('http')) {
+            img.src = imageUrl;
+        } else {
+            img.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3ESem Imagem%3C/text%3E%3C/svg%3E';
+        }
+        
+        img.alt = escapeHtml(product.name);
+        img.loading = 'lazy';
+        img.onerror = function() {
+            console.error('❌ Erro ao carregar imagem do produto:', product.name);
+            console.error('URL da imagem:', imageUrl);
+            console.error('URL completa:', this.src);
+            // Verificar se é erro de CORS
+            if (imageUrl && imageUrl.includes('firebasestorage')) {
+                console.error('⚠️ Possível problema de CORS ou URL inválida do Firebase Storage');
+                console.error('Verifique se a URL está correta e se as regras do Storage permitem leitura pública');
+            }
+            this.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3C/svg%3E';
+            this.onerror = null; // Prevenir loop infinito
+        };
+        img.onload = function() {
+            if (imageUrl) {
+                console.log('✅ Imagem carregada com sucesso:', product.name);
+            }
+        };
+        
+        imageContainer.appendChild(img);
+        
+        // 5. Nome e 6. Descrição (em container de conteúdo)
         const contentContainer = document.createElement('div');
         contentContainer.className = 'item-content';
         
         const title = document.createElement('h3');
         title.className = 'item-title';
-        // Formatar nome com numeração (exceto Bebidas)
-        const formattedName = formatProductName(product, index);
+        // Formatar nome com numeração (exceto Bebidas) - NÃO usar index para evitar problemas
+        const formattedName = formatProductName(product);
         title.textContent = escapeHtml(formattedName);
         
         const description = document.createElement('p');
         description.className = 'item-description';
         description.textContent = escapeHtml(product.description || '');
         
-        // Meta info: category and status
-        const metaInfo = document.createElement('div');
-        metaInfo.className = 'product-meta-info';
-        
-        const category = document.createElement('span');
-        category.className = 'product-category-badge';
-        category.textContent = escapeHtml(product.category);
-        
-        const status = document.createElement('span');
-        status.className = `product-status-badge ${product.available ? 'available' : 'unavailable'}`;
-        status.textContent = product.available ? '✓ Disponível' : '✗ Indisponível';
-        
-        metaInfo.appendChild(category);
-        metaInfo.appendChild(status);
-        
         contentContainer.appendChild(title);
         contentContainer.appendChild(description);
-        contentContainer.appendChild(metaInfo);
         
-        // Image container
-        const imageContainer = document.createElement('div');
-        imageContainer.className = 'item-image-container';
-        
-        const img = document.createElement('img');
-        img.className = 'item-image';
-        img.src = product.image || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3ESem Imagem%3C/text%3E%3C/svg%3E';
-        img.alt = escapeHtml(product.name);
-        img.onerror = function() {
-            this.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3C/svg%3E';
-        };
-        
-        imageContainer.appendChild(img);
-        
-        topSection.appendChild(contentContainer);
-        topSection.appendChild(imageContainer);
-        
-        // Price and actions container
-        const priceActionsContainer = document.createElement('div');
-        priceActionsContainer.className = 'item-price-actions';
-        
+        // 7. Preço
         const price = document.createElement('div');
         price.className = 'item-price';
         price.textContent = `R$ ${product.price.toFixed(2)}`;
         
+        // 8. Botões
         const buttonsContainer = document.createElement('div');
         buttonsContainer.className = 'item-buttons';
         
@@ -292,12 +342,14 @@ function renderProducts() {
         buttonsContainer.appendChild(editBtn);
         buttonsContainer.appendChild(deleteBtn);
         
-        priceActionsContainer.appendChild(price);
-        priceActionsContainer.appendChild(buttonsContainer);
-        
+        // Adicionar elementos ao card na ordem: checkbox, status, categoria, imagem, conteúdo, preço, botões
         card.appendChild(checkboxContainer);
-        card.appendChild(topSection);
-        card.appendChild(priceActionsContainer);
+        card.appendChild(status);
+        card.appendChild(categoryBadge);
+        card.appendChild(imageContainer);
+        card.appendChild(contentContainer);
+        card.appendChild(price);
+        card.appendChild(buttonsContainer);
         
         productsGrid.appendChild(card);
         });
@@ -573,12 +625,7 @@ async function deleteSelected() {
 // Adicionar produto
 if (addProductBtn) {
     addProductBtn.addEventListener('click', async () => {
-        editingProductId = null;
-        modalTitle.textContent = 'Adicionar Produto';
-        productForm.reset();
-        document.getElementById('product-available').checked = true;
-        defaultIngredientsOrder = []; // Resetar ordem
-        resetImagePreview();
+        resetProductForm();
         await loadProductDefaultIngredients();
         await loadProductIngredients();
         updateDescriptionFromDefaultIngredients();
@@ -711,6 +758,19 @@ service firebase.storage {
         description = await generateDescriptionFromIngredients(selectedDefaultIngredients);
     }
     
+    // Obter número do produto (pode ser vazio)
+    const productNumberInput = document.getElementById('product-number').value.trim();
+    let productNumber = null;
+    if (productNumberInput) {
+        const parsed = parseInt(productNumberInput, 10);
+        if (!isNaN(parsed) && parsed > 0) {
+            productNumber = parsed;
+        } else {
+            showToast('Número do produto inválido. Use um número maior que zero.', 'error');
+            return;
+        }
+    }
+    
     const productData = {
         name: document.getElementById('product-name').value.trim(),
         description: description,
@@ -719,7 +779,8 @@ service firebase.storage {
         image: imageUrl,
         available: document.getElementById('product-available').checked,
         defaultIngredients: selectedDefaultIngredients,
-        availableIngredients: selectedAvailableIngredients
+        availableIngredients: selectedAvailableIngredients,
+        number: productNumber // Incluir número (pode ser null)
     };
 
     try {
@@ -731,8 +792,9 @@ service firebase.storage {
             showToast('Produto adicionado com sucesso!', 'success');
         }
         
+        // Resetar formulário e estado
+        resetProductForm();
         productModal.classList.remove('active');
-        resetImagePreview();
         await loadProducts();
     } catch (error) {
         console.error('Erro ao salvar produto:', error);
@@ -753,6 +815,7 @@ window.editProduct = async (id) => {
     document.getElementById('product-price').value = product.price;
     document.getElementById('product-category').value = product.category;
     document.getElementById('product-available').checked = product.available !== false;
+    document.getElementById('product-number').value = product.number || ''; // Carregar número se existir
     
     // Carregar preview da imagem existente
     if (product.image) {
@@ -862,6 +925,25 @@ function showImagePreview(imageFile) {
 /**
  * Resetar preview de imagem
  */
+// Resetar formulário de produto
+function resetProductForm() {
+    editingProductId = null;
+    modalTitle.textContent = 'Adicionar Produto';
+    productForm.reset();
+    document.getElementById('product-available').checked = true;
+    document.getElementById('product-number').value = '';
+    defaultIngredientsOrder = [];
+    resetImagePreview();
+    currentImageFile = null;
+    
+    // Resetar botão de submit se estiver em estado de upload
+    const submitButton = productForm.querySelector('button[type="submit"]');
+    if (submitButton) {
+        submitButton.textContent = 'Salvar';
+        submitButton.disabled = false;
+    }
+}
+
 function resetImagePreview() {
     if (!imageUploadPlaceholder || !imagePreviewContainer) return;
     
@@ -1677,12 +1759,14 @@ function setupEventListeners() {
     // Fechar modal de produto
     if (modalClose) {
         modalClose.addEventListener('click', () => {
+            resetProductForm();
             productModal.classList.remove('active');
         });
     }
     
     if (cancelBtn) {
         cancelBtn.addEventListener('click', () => {
+            resetProductForm();
             productModal.classList.remove('active');
         });
     }
@@ -1719,6 +1803,7 @@ function setupEventListeners() {
     if (productModal) {
         productModal.addEventListener('click', (e) => {
             if (e.target === productModal) {
+                resetProductForm();
                 productModal.classList.remove('active');
             }
         });
@@ -1930,19 +2015,19 @@ function formatProductName(product, index = null) {
         return product.name;
     }
     
-    // Tentar usar ID numérico se disponível
+    // PRIMEIRO: Tentar usar campo 'number' do Firebase (prioridade máxima)
+    if (product.number !== null && product.number !== undefined) {
+        const number = String(product.number).padStart(2, '0');
+        return `${number} - ${product.name}`;
+    }
+    
+    // SEGUNDO: Tentar usar ID numérico se disponível (fallback para produtos antigos)
     if (product.id && /^\d+$/.test(product.id)) {
         const number = product.id.padStart(2, '0');
         return `${number} - ${product.name}`;
     }
     
-    // Se não houver ID numérico, usar índice + 1 (se fornecido)
-    if (index !== null) {
-        const number = (index + 1).toString().padStart(2, '0');
-        return `${number} - ${product.name}`;
-    }
-    
-    // Fallback: retornar nome sem numeração
+    // Fallback: retornar nome sem numeração (NÃO usar índice, pois causa problemas)
     return product.name;
 }
 
