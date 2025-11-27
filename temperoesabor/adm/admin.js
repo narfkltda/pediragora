@@ -475,23 +475,74 @@ function removeDuplicateIngredients(ingredientsList) {
     return { unique, duplicates };
 }
 
+// Processar lista com preços individuais (formato: "ingrediente1,preço1,ingrediente2,preço2")
+function processIngredientsWithIndividualPrices(listText) {
+    const parts = listText.split(',').map(p => p.trim()).filter(p => p.length > 0);
+    const ingredients = [];
+    
+    for (let i = 0; i < parts.length; i += 2) {
+        const name = parts[i];
+        const priceStr = parts[i + 1];
+        
+        if (!name) continue;
+        
+        let price = 0;
+        if (priceStr) {
+            const parsedPrice = parseFloat(priceStr.replace(',', '.'));
+            if (!isNaN(parsedPrice) && parsedPrice >= 0) {
+                price = parsedPrice;
+            }
+        }
+        
+        ingredients.push({ name, price });
+    }
+    
+    return ingredients;
+}
+
 // Salvar ingredientes em lote
 if (ingredientBatchForm) {
     ingredientBatchForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const listText = document.getElementById('ingredient-list').value.trim();
+        const priceMode = document.querySelector('input[name="price-mode"]:checked')?.value || 'none';
+        const priceUniqueInput = document.getElementById('price-unique');
+        const priceUnique = priceUniqueInput ? parseFloat(priceUniqueInput.value) || 0 : 0;
         
         if (!listText) {
             showToast('Por favor, digite pelo menos um ingrediente.', 'error');
             return;
         }
         
-        // Separar por vírgula e limpar espaços
-        const ingredientsList = listText
-            .split(',')
-            .map(ing => ing.trim())
-            .filter(ing => ing.length > 0);
+        // Validar preço único se necessário
+        if (priceMode === 'unique') {
+            if (!priceUniqueInput || !priceUniqueInput.value || priceUnique <= 0) {
+                showToast('Por favor, informe um preço único válido maior que zero.', 'error');
+                return;
+            }
+        }
+        
+        let ingredientsList = [];
+        let ingredientsWithPrices = [];
+        
+        // Processar lista baseado no modo de preço selecionado
+        if (priceMode === 'individual') {
+            // Formato: "ingrediente1,preço1,ingrediente2,preço2"
+            ingredientsWithPrices = processIngredientsWithIndividualPrices(listText);
+            ingredientsList = ingredientsWithPrices.map(ing => ing.name);
+            
+            if (ingredientsList.length === 0) {
+                showToast('Formato inválido. Use: ingrediente1,preço1,ingrediente2,preço2', 'error');
+                return;
+            }
+        } else {
+            // Sem preço ou preço único - processar normalmente
+            ingredientsList = listText
+                .split(',')
+                .map(ing => ing.trim())
+                .filter(ing => ing.length > 0);
+        }
         
         if (ingredientsList.length === 0) {
             showToast('Nenhum ingrediente válido encontrado.', 'error');
@@ -513,7 +564,7 @@ if (ingredientBatchForm) {
                 existingIngredients.map(ing => normalizeIngredientName(ing.name))
             );
             
-            // Filtrar ingredientes que já existem
+            // Filtrar ingredientes que já existem e preparar dados com preços
             const ingredientsToCreate = [];
             const alreadyExisting = [];
             
@@ -522,7 +573,18 @@ if (ingredientBatchForm) {
                 if (existingNames.has(normalized)) {
                     alreadyExisting.push(ingredientName);
                 } else {
-                    ingredientsToCreate.push(ingredientName);
+                    // Determinar preço baseado no modo
+                    let price = 0;
+                    if (priceMode === 'unique') {
+                        price = priceUnique;
+                    } else if (priceMode === 'individual') {
+                        const ingredientData = ingredientsWithPrices.find(ing => 
+                            normalizeIngredientName(ing.name) === normalized
+                        );
+                        price = ingredientData ? ingredientData.price : 0;
+                    }
+                    
+                    ingredientsToCreate.push({ name: ingredientName, price });
                 }
             }
             
@@ -543,16 +605,17 @@ if (ingredientBatchForm) {
             const created = [];
             const errors = [];
             
-            for (const ingredientName of ingredientsToCreate) {
+            for (const { name: ingredientName, price } of ingredientsToCreate) {
                 try {
                     const ingredientData = {
                         name: ingredientName,
-                        price: 0, // Preço padrão 0
+                        price: price,
                         active: true // Ativo por padrão
                     };
                     
                     await addIngredient(ingredientData);
-                    created.push(ingredientName);
+                    const displayName = price > 0 ? `${ingredientName} (R$ ${price.toFixed(2)})` : ingredientName;
+                    created.push(displayName);
                 } catch (error) {
                     console.error(`Erro ao criar ingrediente "${ingredientName}":`, error);
                     errors.push(`${ingredientName}: ${error.message}`);
@@ -577,6 +640,8 @@ if (ingredientBatchForm) {
             
             // Limpar formulário e recarregar lista
             ingredientBatchForm.reset();
+            document.querySelector('input[name="price-mode"][value="none"]').checked = true;
+            updatePriceModeUI();
             await loadIngredients();
             
             // Recarregar listas de ingredientes no formulário de produtos se estiver aberto
@@ -587,7 +652,7 @@ if (ingredientBatchForm) {
             }
             
             // Fechar modal se todos foram criados com sucesso
-            if (errorCount === 0 && alreadyExisting.length === 0) {
+            if (errors.length === 0 && alreadyExisting.length === 0) {
                 ingredientModal.classList.remove('active');
             }
         } catch (error) {
@@ -595,6 +660,46 @@ if (ingredientBatchForm) {
             showToast('Erro ao criar ingredientes: ' + error.message, 'error');
         }
     });
+    
+    // Atualizar UI baseado no modo de preço selecionado
+    function updatePriceModeUI() {
+        const priceMode = document.querySelector('input[name="price-mode"]:checked')?.value || 'none';
+        const priceUniqueGroup = document.getElementById('price-unique-group');
+        const ingredientList = document.getElementById('ingredient-list');
+        const ingredientListHint = document.getElementById('ingredient-list-hint');
+        
+        if (priceMode === 'unique') {
+            priceUniqueGroup.style.display = 'block';
+            document.getElementById('price-unique').required = true;
+            ingredientList.placeholder = 'Digite os ingredientes separados por vírgula\nExemplo: Pão, Molho Mima, Alface, Tomate, Cebola';
+            ingredientListHint.textContent = 'Separe os ingredientes por vírgula. Todos receberão o preço único definido acima.';
+        } else if (priceMode === 'individual') {
+            priceUniqueGroup.style.display = 'none';
+            document.getElementById('price-unique').required = false;
+            ingredientList.placeholder = 'Digite no formato: ingrediente1,preço1,ingrediente2,preço2\nExemplo: bacon,2.99,molho,1.99,queijo,3.50';
+            ingredientListHint.textContent = 'Formato: ingrediente,preço,ingrediente,preço... Use ponto ou vírgula para decimais (ex: 2.99 ou 2,99).';
+        } else {
+            priceUniqueGroup.style.display = 'none';
+            document.getElementById('price-unique').required = false;
+            ingredientList.placeholder = 'Digite os ingredientes separados por vírgula\nExemplo: Pão, Molho Mima, Alface, Tomate, Cebola';
+            ingredientListHint.textContent = 'Separe os ingredientes por vírgula. Todos serão criados com preço R$ 0,00 e como ativos.';
+        }
+    }
+    
+    // Event listeners para mudança de modo de preço
+    const priceModeRadios = document.querySelectorAll('input[name="price-mode"]');
+    priceModeRadios.forEach(radio => {
+        radio.addEventListener('change', updatePriceModeUI);
+    });
+    
+    // Inicializar UI ao abrir modal
+    if (addIngredientBtn) {
+        addIngredientBtn.addEventListener('click', () => {
+            setTimeout(() => {
+                updatePriceModeUI();
+            }, 100);
+        });
+    }
 }
 
 // Editar ingrediente

@@ -148,13 +148,37 @@
             <div id="ingredient-tab-batch" class="modal-tab-content">
                 <form id="ingredient-batch-form">
                     <div class="form-group">
+                        <label>Opção de Preço *</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="price-mode" value="none" checked>
+                                <span>Sem preço (R$ 0,00)</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="price-mode" value="individual">
+                                <span>Preço individual</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="price-mode" value="unique">
+                                <span>Preço único para todos</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="price-unique-group" style="display: none;">
+                        <label for="price-unique">Preço Único (R$) *</label>
+                        <input type="number" id="price-unique" step="0.01" min="0" placeholder="0.00">
+                        <small>Este preço será aplicado a todos os ingredientes da lista.</small>
+                    </div>
+
+                    <div class="form-group">
                         <label for="ingredient-list">Lista de Ingredientes *</label>
                         <textarea 
                             id="ingredient-list" 
                             rows="6" 
                             placeholder="Digite os ingredientes separados por vírgula&#10;Exemplo: Pão, Molho Mima, Alface, Tomate, Cebola"
                             required></textarea>
-                        <small>Separe os ingredientes por vírgula. Todos serão criados com preço R$ 0,00 e como ativos.</small>
+                        <small id="ingredient-list-hint">Separe os ingredientes por vírgula. Todos serão criados com preço R$ 0,00 e como ativos.</small>
                     </div>
 
                     <div class="form-actions">
