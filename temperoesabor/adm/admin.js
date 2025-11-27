@@ -939,6 +939,14 @@ function toggleSelectAllAvailable() {
     updateSelectAllButtonState();
 }
 
+// Função auxiliar para capitalizar apenas a primeira letra
+function capitalizeFirstLetter(str) {
+    if (!str || str.length === 0) {
+        return '';
+    }
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
 // Gerar descrição a partir dos ingredientes padrão selecionados (na ordem de seleção)
 async function generateDescriptionFromIngredients(ingredientIds) {
     if (!ingredientIds || ingredientIds.length === 0) {
@@ -962,11 +970,11 @@ async function generateDescriptionFromIngredients(ingredientIds) {
         ? defaultIngredientsOrder.filter(id => ingredientIds.includes(id))
         : ingredientIds;
     
-    // Buscar nomes dos ingredientes na ordem de seleção
+    // Buscar nomes dos ingredientes na ordem de seleção e converter para minúsculas
     const ingredientNames = orderedIds
         .map(id => {
             const ingredient = ingredientsToUse.find(ing => ing.id === id);
-            return ingredient ? ingredient.name : id;
+            return ingredient ? ingredient.name.toLowerCase() : id.toLowerCase();
         })
         .filter(name => name); // Remover nomes vazios
     
@@ -988,22 +996,26 @@ async function generateDescriptionFromIngredients(ingredientIds) {
     
     // Se não houver ingredientes, retornar apenas "Pão" ou vazio
     if (otherIngredients.length === 0) {
-        return paoName || 'Pão';
+        return capitalizeFirstLetter(paoName || 'pão');
     }
     
-    // Formatar descrição: "Pão, Ingrediente1, Ingrediente2 e Ingrediente3"
-    // ou "Ingrediente1, Ingrediente2 e Ingrediente3" se não houver Pão
-    const baseName = paoName || 'Pão';
+    // Formatar descrição: "Pão, ingrediente1, ingrediente2 e ingrediente3"
+    // ou "Ingrediente1, ingrediente2 e ingrediente3" se não houver Pão
+    const baseName = paoName || 'pão';
     
+    let description = '';
     if (otherIngredients.length === 1) {
-        return `${baseName}, ${otherIngredients[0]}`;
+        description = `${baseName}, ${otherIngredients[0]}`;
     } else if (otherIngredients.length === 2) {
-        return `${baseName}, ${otherIngredients[0]} e ${otherIngredients[1]}`;
+        description = `${baseName}, ${otherIngredients[0]} e ${otherIngredients[1]}`;
     } else {
         const lastIngredient = otherIngredients[otherIngredients.length - 1];
         const otherList = otherIngredients.slice(0, -1).join(', ');
-        return `${baseName}, ${otherList} e ${lastIngredient}`;
+        description = `${baseName}, ${otherList} e ${lastIngredient}`;
     }
+    
+    // Capitalizar apenas a primeira letra da descrição completa
+    return capitalizeFirstLetter(description);
 }
 
 // Atualizar descrição a partir dos ingredientes padrão selecionados
