@@ -711,11 +711,19 @@ body {
     }
 }
 
-/* Ingredients Grid */
-.ingredients-grid {
+/* Ingredients Grid - Uma coluna por linha */
+#ingredients-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: 1fr;
     gap: 20px;
+    padding: 20px;
+}
+
+/* Ingredients Controls - Usa os mesmos estilos de products-controls */
+.ingredients-controls {
+    padding: 20px;
+    background: white;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 /* Ingredients Sections */

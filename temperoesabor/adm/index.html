@@ -92,7 +92,35 @@
                 Carregando ingredientes...
             </div>
 
-            <div class="ingredients-grid" id="ingredients-grid">
+            <!-- Controles de Seleção em Massa e Filtros -->
+            <div class="products-controls ingredients-controls">
+                <div class="bulk-actions">
+                    <label class="select-all-label">
+                        <input type="checkbox" id="select-all-ingredients-checkbox">
+                        <span>Selecionar Todos</span>
+                        <span class="selection-count" id="ingredients-selection-count"></span>
+                    </label>
+                    <div class="bulk-action-buttons">
+                        <button id="activate-selected-ingredients-btn" class="btn-bulk-action" disabled>
+                            Ativar Selecionados
+                        </button>
+                        <button id="deactivate-selected-ingredients-btn" class="btn-bulk-action" disabled>
+                            Desativar Selecionados
+                        </button>
+                        <button id="delete-selected-ingredients-btn" class="btn-bulk-action btn-danger" disabled>
+                            Excluir Selecionados
+                        </button>
+                    </div>
+                </div>
+                <div class="products-filters">
+                    <div class="search-container">
+                        <input type="text" id="ingredient-search-input" class="search-input" placeholder="Buscar ingrediente...">
+                        <button id="clear-ingredient-search-btn" class="clear-search-btn" style="display: none;">&times;</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="products-grid" id="ingredients-grid">
                 <!-- Ingredientes serão carregados aqui -->
             </div>
         </section>

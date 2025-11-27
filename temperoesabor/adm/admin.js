@@ -95,6 +95,15 @@ const categoryFilter = document.getElementById('category-filter');
 const productSearchInput = document.getElementById('product-search-input');
 const clearSearchBtn = document.getElementById('clear-search-btn');
 
+// Elementos DOM - Controles de Seleção e Filtros de Ingredientes
+const selectAllIngredientsCheckbox = document.getElementById('select-all-ingredients-checkbox');
+const ingredientsSelectionCount = document.getElementById('ingredients-selection-count');
+const activateSelectedIngredientsBtn = document.getElementById('activate-selected-ingredients-btn');
+const deactivateSelectedIngredientsBtn = document.getElementById('deactivate-selected-ingredients-btn');
+const deleteSelectedIngredientsBtn = document.getElementById('delete-selected-ingredients-btn');
+const ingredientSearchInput = document.getElementById('ingredient-search-input');
+const clearIngredientSearchBtn = document.getElementById('clear-ingredient-search-btn');
+
 // Estado
 let products = [];
 let ingredients = [];
@@ -110,6 +119,12 @@ let currentCategoryFilter = 'all';
 let currentSearchTerm = '';
 let allProducts = []; // Todos os produtos (sem filtros)
 let filteredProducts = []; // Produtos após aplicar filtros
+
+// Estado para seleção e filtros de ingredientes
+let selectedIngredients = []; // Array de IDs selecionados
+let currentIngredientSearchTerm = '';
+let allIngredients = []; // Todos os ingredientes (sem filtros)
+let filteredIngredients = []; // Ingredientes após aplicar filtros
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
@@ -420,6 +435,32 @@ function filterByCategory(category) {
 function searchProducts(term) {
     currentSearchTerm = term;
     applyFilters();
+}
+
+// Buscar ingredientes
+function searchIngredients(term) {
+    currentIngredientSearchTerm = term;
+    applyIngredientFilters();
+}
+
+// Aplicar filtros de ingredientes (busca)
+function applyIngredientFilters() {
+    filteredIngredients = [...allIngredients];
+    
+    // Filtro por busca
+    if (currentIngredientSearchTerm.trim()) {
+        const searchLower = currentIngredientSearchTerm.toLowerCase().trim();
+        filteredIngredients = filteredIngredients.filter(i => {
+            return i.name.toLowerCase().includes(searchLower);
+        });
+    }
+    
+    // Remover seleções de ingredientes que não estão mais visíveis
+    selectedIngredients = selectedIngredients.filter(id => 
+        filteredIngredients.some(i => i.id === id)
+    );
+    
+    renderIngredients();
 }
 
 // Toggle selecionar todos
@@ -1032,6 +1073,83 @@ function loadExistingImagePreview(imageUrl) {
 
 // ==================== INGREDIENTES ====================
 
+// Seleção de ingredientes
+function toggleSelectAllIngredients() {
+    if (!selectAllIngredientsCheckbox) return;
+    
+    const isChecked = selectAllIngredientsCheckbox.checked;
+    const visibleIngredientIds = filteredIngredients.map(i => i.id);
+    
+    if (isChecked) {
+        // Adicionar todos os ingredientes visíveis
+        visibleIngredientIds.forEach(id => {
+            if (!selectedIngredients.includes(id)) {
+                selectedIngredients.push(id);
+            }
+        });
+    } else {
+        // Remover apenas os ingredientes visíveis
+        selectedIngredients = selectedIngredients.filter(id => !visibleIngredientIds.includes(id));
+    }
+    
+    // Atualizar checkboxes individuais
+    document.querySelectorAll('.product-checkbox[data-ingredient-id]').forEach(checkbox => {
+        checkbox.checked = selectedIngredients.includes(checkbox.dataset.ingredientId);
+    });
+    
+    updateIngredientSelectionUI();
+}
+
+function toggleIngredientSelection(ingredientId) {
+    const index = selectedIngredients.indexOf(ingredientId);
+    if (index > -1) {
+        selectedIngredients.splice(index, 1);
+    } else {
+        selectedIngredients.push(ingredientId);
+    }
+    
+    updateIngredientSelectionUI();
+}
+
+// Atualizar UI de seleção de ingredientes
+function updateIngredientSelectionUI() {
+    if (!selectAllIngredientsCheckbox || !ingredientsSelectionCount) return;
+    
+    const visibleIngredientIds = filteredIngredients.map(i => i.id);
+    const selectedVisible = visibleIngredientIds.filter(id => selectedIngredients.includes(id));
+    
+    // Atualizar checkbox "Selecionar Todos"
+    if (visibleIngredientIds.length > 0) {
+        selectAllIngredientsCheckbox.checked = selectedVisible.length === visibleIngredientIds.length;
+        selectAllIngredientsCheckbox.indeterminate = selectedVisible.length > 0 && selectedVisible.length < visibleIngredientIds.length;
+    } else {
+        selectAllIngredientsCheckbox.checked = false;
+        selectAllIngredientsCheckbox.indeterminate = false;
+    }
+    
+    // Atualizar contador
+    const totalSelected = selectedIngredients.length;
+    if (totalSelected > 0) {
+        ingredientsSelectionCount.textContent = `(${totalSelected} selecionado${totalSelected > 1 ? 's' : ''})`;
+        ingredientsSelectionCount.style.display = 'inline';
+    } else {
+        ingredientsSelectionCount.textContent = '';
+        ingredientsSelectionCount.style.display = 'none';
+    }
+    
+    // Atualizar botões de ação em massa
+    const hasSelection = selectedIngredients.length > 0;
+    if (activateSelectedIngredientsBtn) {
+        activateSelectedIngredientsBtn.disabled = !hasSelection;
+    }
+    if (deactivateSelectedIngredientsBtn) {
+        deactivateSelectedIngredientsBtn.disabled = !hasSelection;
+    }
+    if (deleteSelectedIngredientsBtn) {
+        deleteSelectedIngredientsBtn.disabled = !hasSelection;
+    }
+}
+
 // Carregar ingredientes
 async function loadIngredients() {
     try {
@@ -1039,6 +1157,8 @@ async function loadIngredients() {
         if (ingredientsGrid) ingredientsGrid.innerHTML = '';
         
         ingredients = await getIngredients();
+        allIngredients = [...ingredients];
+        filteredIngredients = [...ingredients];
         renderIngredients();
         
         if (ingredientsLoading) ingredientsLoading.style.display = 'none';
@@ -1054,38 +1174,220 @@ function renderIngredients() {
     if (!ingredientsGrid) return;
     ingredientsGrid.innerHTML = '';
     
-    if (ingredients.length === 0) {
+    // Usar filteredIngredients em vez de ingredients
+    const ingredientsToRender = filteredIngredients.length > 0 ? filteredIngredients : allIngredients;
+    
+    if (ingredientsToRender.length === 0) {
         ingredientsGrid.innerHTML = `
             <div class="empty-state">
-                <p>Nenhum ingrediente cadastrado ainda.</p>
+                <p>${currentIngredientSearchTerm ? 'Nenhum ingrediente encontrado com essa busca.' : 'Nenhum ingrediente cadastrado ainda.'}</p>
+                ${!currentIngredientSearchTerm ? `
                 <button class="btn-primary" onclick="document.getElementById('add-ingredient-btn').click()">
                     Adicionar Primeiro Ingrediente
                 </button>
+                ` : ''}
             </div>
         `;
+        updateIngredientSelectionUI();
         return;
     }
     
-    ingredients.forEach(ingredient => {
+    // Renderizar ingredientes com cards horizontais
+    ingredientsToRender.forEach((ingredient) => {
         const card = document.createElement('div');
-        card.className = 'product-card';
-        card.innerHTML = `
-            <div class="product-info">
-                <h3>${escapeHtml(ingredient.name)}</h3>
-                <div class="product-meta">
-                    <span class="product-price">R$ ${ingredient.price.toFixed(2)}</span>
-                    <span class="product-status ${ingredient.active ? 'available' : 'unavailable'}">
-                        ${ingredient.active ? '✓ Ativo' : '✗ Inativo'}
-                    </span>
-                </div>
-            </div>
-            <div class="product-actions">
-                <button class="btn-edit" onclick="editIngredient('${ingredient.id}')">✏️ Editar</button>
-                <button class="btn-delete" onclick="deleteIngredientConfirm('${ingredient.id}')">🗑️ Excluir</button>
-            </div>
-        `;
+        card.className = 'item-card horizontal';
+        
+        // 1. Checkbox de seleção
+        const checkboxContainer = document.createElement('div');
+        checkboxContainer.className = 'product-checkbox-container';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'product-checkbox';
+        checkbox.dataset.ingredientId = ingredient.id;
+        checkbox.checked = selectedIngredients.includes(ingredient.id);
+        checkbox.addEventListener('change', () => toggleIngredientSelection(ingredient.id));
+        checkboxContainer.appendChild(checkbox);
+        
+        // 2. Status (ativo/inativo)
+        const status = document.createElement('span');
+        status.className = `product-status-badge ${ingredient.active ? 'available' : 'unavailable'}`;
+        status.textContent = ingredient.active ? '✓ Ativo' : '✗ Inativo';
+        
+        // 3. Categoria (Ingrediente)
+        const categoryBadge = document.createElement('span');
+        categoryBadge.className = 'product-category-badge';
+        categoryBadge.textContent = 'Ingrediente';
+        
+        // 4. Conteúdo (nome)
+        const contentContainer = document.createElement('div');
+        contentContainer.className = 'item-content';
+        
+        const title = document.createElement('h3');
+        title.className = 'item-title';
+        title.textContent = escapeHtml(ingredient.name);
+        
+        contentContainer.appendChild(title);
+        
+        // 5. Preço
+        const price = document.createElement('div');
+        price.className = 'item-price';
+        price.textContent = `R$ ${ingredient.price.toFixed(2)}`;
+        
+        // 6. Botões
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.className = 'item-buttons';
+        
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-edit';
+        editBtn.textContent = '✏️ Editar';
+        editBtn.onclick = () => editIngredient(ingredient.id);
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-delete';
+        deleteBtn.textContent = '🗑️ Excluir';
+        deleteBtn.onclick = () => deleteIngredientConfirm(ingredient.id);
+        
+        buttonsContainer.appendChild(editBtn);
+        buttonsContainer.appendChild(deleteBtn);
+        
+        // Adicionar elementos ao card na ordem: checkbox, status, categoria, conteúdo, preço, botões
+        card.appendChild(checkboxContainer);
+        card.appendChild(status);
+        card.appendChild(categoryBadge);
+        card.appendChild(contentContainer);
+        card.appendChild(price);
+        card.appendChild(buttonsContainer);
+        
         ingredientsGrid.appendChild(card);
     });
+    
+    updateIngredientSelectionUI();
+}
+
+// Ações em massa para ingredientes
+async function activateSelectedIngredients() {
+    if (selectedIngredients.length === 0) return;
+    
+    try {
+        if (ingredientsLoading) ingredientsLoading.style.display = 'block';
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (const ingredientId of selectedIngredients) {
+            try {
+                await updateIngredient(ingredientId, { active: true });
+                successCount++;
+            } catch (error) {
+                console.error(`Erro ao ativar ingrediente ${ingredientId}:`, error);
+                errorCount++;
+            }
+        }
+        
+        await loadIngredients();
+        
+        if (successCount > 0) {
+            showToast(`${successCount} ingrediente(s) ativado(s) com sucesso!`, 'success');
+        }
+        if (errorCount > 0) {
+            showToast(`Erro ao ativar ${errorCount} ingrediente(s)`, 'error');
+        }
+        
+        selectedIngredients = [];
+        updateIngredientSelectionUI();
+        if (ingredientsLoading) ingredientsLoading.style.display = 'none';
+    } catch (error) {
+        console.error('Erro ao ativar ingredientes:', error);
+        showToast('Erro ao ativar ingredientes', 'error');
+        if (ingredientsLoading) ingredientsLoading.style.display = 'none';
+    }
+}
+
+async function deactivateSelectedIngredients() {
+    if (selectedIngredients.length === 0) return;
+    
+    try {
+        if (ingredientsLoading) ingredientsLoading.style.display = 'block';
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (const ingredientId of selectedIngredients) {
+            try {
+                await updateIngredient(ingredientId, { active: false });
+                successCount++;
+            } catch (error) {
+                console.error(`Erro ao desativar ingrediente ${ingredientId}:`, error);
+                errorCount++;
+            }
+        }
+        
+        await loadIngredients();
+        
+        if (successCount > 0) {
+            showToast(`${successCount} ingrediente(s) desativado(s) com sucesso!`, 'success');
+        }
+        if (errorCount > 0) {
+            showToast(`Erro ao desativar ${errorCount} ingrediente(s)`, 'error');
+        }
+        
+        selectedIngredients = [];
+        updateIngredientSelectionUI();
+        if (ingredientsLoading) ingredientsLoading.style.display = 'none';
+    } catch (error) {
+        console.error('Erro ao desativar ingredientes:', error);
+        showToast('Erro ao desativar ingredientes', 'error');
+        if (ingredientsLoading) ingredientsLoading.style.display = 'none';
+    }
+}
+
+async function deleteSelectedIngredients() {
+    if (selectedIngredients.length === 0) return;
+    
+    const count = selectedIngredients.length;
+    const ingredientNames = allIngredients
+        .filter(i => selectedIngredients.includes(i.id))
+        .map(i => i.name)
+        .slice(0, 3)
+        .join(', ');
+    const moreText = count > 3 ? ` e mais ${count - 3}` : '';
+    
+    showConfirmModal(
+        'Confirmar Exclusão',
+        `Tem certeza que deseja excluir ${count} ingrediente(s)?\n\n${ingredientNames}${moreText}`,
+        async () => {
+            try {
+                if (ingredientsLoading) ingredientsLoading.style.display = 'block';
+                let successCount = 0;
+                let errorCount = 0;
+                
+                for (const ingredientId of selectedIngredients) {
+                    try {
+                        await deleteIngredient(ingredientId);
+                        successCount++;
+                    } catch (error) {
+                        console.error(`Erro ao excluir ingrediente ${ingredientId}:`, error);
+                        errorCount++;
+                    }
+                }
+                
+                await loadIngredients();
+                
+                if (successCount > 0) {
+                    showToast(`${successCount} ingrediente(s) excluído(s) com sucesso!`, 'success');
+                }
+                if (errorCount > 0) {
+                    showToast(`Erro ao excluir ${errorCount} ingrediente(s)`, 'error');
+                }
+                
+                selectedIngredients = [];
+                updateIngredientSelectionUI();
+                if (ingredientsLoading) ingredientsLoading.style.display = 'none';
+            } catch (error) {
+                console.error('Erro ao excluir ingredientes:', error);
+                showToast('Erro ao excluir ingredientes', 'error');
+                if (ingredientsLoading) ingredientsLoading.style.display = 'none';
+            }
+        }
+    );
 }
 
 // Adicionar ingrediente
@@ -1985,6 +2287,44 @@ function setupEventListeners() {
                 productSearchInput.value = '';
                 searchProducts('');
                 clearSearchBtn.style.display = 'none';
+            }
+        });
+    }
+    
+    // Controles de seleção em massa de ingredientes
+    if (selectAllIngredientsCheckbox) {
+        selectAllIngredientsCheckbox.addEventListener('change', toggleSelectAllIngredients);
+    }
+    
+    if (activateSelectedIngredientsBtn) {
+        activateSelectedIngredientsBtn.addEventListener('click', activateSelectedIngredients);
+    }
+    
+    if (deactivateSelectedIngredientsBtn) {
+        deactivateSelectedIngredientsBtn.addEventListener('click', deactivateSelectedIngredients);
+    }
+    
+    if (deleteSelectedIngredientsBtn) {
+        deleteSelectedIngredientsBtn.addEventListener('click', deleteSelectedIngredients);
+    }
+    
+    // Busca de ingredientes
+    if (ingredientSearchInput) {
+        ingredientSearchInput.addEventListener('input', (e) => {
+            const term = e.target.value;
+            searchIngredients(term);
+            if (clearIngredientSearchBtn) {
+                clearIngredientSearchBtn.style.display = term.trim() ? 'block' : 'none';
+            }
+        });
+    }
+    
+    if (clearIngredientSearchBtn) {
+        clearIngredientSearchBtn.addEventListener('click', () => {
+            if (ingredientSearchInput) {
+                ingredientSearchInput.value = '';
+                searchIngredients('');
+                clearIngredientSearchBtn.style.display = 'none';
             }
         });
     }
