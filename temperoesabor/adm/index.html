@@ -22,6 +22,9 @@
             <button class="nav-btn active" data-section="products">
                 <span>📦</span> Produtos
             </button>
+            <button class="nav-btn" data-section="ingredients">
+                <span>🥬</span> Ingredientes
+            </button>
             <button class="nav-btn" data-section="config">
                 <span>⚙️</span> Configurações
             </button>
@@ -42,6 +45,24 @@
 
             <div class="products-grid" id="products-grid">
                 <!-- Produtos serão carregados aqui -->
+            </div>
+        </section>
+
+        <!-- Seção de Ingredientes -->
+        <section id="ingredients-section" class="admin-section">
+            <div class="section-header">
+                <h2>Gerenciar Ingredientes</h2>
+                <button id="add-ingredient-btn" class="btn-primary">
+                    <span>+</span> Adicionar Ingrediente
+                </button>
+            </div>
+
+            <div class="loading" id="ingredients-loading" style="display: none;">
+                Carregando ingredientes...
+            </div>
+
+            <div class="ingredients-grid" id="ingredients-grid">
+                <!-- Ingredientes serão carregados aqui -->
             </div>
         </section>
 
@@ -80,6 +101,71 @@
         </section>
     </div>
 
+    <!-- Modal de Ingrediente -->
+    <div id="ingredient-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="ingredient-modal-title">Adicionar Ingrediente</h3>
+                <button class="modal-close" id="ingredient-modal-close">&times;</button>
+            </div>
+            
+            <!-- Abas -->
+            <div class="modal-tabs">
+                <button class="modal-tab active" data-tab="single">Adicionar</button>
+                <button class="modal-tab" data-tab="batch">+ Lista de ingredientes</button>
+            </div>
+            
+            <!-- Aba: Adicionar único -->
+            <div id="ingredient-tab-single" class="modal-tab-content active">
+                <form id="ingredient-form">
+                    <input type="hidden" id="ingredient-id">
+                    
+                    <div class="form-group">
+                        <label for="ingredient-name">Nome do Ingrediente *</label>
+                        <input type="text" id="ingredient-name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ingredient-price">Preço (R$) *</label>
+                        <input type="number" id="ingredient-price" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="ingredient-active" checked>
+                            <span>Ingrediente ativo</span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-cancel" id="cancel-ingredient-btn">Cancelar</button>
+                        <button type="submit" class="btn-save">Salvar</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Aba: Lista de ingredientes -->
+            <div id="ingredient-tab-batch" class="modal-tab-content">
+                <form id="ingredient-batch-form">
+                    <div class="form-group">
+                        <label for="ingredient-list">Lista de Ingredientes *</label>
+                        <textarea 
+                            id="ingredient-list" 
+                            rows="6" 
+                            placeholder="Digite os ingredientes separados por vírgula&#10;Exemplo: Pão, Molho Mima, Alface, Tomate, Cebola"
+                            required></textarea>
+                        <small>Separe os ingredientes por vírgula. Todos serão criados com preço R$ 0,00 e como ativos.</small>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-cancel" id="cancel-ingredient-batch-btn">Cancelar</button>
+                        <button type="submit" class="btn-save">Criar Ingredientes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal de Produto -->
     <div id="product-modal" class="modal-overlay">
         <div class="modal-content">
@@ -93,11 +179,6 @@
                 <div class="form-group">
                     <label for="product-name">Nome do Produto *</label>
                     <input type="text" id="product-name" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="product-description">Descrição</label>
-                    <textarea id="product-description" rows="3" placeholder="Descrição do produto..."></textarea>
                 </div>
 
                 <div class="form-row">
@@ -124,6 +205,38 @@
                     <small>Exemplo: ../assets/images/Burgers_01_voMima.png</small>
                 </div>
 
+                <!-- Seção: Ingredientes (Padrão) -->
+                <div class="form-group ingredients-section-group">
+                    <label>Ingredientes (Padrão)</label>
+                    <div class="ingredients-checkbox-list" id="product-default-ingredients-list">
+                        <!-- Checkboxes de ingredientes padrão serão carregados aqui -->
+                        <p class="loading-text">Carregando ingredientes...</p>
+                    </div>
+                    <small>Marque os ingredientes que já vêm incluídos no produto. A descrição será gerada automaticamente.</small>
+                </div>
+
+                <!-- Descrição gerada automaticamente -->
+                <div class="form-group">
+                    <label for="product-description">Descrição (Gerada automaticamente)</label>
+                    <textarea id="product-description" rows="3" placeholder="A descrição será gerada automaticamente a partir dos ingredientes padrão selecionados..." readonly></textarea>
+                    <small>A descrição é gerada automaticamente. Você pode editá-la manualmente se necessário.</small>
+                </div>
+
+                <!-- Seção: Ingredientes Disponíveis -->
+                <div class="form-group ingredients-section-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <label style="margin-bottom: 0;">Ingredientes Disponíveis</label>
+                        <button type="button" id="select-all-available-btn" class="btn-select-all">
+                            Selecionar Todos
+                        </button>
+                    </div>
+                    <div class="ingredients-checkbox-list" id="product-ingredients-list">
+                        <!-- Checkboxes de ingredientes disponíveis serão carregados aqui -->
+                        <p class="loading-text">Carregando ingredientes...</p>
+                    </div>
+                    <small>Marque os ingredientes que podem ser adicionados/removidos neste produto</small>
+                </div>
+
                 <div class="form-group">
                     <label class="checkbox-label">
                         <input type="checkbox" id="product-available" checked>
@@ -145,6 +258,7 @@
     <!-- Scripts -->
     <script type="module" src="../firebase-config.js"></script>
     <script type="module" src="../services/products-service.js"></script>
+    <script type="module" src="../services/ingredients-service.js"></script>
     <script type="module" src="../services/config-service.js"></script>
     <script type="module" src="admin.js"></script>
 </body>

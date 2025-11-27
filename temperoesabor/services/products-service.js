@@ -109,6 +109,8 @@ export async function addProduct(product) {
       category: product.category,
       image: product.image || '',
       available: product.available !== undefined ? product.available : true,
+      defaultIngredients: product.defaultIngredients || [], // Array de IDs de ingredientes padrão
+      availableIngredients: product.availableIngredients || [], // Array de IDs de ingredientes disponíveis
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
@@ -133,6 +135,8 @@ export async function updateProduct(id, product) {
     const updateData = {
       ...product,
       price: parseFloat(product.price),
+      defaultIngredients: product.defaultIngredients || [], // Array de IDs de ingredientes padrão
+      availableIngredients: product.availableIngredients || [], // Array de IDs de ingredientes disponíveis
       updatedAt: serverTimestamp()
     };
     await updateDoc(docRef, updateData);

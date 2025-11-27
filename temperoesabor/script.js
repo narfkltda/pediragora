@@ -14,6 +14,7 @@
 // Import Firebase services
 import { getAvailableProducts } from './services/products-service.js';
 import { getRestaurantConfig } from './services/config-service.js';
+import { getActiveIngredients } from './services/ingredients-service.js';
 
 // Configuration
 const CONFIG = {
@@ -329,8 +330,8 @@ async function loadConfigFromFirebase() {
 }
 
 // Available ingredients for customization
-// Make it globally accessible for whatsapp.js
-const AVAILABLE_INGREDIENTS = [
+// Será carregado do Firebase ou usado como fallback
+let AVAILABLE_INGREDIENTS = [
     { id: 'hamburger', name: 'Hamburger', price: 12.00 },
     { id: 'mussarela', name: 'Mussarela', price: 4.00 },
     { id: 'calabresa', name: 'Calabresa', price: 2.00 },
@@ -349,6 +350,40 @@ const AVAILABLE_INGREDIENTS = [
     { id: 'molho-barbecue', name: 'Molho Barbecue', price: 2.00 },
     { id: 'molho-churrasco', name: 'Molho de Churrasco', price: 2.00 }
 ];
+
+// Flag para indicar se os ingredientes foram carregados do Firebase
+let ingredientsLoadedFromFirebase = false;
+
+/**
+ * Carregar ingredientes do Firebase
+ */
+async function loadIngredientsFromFirebase() {
+    try {
+        console.log('Carregando ingredientes do Firebase...');
+        const firebaseIngredients = await getActiveIngredients();
+        
+        if (firebaseIngredients && firebaseIngredients.length > 0) {
+            AVAILABLE_INGREDIENTS = firebaseIngredients.map(ing => ({
+                id: ing.id,
+                name: ing.name,
+                price: ing.price
+            }));
+            
+            ingredientsLoadedFromFirebase = true;
+            console.log(`✅ ${firebaseIngredients.length} ingredientes carregados do Firebase`);
+        } else {
+            console.warn('Nenhum ingrediente encontrado no Firebase. Usando dados estáticos como fallback.');
+            ingredientsLoadedFromFirebase = false;
+        }
+    } catch (error) {
+        console.error('Erro ao carregar ingredientes do Firebase:', error);
+        console.log('Usando dados estáticos como fallback.');
+        ingredientsLoadedFromFirebase = false;
+    }
+    
+    // Sempre atualizar window.AVAILABLE_INGREDIENTS
+    window.AVAILABLE_INGREDIENTS = AVAILABLE_INGREDIENTS;
+}
 
 // Make AVAILABLE_INGREDIENTS globally accessible for whatsapp.js
 window.AVAILABLE_INGREDIENTS = AVAILABLE_INGREDIENTS;
@@ -572,6 +607,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Carregar dados do Firebase (assíncrono)
     loadMenuFromFirebase();
+    loadIngredientsFromFirebase();
     loadConfigFromFirebase();
     
     // Renderizar com dados estáticos inicialmente (fallback)
@@ -2059,7 +2095,13 @@ function renderIngredientsSection(item) {
     // Skip if item is a beverage (Bebidas category)
     
     if (!isBeverage) {
-        AVAILABLE_INGREDIENTS.forEach(ingredient => {
+        // Filtrar ingredientes disponíveis para este produto
+        const availableForProduct = item.availableIngredients || [];
+        const ingredientsToShow = availableForProduct.length > 0 
+            ? AVAILABLE_INGREDIENTS.filter(ing => availableForProduct.includes(ing.id))
+            : AVAILABLE_INGREDIENTS; // Se não houver lista, mostrar todos
+        
+        ingredientsToShow.forEach(ingredient => {
             // Skip if already in default ingredients
             if (defaultIngredients.includes(ingredient.id)) {
                 return;
