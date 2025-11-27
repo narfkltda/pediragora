@@ -8,13 +8,7 @@
  * - Cart system integration
  * - Customer data persistence
  * - WhatsApp checkout
- * - Firebase integration for dynamic menu loading
  */
-
-// Import Firebase services
-import { getAvailableProducts } from './services/products-service.js';
-import { getRestaurantConfig } from './services/config-service.js';
-import { getActiveIngredients } from './services/ingredients-service.js';
 
 // Configuration
 const CONFIG = {
@@ -40,8 +34,8 @@ const TEST_MODE = {
     simulatedTime: '20:00' // Horário simulado para teste (formato HH:MM)
 };
 
-// Menu data - será carregado do Firebase ou usado como fallback
-let MENU_DATA = {
+// Menu data
+const MENU_DATA = {
     categories: ['Todos', 'Burguers', 'Hot-Dogs', 'Porções', 'Bebidas'],
     items: [
         {
@@ -255,83 +249,9 @@ let MENU_DATA = {
     ]
 };
 
-// Flag para indicar se os dados foram carregados do Firebase
-let menuLoadedFromFirebase = false;
-
-/**
- * Carregar menu do Firebase
- * Atualiza MENU_DATA com produtos do Firestore
- */
-async function loadMenuFromFirebase() {
-    try {
-        console.log('Carregando produtos do Firebase...');
-        const products = await getAvailableProducts();
-        
-        if (products && products.length > 0) {
-            // Converter produtos do Firebase para o formato esperado
-            MENU_DATA.items = products.map(product => ({
-                id: product.id,
-                name: product.name,
-                description: product.description || '',
-                price: product.price,
-                category: product.category,
-                image: product.image || ''
-            }));
-            
-            // Extrair categorias únicas dos produtos
-            const uniqueCategories = ['Todos', ...new Set(products.map(p => p.category).filter(Boolean))];
-            MENU_DATA.categories = uniqueCategories;
-            
-            menuLoadedFromFirebase = true;
-            console.log(`✅ ${products.length} produtos carregados do Firebase`);
-            
-            // Renderizar após carregar
-            if (categoryButtons && itemsGrid) {
-                renderCategories();
-                renderItems();
-            }
-        } else {
-            console.warn('Nenhum produto encontrado no Firebase. Usando dados estáticos como fallback.');
-            menuLoadedFromFirebase = false;
-        }
-    } catch (error) {
-        console.error('Erro ao carregar produtos do Firebase:', error);
-        console.log('Usando dados estáticos como fallback.');
-        menuLoadedFromFirebase = false;
-    }
-}
-
-/**
- * Carregar configurações do Firebase
- * Atualiza CONFIG com dados do Firestore
- */
-async function loadConfigFromFirebase() {
-    try {
-        const config = await getRestaurantConfig();
-        
-        // Atualizar CONFIG com dados do Firebase
-        if (config.restaurantName) CONFIG.restaurantName = config.restaurantName;
-        if (config.whatsappNumber) CONFIG.whatsappNumber = config.whatsappNumber;
-        if (config.restaurantLatitude) CONFIG.restaurantLatitude = config.restaurantLatitude;
-        if (config.restaurantLongitude) CONFIG.restaurantLongitude = config.restaurantLongitude;
-        if (config.openingHours) CONFIG.openingHours = config.openingHours;
-        
-        // Atualizar nome do restaurante na página se já estiver renderizado
-        const restaurantNameEl = document.querySelector('.restaurant-name');
-        if (restaurantNameEl) {
-            restaurantNameEl.textContent = CONFIG.restaurantName;
-        }
-        
-        console.log('✅ Configurações carregadas do Firebase');
-    } catch (error) {
-        console.error('Erro ao carregar configurações do Firebase:', error);
-        console.log('Usando configurações estáticas.');
-    }
-}
-
 // Available ingredients for customization
-// Será carregado do Firebase ou usado como fallback
-let AVAILABLE_INGREDIENTS = [
+// Make it globally accessible for whatsapp.js
+const AVAILABLE_INGREDIENTS = [
     { id: 'hamburger', name: 'Hamburger', price: 12.00 },
     { id: 'mussarela', name: 'Mussarela', price: 4.00 },
     { id: 'calabresa', name: 'Calabresa', price: 2.00 },
@@ -350,40 +270,6 @@ let AVAILABLE_INGREDIENTS = [
     { id: 'molho-barbecue', name: 'Molho Barbecue', price: 2.00 },
     { id: 'molho-churrasco', name: 'Molho de Churrasco', price: 2.00 }
 ];
-
-// Flag para indicar se os ingredientes foram carregados do Firebase
-let ingredientsLoadedFromFirebase = false;
-
-/**
- * Carregar ingredientes do Firebase
- */
-async function loadIngredientsFromFirebase() {
-    try {
-        console.log('Carregando ingredientes do Firebase...');
-        const firebaseIngredients = await getActiveIngredients();
-        
-        if (firebaseIngredients && firebaseIngredients.length > 0) {
-            AVAILABLE_INGREDIENTS = firebaseIngredients.map(ing => ({
-                id: ing.id,
-                name: ing.name,
-                price: ing.price
-            }));
-            
-            ingredientsLoadedFromFirebase = true;
-            console.log(`✅ ${firebaseIngredients.length} ingredientes carregados do Firebase`);
-        } else {
-            console.warn('Nenhum ingrediente encontrado no Firebase. Usando dados estáticos como fallback.');
-            ingredientsLoadedFromFirebase = false;
-        }
-    } catch (error) {
-        console.error('Erro ao carregar ingredientes do Firebase:', error);
-        console.log('Usando dados estáticos como fallback.');
-        ingredientsLoadedFromFirebase = false;
-    }
-    
-    // Sempre atualizar window.AVAILABLE_INGREDIENTS
-    window.AVAILABLE_INGREDIENTS = AVAILABLE_INGREDIENTS;
-}
 
 // Make AVAILABLE_INGREDIENTS globally accessible for whatsapp.js
 window.AVAILABLE_INGREDIENTS = AVAILABLE_INGREDIENTS;
@@ -605,12 +491,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Carregar dados do Firebase (assíncrono)
-    loadMenuFromFirebase();
-    loadIngredientsFromFirebase();
-    loadConfigFromFirebase();
-    
-    // Renderizar com dados estáticos inicialmente (fallback)
     renderCategories();
     renderItems();
     renderCartUI();
@@ -2095,13 +1975,7 @@ function renderIngredientsSection(item) {
     // Skip if item is a beverage (Bebidas category)
     
     if (!isBeverage) {
-        // Filtrar ingredientes disponíveis para este produto
-        const availableForProduct = item.availableIngredients || [];
-        const ingredientsToShow = availableForProduct.length > 0 
-            ? AVAILABLE_INGREDIENTS.filter(ing => availableForProduct.includes(ing.id))
-            : AVAILABLE_INGREDIENTS; // Se não houver lista, mostrar todos
-        
-        ingredientsToShow.forEach(ingredient => {
+        AVAILABLE_INGREDIENTS.forEach(ingredient => {
             // Skip if already in default ingredients
             if (defaultIngredients.includes(ingredient.id)) {
                 return;
@@ -2767,19 +2641,18 @@ function renderCartItems() {
     const cart = getCart();
     const cartItemsAlterations = document.getElementById('cart-items-alterations');
     const cartAlterationsSection = document.getElementById('cart-alterations-section');
-    const cartItemsSection = document.getElementById('cart-items-section');
     
     if (cart.length === 0) {
-        // Hide both sections when cart is empty
-        if (cartItemsSection) {
-            cartItemsSection.style.display = 'none';
+        const emptyCartEl = document.createElement('div');
+        emptyCartEl.className = 'empty-cart';
+        emptyCartEl.textContent = 'Carrinho vazio';
+        cartItems.innerHTML = '';
+        cartItems.appendChild(emptyCartEl);
+        if (cartItemsAlterations) {
+            cartItemsAlterations.innerHTML = '';
         }
         if (cartAlterationsSection) {
             cartAlterationsSection.style.display = 'none';
-        }
-        cartItems.innerHTML = '';
-        if (cartItemsAlterations) {
-            cartItemsAlterations.innerHTML = '';
         }
         return;
     }
@@ -2801,22 +2674,21 @@ function renderCartItems() {
         }
     });
     
-    // Show/hide "Itens" section based on items without customizations
-    if (cartItemsSection) {
-        if (itemsWithoutCustomizations.length > 0) {
-            cartItemsSection.style.display = 'block';
-            cartItems.innerHTML = '';
-            itemsWithoutCustomizations.forEach(item => {
-                const cartItemEl = createCartItemElement(item);
-                cartItems.appendChild(cartItemEl);
-            });
-        } else {
-            cartItemsSection.style.display = 'none';
-            cartItems.innerHTML = '';
-        }
+    // Render items without customizations
+    cartItems.innerHTML = '';
+    if (itemsWithoutCustomizations.length === 0) {
+        const emptyCartEl = document.createElement('div');
+        emptyCartEl.className = 'empty-cart';
+        emptyCartEl.textContent = 'Nenhum item';
+        cartItems.appendChild(emptyCartEl);
+    } else {
+        itemsWithoutCustomizations.forEach(item => {
+            const cartItemEl = createCartItemElement(item);
+            cartItems.appendChild(cartItemEl);
+        });
     }
     
-    // Show/hide "Com Alterações" section based on items with customizations
+    // Render items with customizations
     if (cartItemsAlterations && cartAlterationsSection) {
         if (itemsWithCustomizations.length > 0) {
             cartAlterationsSection.style.display = 'block';

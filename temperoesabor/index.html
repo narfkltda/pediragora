@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://wa.me https://www.google.com https://*.firebaseio.com https://*.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://wa.me https://www.google.com;">
     <title>Tempero & Sabor - Cardápio Digital</title>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -92,7 +92,7 @@
         <!-- Step 1: Cart Items -->
         <div class="cart-step cart-step-1" id="cart-step-1">
             <div class="cart-step-content">
-                <div class="cart-items-section" id="cart-items-section">
+                <div class="cart-items-section">
                     <h4 class="cart-section-title">Itens</h4>
                     <div class="cart-items" id="cart-items">
                         <!-- Cart items will be dynamically generated -->
@@ -429,7 +429,7 @@
     <!-- Scripts -->
     <script src="../core/cart.js"></script>
     <script src="../core/whatsapp.js"></script>
-    <script type="module" src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
 

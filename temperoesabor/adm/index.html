@@ -43,6 +43,37 @@
                 Carregando produtos...
             </div>
 
+            <!-- Controles de Seleção em Massa e Filtros -->
+            <div class="products-controls">
+                <div class="bulk-actions">
+                    <label class="select-all-label">
+                        <input type="checkbox" id="select-all-checkbox">
+                        <span>Selecionar Todos</span>
+                        <span class="selection-count" id="selection-count"></span>
+                    </label>
+                    <div class="bulk-action-buttons">
+                        <button id="activate-selected-btn" class="btn-bulk-action" disabled>
+                            Ativar Selecionados
+                        </button>
+                        <button id="deactivate-selected-btn" class="btn-bulk-action" disabled>
+                            Desativar Selecionados
+                        </button>
+                        <button id="delete-selected-btn" class="btn-bulk-action btn-danger" disabled>
+                            Excluir Selecionados
+                        </button>
+                    </div>
+                </div>
+                <div class="products-filters">
+                    <select id="category-filter" class="category-select">
+                        <option value="all">Todas as Categorias</option>
+                    </select>
+                    <div class="search-container">
+                        <input type="text" id="product-search-input" class="search-input" placeholder="Buscar produto...">
+                        <button id="clear-search-btn" class="clear-search-btn" style="display: none;">&times;</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="products-grid" id="products-grid">
                 <!-- Produtos serão carregados aqui -->
             </div>

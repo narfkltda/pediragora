@@ -85,6 +85,16 @@ const navButtons = document.querySelectorAll('.nav-btn');
 const adminSections = document.querySelectorAll('.admin-section');
 const configForm = document.getElementById('config-form');
 
+// Elementos DOM - Controles de Seleção e Filtros
+const selectAllCheckbox = document.getElementById('select-all-checkbox');
+const selectionCount = document.getElementById('selection-count');
+const activateSelectedBtn = document.getElementById('activate-selected-btn');
+const deactivateSelectedBtn = document.getElementById('deactivate-selected-btn');
+const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+const categoryFilter = document.getElementById('category-filter');
+const productSearchInput = document.getElementById('product-search-input');
+const clearSearchBtn = document.getElementById('clear-search-btn');
+
 // Estado
 let products = [];
 let ingredients = [];
@@ -93,6 +103,13 @@ let editingIngredientId = null;
 let currentImageFile = null;
 let defaultIngredientsOrder = [];
 let confirmCallback = null;
+
+// Estado para seleção e filtros
+let selectedProducts = []; // Array de IDs selecionados
+let currentCategoryFilter = 'all';
+let currentSearchTerm = '';
+let allProducts = []; // Todos os produtos (sem filtros)
+let filteredProducts = []; // Produtos após aplicar filtros
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
@@ -106,6 +123,9 @@ document.addEventListener('DOMContentLoaded', () => {
     previewOriginalImg = document.getElementById('preview-original-img');
     removeImageBtn = document.getElementById('remove-image-btn');
     imageUploadLoading = document.getElementById('image-upload-loading');
+    
+    // Inicializar elementos de seleção e filtros (podem não existir em outras seções)
+    // Esses elementos serão verificados nas funções antes de uso
     
     checkAuth();
     setupEventListeners();
@@ -133,8 +153,10 @@ async function loadProducts() {
         productsLoading.style.display = 'block';
         productsGrid.innerHTML = '';
         
-        products = await getProducts();
-        renderProducts();
+        allProducts = await getProducts();
+        products = allProducts;
+        populateCategoryFilter();
+        applyFilters();
         
         productsLoading.style.display = 'none';
     } catch (error) {
@@ -148,21 +170,49 @@ async function loadProducts() {
 function renderProducts() {
     productsGrid.innerHTML = '';
     
-    if (products.length === 0) {
+    // Usar filteredProducts em vez de products
+    const productsToRender = filteredProducts.length > 0 ? filteredProducts : products;
+    
+    if (productsToRender.length === 0) {
         productsGrid.innerHTML = `
             <div class="empty-state">
-                <p>Nenhum produto cadastrado ainda.</p>
+                <p>${currentSearchTerm || currentCategoryFilter !== 'all' ? 'Nenhum produto encontrado com os filtros aplicados.' : 'Nenhum produto cadastrado ainda.'}</p>
+                ${!currentSearchTerm && currentCategoryFilter === 'all' ? `
                 <button class="btn-primary" onclick="document.getElementById('add-product-btn').click()">
                     Adicionar Primeiro Produto
                 </button>
+                ` : ''}
             </div>
         `;
+        updateSelectionUI();
         return;
     }
     
-    products.forEach(product => {
+    // Agrupar por categoria para numeração
+    const productsByCategory = {};
+    productsToRender.forEach(product => {
+        if (!productsByCategory[product.category]) {
+            productsByCategory[product.category] = [];
+        }
+        productsByCategory[product.category].push(product);
+    });
+    
+    // Renderizar produtos agrupados por categoria
+    Object.keys(productsByCategory).sort().forEach(category => {
+        productsByCategory[category].forEach((product, index) => {
         const card = document.createElement('div');
         card.className = 'item-card horizontal';
+        
+        // Checkbox de seleção
+        const checkboxContainer = document.createElement('div');
+        checkboxContainer.className = 'product-checkbox-container';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'product-checkbox';
+        checkbox.dataset.productId = product.id;
+        checkbox.checked = selectedProducts.includes(product.id);
+        checkbox.addEventListener('change', () => toggleProductSelection(product.id));
+        checkboxContainer.appendChild(checkbox);
         
         // Top section: content + image
         const topSection = document.createElement('div');
@@ -174,7 +224,9 @@ function renderProducts() {
         
         const title = document.createElement('h3');
         title.className = 'item-title';
-        title.textContent = escapeHtml(product.name);
+        // Formatar nome com numeração (exceto Bebidas)
+        const formattedName = formatProductName(product, index);
+        title.textContent = escapeHtml(formattedName);
         
         const description = document.createElement('p');
         description.className = 'item-description';
@@ -243,11 +295,279 @@ function renderProducts() {
         priceActionsContainer.appendChild(price);
         priceActionsContainer.appendChild(buttonsContainer);
         
+        card.appendChild(checkboxContainer);
         card.appendChild(topSection);
         card.appendChild(priceActionsContainer);
         
         productsGrid.appendChild(card);
+        });
     });
+    
+    updateSelectionUI();
+}
+
+// Popular dropdown de categorias
+function populateCategoryFilter() {
+    if (!categoryFilter) return;
+    
+    // Limpar opções existentes (exceto "Todas as Categorias")
+    const allOption = categoryFilter.querySelector('option[value="all"]');
+    categoryFilter.innerHTML = '';
+    if (allOption) {
+        categoryFilter.appendChild(allOption);
+    } else {
+        const defaultOption = document.createElement('option');
+        defaultOption.value = 'all';
+        defaultOption.textContent = 'Todas as Categorias';
+        categoryFilter.appendChild(defaultOption);
+    }
+    
+    // Obter categorias únicas dos produtos
+    const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))].sort();
+    
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        categoryFilter.appendChild(option);
+    });
+}
+
+// Aplicar filtros (categoria + busca)
+function applyFilters() {
+    filteredProducts = [...allProducts];
+    
+    // Filtro por categoria
+    if (currentCategoryFilter !== 'all') {
+        filteredProducts = filteredProducts.filter(p => p.category === currentCategoryFilter);
+    }
+    
+    // Filtro por busca
+    if (currentSearchTerm.trim()) {
+        const searchLower = currentSearchTerm.toLowerCase().trim();
+        filteredProducts = filteredProducts.filter(p => 
+            p.name.toLowerCase().includes(searchLower)
+        );
+    }
+    
+    // Remover seleções de produtos que não estão mais visíveis
+    selectedProducts = selectedProducts.filter(id => 
+        filteredProducts.some(p => p.id === id)
+    );
+    
+    renderProducts();
+}
+
+// Filtrar por categoria
+function filterByCategory(category) {
+    currentCategoryFilter = category;
+    applyFilters();
+}
+
+// Buscar produtos por nome
+function searchProducts(term) {
+    currentSearchTerm = term;
+    applyFilters();
+}
+
+// Toggle selecionar todos
+function toggleSelectAll() {
+    if (!selectAllCheckbox) return;
+    
+    const isChecked = selectAllCheckbox.checked;
+    const visibleProductIds = filteredProducts.map(p => p.id);
+    
+    if (isChecked) {
+        // Adicionar todos os produtos visíveis
+        visibleProductIds.forEach(id => {
+            if (!selectedProducts.includes(id)) {
+                selectedProducts.push(id);
+            }
+        });
+    } else {
+        // Remover apenas os produtos visíveis
+        selectedProducts = selectedProducts.filter(id => !visibleProductIds.includes(id));
+    }
+    
+    // Atualizar checkboxes individuais
+    document.querySelectorAll('.product-checkbox').forEach(checkbox => {
+        checkbox.checked = selectedProducts.includes(checkbox.dataset.productId);
+    });
+    
+    updateSelectionUI();
+}
+
+// Toggle seleção de produto individual
+function toggleProductSelection(productId) {
+    const index = selectedProducts.indexOf(productId);
+    if (index > -1) {
+        selectedProducts.splice(index, 1);
+    } else {
+        selectedProducts.push(productId);
+    }
+    
+    updateSelectionUI();
+}
+
+// Atualizar UI de seleção
+function updateSelectionUI() {
+    if (!selectAllCheckbox || !selectionCount) return;
+    
+    const visibleProductIds = filteredProducts.map(p => p.id);
+    const selectedVisible = visibleProductIds.filter(id => selectedProducts.includes(id));
+    
+    // Atualizar checkbox "Selecionar Todos"
+    if (visibleProductIds.length > 0) {
+        selectAllCheckbox.checked = selectedVisible.length === visibleProductIds.length;
+        selectAllCheckbox.indeterminate = selectedVisible.length > 0 && selectedVisible.length < visibleProductIds.length;
+    } else {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    }
+    
+    // Atualizar contador
+    const totalSelected = selectedProducts.length;
+    if (totalSelected > 0) {
+        selectionCount.textContent = `(${totalSelected} selecionado${totalSelected > 1 ? 's' : ''})`;
+        selectionCount.style.display = 'inline';
+    } else {
+        selectionCount.textContent = '';
+        selectionCount.style.display = 'none';
+    }
+    
+    // Habilitar/desabilitar botões de ação
+    const hasSelection = selectedProducts.length > 0;
+    if (activateSelectedBtn) activateSelectedBtn.disabled = !hasSelection;
+    if (deactivateSelectedBtn) deactivateSelectedBtn.disabled = !hasSelection;
+    if (deleteSelectedBtn) deleteSelectedBtn.disabled = !hasSelection;
+}
+
+// Ativar produtos selecionados
+async function activateSelected() {
+    if (selectedProducts.length === 0) return;
+    
+    try {
+        productsLoading.style.display = 'block';
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (const productId of selectedProducts) {
+            try {
+                await updateProduct(productId, { available: true });
+                successCount++;
+            } catch (error) {
+                console.error(`Erro ao ativar produto ${productId}:`, error);
+                errorCount++;
+            }
+        }
+        
+        await loadProducts();
+        
+        if (successCount > 0) {
+            showToast(`${successCount} produto(s) ativado(s) com sucesso!`, 'success');
+        }
+        if (errorCount > 0) {
+            showToast(`Erro ao ativar ${errorCount} produto(s)`, 'error');
+        }
+        
+        selectedProducts = [];
+        updateSelectionUI();
+        productsLoading.style.display = 'none';
+    } catch (error) {
+        console.error('Erro ao ativar produtos:', error);
+        showToast('Erro ao ativar produtos', 'error');
+        productsLoading.style.display = 'none';
+    }
+}
+
+// Desativar produtos selecionados
+async function deactivateSelected() {
+    if (selectedProducts.length === 0) return;
+    
+    try {
+        productsLoading.style.display = 'block';
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (const productId of selectedProducts) {
+            try {
+                await updateProduct(productId, { available: false });
+                successCount++;
+            } catch (error) {
+                console.error(`Erro ao desativar produto ${productId}:`, error);
+                errorCount++;
+            }
+        }
+        
+        await loadProducts();
+        
+        if (successCount > 0) {
+            showToast(`${successCount} produto(s) desativado(s) com sucesso!`, 'success');
+        }
+        if (errorCount > 0) {
+            showToast(`Erro ao desativar ${errorCount} produto(s)`, 'error');
+        }
+        
+        selectedProducts = [];
+        updateSelectionUI();
+        productsLoading.style.display = 'none';
+    } catch (error) {
+        console.error('Erro ao desativar produtos:', error);
+        showToast('Erro ao desativar produtos', 'error');
+        productsLoading.style.display = 'none';
+    }
+}
+
+// Excluir produtos selecionados
+async function deleteSelected() {
+    if (selectedProducts.length === 0) return;
+    
+    const count = selectedProducts.length;
+    const productNames = allProducts
+        .filter(p => selectedProducts.includes(p.id))
+        .map(p => p.name)
+        .slice(0, 3)
+        .join(', ');
+    const moreText = count > 3 ? ` e mais ${count - 3}` : '';
+    
+    showConfirmModal(
+        'Confirmar Exclusão',
+        `Tem certeza que deseja excluir ${count} produto(s)?\n\n${productNames}${moreText}`,
+        async () => {
+            try {
+                productsLoading.style.display = 'block';
+                let successCount = 0;
+                let errorCount = 0;
+                
+                for (const productId of selectedProducts) {
+                    try {
+                        await deleteProduct(productId);
+                        successCount++;
+                    } catch (error) {
+                        console.error(`Erro ao excluir produto ${productId}:`, error);
+                        errorCount++;
+                    }
+                }
+                
+                await loadProducts();
+                
+                if (successCount > 0) {
+                    showToast(`${successCount} produto(s) excluído(s) com sucesso!`, 'success');
+                }
+                if (errorCount > 0) {
+                    showToast(`Erro ao excluir ${errorCount} produto(s)`, 'error');
+                }
+                
+                selectedProducts = [];
+                updateSelectionUI();
+                productsLoading.style.display = 'none';
+            } catch (error) {
+                console.error('Erro ao excluir produtos:', error);
+                showToast('Erro ao excluir produtos', 'error');
+                productsLoading.style.display = 'none';
+            }
+        }
+    );
 }
 
 // Adicionar produto
@@ -1538,6 +1858,51 @@ function setupEventListeners() {
             }
         });
     }
+    
+    // Controles de seleção em massa
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', toggleSelectAll);
+    }
+    
+    if (activateSelectedBtn) {
+        activateSelectedBtn.addEventListener('click', activateSelected);
+    }
+    
+    if (deactivateSelectedBtn) {
+        deactivateSelectedBtn.addEventListener('click', deactivateSelected);
+    }
+    
+    if (deleteSelectedBtn) {
+        deleteSelectedBtn.addEventListener('click', deleteSelected);
+    }
+    
+    // Filtro por categoria
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', (e) => {
+            filterByCategory(e.target.value);
+        });
+    }
+    
+    // Busca por nome
+    if (productSearchInput) {
+        productSearchInput.addEventListener('input', (e) => {
+            const term = e.target.value;
+            searchProducts(term);
+            if (clearSearchBtn) {
+                clearSearchBtn.style.display = term.trim() ? 'block' : 'none';
+            }
+        });
+    }
+    
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', () => {
+            if (productSearchInput) {
+                productSearchInput.value = '';
+                searchProducts('');
+                clearSearchBtn.style.display = 'none';
+            }
+        });
+    }
 }
 
 // Navegação entre seções
@@ -1558,6 +1923,29 @@ function setupNavigation() {
 }
 
 // Utilitários
+// Formatar nome do produto com numeração (exceto Bebidas)
+function formatProductName(product, index = null) {
+    // Don't add ID prefix for Bebidas category
+    if (product.category === 'Bebidas') {
+        return product.name;
+    }
+    
+    // Tentar usar ID numérico se disponível
+    if (product.id && /^\d+$/.test(product.id)) {
+        const number = product.id.padStart(2, '0');
+        return `${number} - ${product.name}`;
+    }
+    
+    // Se não houver ID numérico, usar índice + 1 (se fornecido)
+    if (index !== null) {
+        const number = (index + 1).toString().padStart(2, '0');
+        return `${number} - ${product.name}`;
+    }
+    
+    // Fallback: retornar nome sem numeração
+    return product.name;
+}
+
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;

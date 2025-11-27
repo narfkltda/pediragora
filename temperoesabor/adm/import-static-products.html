@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importar Produtos Estáticos - Admin</title>
+    <link rel="stylesheet" href="admin.css">
+    <style>
+        .import-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .import-header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .import-header h2 {
+            margin-bottom: 10px;
+        }
+        
+        .import-header p {
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .import-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .products-list-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .products-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .product-item {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .product-item:hover {
+            border-color: #eea534;
+            box-shadow: 0 2px 8px rgba(238, 165, 52, 0.2);
+        }
+        
+        .product-item.selected {
+            border-color: #eea534;
+            background: rgba(238, 165, 52, 0.05);
+        }
+        
+        .product-item.existing {
+            opacity: 0.6;
+            background: #f5f5f5;
+        }
+        
+        .product-item.existing input[type="checkbox"] {
+            cursor: not-allowed;
+        }
+        
+        .product-item-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .product-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+            cursor: pointer;
+            accent-color: #eea534;
+        }
+        
+        .product-item-info {
+            flex: 1;
+        }
+        
+        .product-item-name {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .product-item-category {
+            display: inline-block;
+            padding: 4px 8px;
+            background: rgba(238, 165, 52, 0.15);
+            color: #d69826;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-bottom: 8px;
+        }
+        
+        .product-item-price {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #333;
+            margin-top: 8px;
+        }
+        
+        .product-item-description {
+            font-size: 0.85rem;
+            color: #666;
+            line-height: 1.4;
+            margin-top: 5px;
+        }
+        
+        .import-progress {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .import-progress.active {
+            display: block;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #eea534, #d69826);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+        }
+        
+        .import-results {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f5f5f5;
+        }
+        
+        .result-item {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .result-item.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .result-item.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .result-item.skipped {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <div class="header-content">
+                <h1>📥 Importar Produtos Estáticos</h1>
+                <div class="header-actions">
+                    <a href="index.html" class="btn-view-site">← Voltar ao Admin</a>
+                    <a href="../index.html" class="btn-view-site" target="_blank">Ver Site</a>
+                    <button id="logout-btn" class="btn-logout">Sair</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="import-container">
+            <div class="import-header">
+                <h2>Importar Produtos do Cardápio Estático</h2>
+                <p>Esta página permite importar os produtos definidos no arquivo <code>script.js</code> para o Firebase. Os produtos já existentes no Firebase serão ignorados (baseado no nome).</p>
+                
+                <div class="import-controls">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="select-all-checkbox">
+                        <span style="font-weight: 600;">Selecionar Todos</span>
+                    </label>
+                    <button id="import-btn" class="btn-primary" disabled>
+                        Importar Selecionados (<span id="selected-count">0</span>)
+                    </button>
+                    <div id="loading-indicator" style="display: none;">
+                        <span>Carregando produtos...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="products-list-container">
+                <div id="products-list" class="products-list">
+                    <!-- Produtos serão carregados aqui -->
+                </div>
+            </div>
+
+            <div id="import-progress" class="import-progress">
+                <h3>Importando Produtos...</h3>
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill" style="width: 0%">0%</div>
+                </div>
+                <div class="progress-text" id="progress-text">Preparando importação...</div>
+                <div id="import-results" class="import-results" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="import-static-products.js"></script>
+</body>
+</html>
+
