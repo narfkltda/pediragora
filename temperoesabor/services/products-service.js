@@ -47,31 +47,41 @@ export async function getProducts() {
  */
 export async function getAvailableProducts() {
   try {
-    const q = query(
-      collection(db, PRODUCTS_COLLECTION),
-      where('available', '==', true),
-      orderBy('category'),
-      orderBy('name')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    // Tentar query com índices compostos primeiro
+    try {
+      const q = query(
+        collection(db, PRODUCTS_COLLECTION),
+        where('available', '==', true),
+        orderBy('category'),
+        orderBy('name')
+      );
+      const snapshot = await getDocs(q);
+      const products = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      if (products.length > 0) {
+        return products;
+      }
+    } catch (indexError) {
+      console.warn('Índice composto não disponível, usando fallback:', indexError.code);
+    }
+    
+    // Fallback: buscar todos e filtrar
+    const allProducts = await getProducts();
+    const availableProducts = allProducts
+      .filter(p => p.available !== false && p.available !== undefined)
+      .sort((a, b) => {
+        if (a.category !== b.category) {
+          return (a.category || '').localeCompare(b.category || '');
+        }
+        return (a.name || '').localeCompare(b.name || '');
+      });
+    
+    return availableProducts;
   } catch (error) {
     console.error('Erro ao buscar produtos disponíveis:', error);
-    // Se não houver índice composto, buscar todos e filtrar
-    if (error.code === 'failed-precondition') {
-      const allProducts = await getProducts();
-      return allProducts
-        .filter(p => p.available !== false)
-        .sort((a, b) => {
-          if (a.category !== b.category) {
-            return a.category.localeCompare(b.category);
-          }
-          return a.name.localeCompare(b.name);
-        });
-    }
     throw error;
   }
 }
@@ -111,6 +121,7 @@ export async function addProduct(product) {
       available: product.available !== undefined ? product.available : true,
       defaultIngredients: product.defaultIngredients || [], // Array de IDs de ingredientes padrão
       availableIngredients: product.availableIngredients || [], // Array de IDs de ingredientes disponíveis
+      number: product.number || null, // Número do produto para numeração (preservado da importação)
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
@@ -137,6 +148,7 @@ export async function updateProduct(id, product) {
       price: parseFloat(product.price),
       defaultIngredients: product.defaultIngredients || [], // Array de IDs de ingredientes padrão
       availableIngredients: product.availableIngredients || [], // Array de IDs de ingredientes disponíveis
+      number: product.number !== undefined ? product.number : null, // Preservar número se fornecido
       updatedAt: serverTimestamp()
     };
     await updateDoc(docRef, updateData);

@@ -8,7 +8,11 @@
  * - Cart system integration
  * - Customer data persistence
  * - WhatsApp checkout
+ * - Firebase integration for products
  */
+
+// Import Firebase service
+import { getAvailableProducts } from './services/products-service.js';
 
 // Configuration
 const CONFIG = {
@@ -34,8 +38,8 @@ const TEST_MODE = {
     simulatedTime: '20:00' // Horário simulado para teste (formato HH:MM)
 };
 
-// Menu data
-const MENU_DATA = {
+// Menu data (fallback estático)
+const MENU_DATA_STATIC = {
     categories: ['Todos', 'Burguers', 'Hot-Dogs', 'Porções', 'Bebidas'],
     items: [
         {
@@ -248,6 +252,15 @@ const MENU_DATA = {
         }
     ]
 };
+
+// Menu data dinâmico (será carregado do Firebase)
+let MENU_DATA = {
+    categories: ['Todos'],
+    items: []
+};
+
+// Tornar MENU_DATA acessível globalmente para cart.js e whatsapp.js
+window.MENU_DATA = MENU_DATA;
 
 // Available ingredients for customization
 // Make it globally accessible for whatsapp.js
@@ -491,9 +504,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    renderCategories();
-    renderItems();
-    renderCartUI();
+    // Carregar produtos do Firebase (com fallback para dados estáticos)
+    loadProductsFromFirebase();
     
     setupCategoryListeners();
     setupSearchListeners();
@@ -519,6 +531,64 @@ document.addEventListener('DOMContentLoaded', () => {
 /**
  * Render category filter buttons
  */
+// Carregar produtos do Firebase
+async function loadProductsFromFirebase() {
+    try {
+        console.log('🔄 Carregando produtos do Firebase...');
+        const firebaseProducts = await getAvailableProducts();
+        
+        console.log(`📦 Produtos recebidos do Firebase:`, firebaseProducts.length);
+        
+        if (firebaseProducts && firebaseProducts.length > 0) {
+            // Converter produtos do Firebase para o formato esperado
+            MENU_DATA.items = firebaseProducts.map(product => ({
+                id: product.id,
+                name: product.name,
+                description: product.description || '',
+                price: product.price,
+                category: product.category,
+                image: product.image || '',
+                number: product.number || null, // Preservar número se existir
+                available: product.available !== false // Garantir que available seja true
+            }));
+            
+            // Filtrar apenas produtos disponíveis (dupla verificação)
+            MENU_DATA.items = MENU_DATA.items.filter(item => item.available !== false);
+            
+            // Extrair categorias únicas dos produtos
+            const categories = ['Todos', ...new Set(MENU_DATA.items.map(item => item.category).filter(Boolean))];
+            MENU_DATA.categories = categories;
+            
+            // Atualizar referência global
+            window.MENU_DATA = MENU_DATA;
+            
+            console.log(`✅ ${MENU_DATA.items.length} produtos disponíveis carregados do Firebase`);
+            console.log('📋 Categorias:', MENU_DATA.categories);
+            console.log('📦 Produtos:', MENU_DATA.items.map(p => `${p.name} (${p.available ? 'ativo' : 'inativo'})`));
+        } else {
+            // Fallback para dados estáticos se Firebase estiver vazio
+            console.warn('⚠️ Firebase vazio ou sem produtos disponíveis, usando dados estáticos como fallback');
+            MENU_DATA = JSON.parse(JSON.stringify(MENU_DATA_STATIC)); // Deep copy
+            window.MENU_DATA = MENU_DATA;
+        }
+    } catch (error) {
+        // Em caso de erro, usar dados estáticos
+        console.error('❌ Erro ao carregar produtos do Firebase:', error);
+        console.error('Detalhes do erro:', error.message, error.code);
+        console.error('Stack:', error.stack);
+        console.warn('⚠️ Usando dados estáticos como fallback');
+        MENU_DATA = JSON.parse(JSON.stringify(MENU_DATA_STATIC)); // Deep copy
+        window.MENU_DATA = MENU_DATA;
+    }
+    
+    // Renderizar após carregar dados (garantir que seja assíncrono)
+    setTimeout(() => {
+        renderCategories();
+        renderItems();
+        renderCartUI();
+    }, 100);
+}
+
 function renderCategories() {
     categoryButtons.innerHTML = '';
     
@@ -615,8 +685,21 @@ function formatItemName(item) {
     if (item.category === 'Bebidas') {
         return item.name;
     }
-    const number = item.id.padStart(2, '0');
-    return `${number} - ${item.name}`;
+    
+    // Tentar usar campo 'number' se disponível (do Firebase)
+    if (item.number) {
+        const number = String(item.number).padStart(2, '0');
+        return `${number} - ${item.name}`;
+    }
+    
+    // Tentar usar ID numérico se disponível
+    if (item.id && /^\d+$/.test(item.id)) {
+        const number = item.id.padStart(2, '0');
+        return `${number} - ${item.name}`;
+    }
+    
+    // Fallback: retornar nome sem numeração
+    return item.name;
 }
 
 /**

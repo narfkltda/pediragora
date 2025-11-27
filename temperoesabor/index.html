@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://wa.me https://www.google.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src https://wa.me https://www.google.com https://*.firebaseio.com https://*.googleapis.com https://*.firebasestorage.app;">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Tempero & Sabor - Cardápio Digital</title>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -427,9 +430,9 @@
     </div>
 
     <!-- Scripts -->
+    <script type="module" src="script.js"></script>
     <script src="../core/cart.js"></script>
     <script src="../core/whatsapp.js"></script>
-    <script src="script.js"></script>
 </body>
 </html>
 
