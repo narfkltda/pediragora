@@ -755,17 +755,34 @@ function createItemCard(item) {
         imageContainer.classList.add('hotdog-container');
     }
     
+    // Loading skeleton
+    const loadingSkeleton = document.createElement('div');
+    loadingSkeleton.className = 'image-loading-skeleton';
+    imageContainer.appendChild(loadingSkeleton);
+    
     const img = document.createElement('img');
     img.src = item.image;
     img.alt = sanitizeHTML(item.name);
     img.className = 'item-image';
+    img.style.opacity = '0';
+    img.style.transition = 'opacity 0.3s ease';
     // Add specific class for hot dog images
     if (item.category === 'Hot-Dogs') {
         img.classList.add('hotdog-image');
     }
+    
+    // Show loading while image loads
+    img.onload = function() {
+        this.style.opacity = '1';
+        loadingSkeleton.style.display = 'none';
+    };
+    
     img.onerror = function() {
         this.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3ESem Imagem%3C/text%3E%3C/svg%3E';
+        this.style.opacity = '1';
+        loadingSkeleton.style.display = 'none';
     };
+    
     imageContainer.appendChild(img);
     
     // Content container (for title and description only)
