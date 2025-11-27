@@ -2781,13 +2781,15 @@ function renderCartItems() {
     const cart = getCart();
     const cartItemsAlterations = document.getElementById('cart-items-alterations');
     const cartAlterationsSection = document.getElementById('cart-alterations-section');
+    // Encontrar a seção de itens (primeira cart-items-section que não é cart-alterations-section)
+    const cartItemsSection = document.querySelector('#cart-step-1 .cart-items-section:not(.cart-alterations-section)');
     
     if (cart.length === 0) {
-        const emptyCartEl = document.createElement('div');
-        emptyCartEl.className = 'empty-cart';
-        emptyCartEl.textContent = 'Carrinho vazio';
+        // Esconder seção de itens quando carrinho estiver vazio
+        if (cartItemsSection) {
+            cartItemsSection.style.display = 'none';
+        }
         cartItems.innerHTML = '';
-        cartItems.appendChild(emptyCartEl);
         if (cartItemsAlterations) {
             cartItemsAlterations.innerHTML = '';
         }
@@ -2817,11 +2819,15 @@ function renderCartItems() {
     // Render items without customizations
     cartItems.innerHTML = '';
     if (itemsWithoutCustomizations.length === 0) {
-        const emptyCartEl = document.createElement('div');
-        emptyCartEl.className = 'empty-cart';
-        emptyCartEl.textContent = 'Nenhum item';
-        cartItems.appendChild(emptyCartEl);
+        // Esconder seção de itens quando não houver itens sem customizações
+        if (cartItemsSection) {
+            cartItemsSection.style.display = 'none';
+        }
     } else {
+        // Mostrar seção de itens quando houver itens sem customizações
+        if (cartItemsSection) {
+            cartItemsSection.style.display = 'block';
+        }
         itemsWithoutCustomizations.forEach(item => {
             const cartItemEl = createCartItemElement(item);
             cartItems.appendChild(cartItemEl);
