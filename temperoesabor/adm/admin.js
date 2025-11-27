@@ -25,6 +25,7 @@ import {
   getRestaurantConfig, 
   saveRestaurantConfig 
 } from '../services/config-service.js';
+import { uploadProductImage } from '../services/storage-service.js';
 
 // Elementos DOM - Produtos
 const productsGrid = document.getElementById('products-grid');
@@ -44,6 +45,17 @@ const feedbackModalClose = document.getElementById('feedback-modal-close');
 const feedbackModalOk = document.getElementById('feedback-modal-ok');
 const feedbackModalBody = document.getElementById('feedback-modal-body');
 const feedbackModalTitle = document.getElementById('feedback-modal-title');
+
+// Elementos DOM - Upload de Imagem (serão inicializados após DOM carregar)
+let productImageInput;
+let productImageUrl;
+let imageUploadArea;
+let imageUploadPlaceholder;
+let imagePreviewContainer;
+let imagePreviewOriginal;
+let previewOriginalImg;
+let removeImageBtn;
+let imageUploadLoading;
 
 // Elementos DOM - Ingredientes
 const ingredientsGrid = document.getElementById('ingredients-grid');
@@ -70,9 +82,21 @@ let products = [];
 let ingredients = [];
 let editingProductId = null;
 let editingIngredientId = null;
+let currentImageFile = null;
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
+    // Inicializar elementos DOM de upload de imagem
+    productImageInput = document.getElementById('product-image-input');
+    productImageUrl = document.getElementById('product-image-url');
+    imageUploadArea = document.getElementById('image-upload-area');
+    imageUploadPlaceholder = document.getElementById('image-upload-placeholder');
+    imagePreviewContainer = document.getElementById('image-preview-container');
+    imagePreviewOriginal = document.getElementById('image-preview-original');
+    previewOriginalImg = document.getElementById('preview-original-img');
+    removeImageBtn = document.getElementById('remove-image-btn');
+    imageUploadLoading = document.getElementById('image-upload-loading');
+    
     checkAuth();
     setupEventListeners();
     setupNavigation();
@@ -163,6 +187,7 @@ if (addProductBtn) {
         productForm.reset();
         document.getElementById('product-available').checked = true;
         defaultIngredientsOrder = []; // Resetar ordem
+        resetImagePreview();
         await loadProductDefaultIngredients();
         await loadProductIngredients();
         updateDescriptionFromDefaultIngredients();
@@ -173,6 +198,99 @@ if (addProductBtn) {
 // Salvar produto
 productForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    
+    // Validar se há imagem (exceto se estiver editando e já tiver imagem)
+    const existingImageUrl = productImageUrl ? productImageUrl.value.trim() : '';
+    if (!currentImageFile && !existingImageUrl && !editingProductId) {
+        showToast('Por favor, selecione uma imagem para o produto', 'error');
+        return;
+    }
+    
+    let imageUrl = existingImageUrl;
+    
+    // Fazer upload da imagem se houver nova imagem selecionada
+    if (currentImageFile) {
+        const submitButton = productForm.querySelector('button[type="submit"]');
+        
+        try {
+            console.log('Iniciando upload da imagem...', currentImageFile.name);
+            if (imageUploadLoading) {
+                imageUploadLoading.style.display = 'block';
+            }
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Fazendo upload...';
+            }
+            
+            // Adicionar timeout para evitar loop infinito
+            const uploadPromise = uploadProductImage(currentImageFile, editingProductId || null);
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Upload demorou muito tempo. Verifique sua conexão e tente novamente.')), 60000); // 60 segundos
+            });
+            
+            imageUrl = await Promise.race([uploadPromise, timeoutPromise]);
+            console.log('Upload concluído com sucesso. URL:', imageUrl);
+            if (productImageUrl) productImageUrl.value = imageUrl;
+        } catch (error) {
+            console.error('Erro detalhado ao fazer upload da imagem:', error);
+            console.error('Stack trace:', error.stack);
+            
+            // Verificar se é erro de CORS
+            const errorMsg = error.message || '';
+            const isCorsError = errorMsg.includes('CORS') || 
+                              errorMsg.includes('blocked by CORS') ||
+                              errorMsg.includes('preflight') ||
+                              errorMsg.includes('XMLHttpRequest') ||
+                              (error.stack && error.stack.includes('CORS'));
+            
+            let displayMessage = errorMsg;
+            
+            // Se for CORS, mostrar mensagem mais clara
+            if (isCorsError) {
+                displayMessage = 'Erro de CORS: Configure as regras do Firebase Storage. Veja o console para instruções.';
+                console.error('\n========================================');
+                console.error('⚠️  ERRO DE CORS DETECTADO');
+                console.error('========================================');
+                console.error('O upload está sendo bloqueado pelas regras do Firebase Storage.');
+                console.error('\n📋 SOLUÇÃO:');
+                console.error('1. Acesse: https://console.firebase.google.com/project/temperoesabor-57382/storage/rules');
+                console.error('2. Substitua as regras por:');
+                console.error(`
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /products/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}`);
+                console.error('3. Clique em "Publish" para publicar');
+                console.error('========================================\n');
+            }
+            
+            showToast(displayMessage, 'error');
+            // Não continuar se o upload falhou
+            if (imageUploadLoading) imageUploadLoading.style.display = 'none';
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Salvar';
+            }
+            return;
+        } finally {
+            // Sempre esconder o loading e reabilitar o botão no finally
+            if (imageUploadLoading) {
+                imageUploadLoading.style.display = 'none';
+            }
+            if (submitButton && !submitButton.disabled) {
+                // Só atualizar o texto se o botão não estiver desabilitado (ou seja, se não continuou o fluxo)
+                const currentText = submitButton.textContent;
+                if (currentText === 'Fazendo upload...') {
+                    submitButton.textContent = 'Salvar';
+                }
+            }
+        }
+    }
     
     // Coletar ingredientes padrão selecionados na ordem de seleção
     const selectedDefaultIngredients = [];
@@ -207,7 +325,7 @@ productForm.addEventListener('submit', async (e) => {
         description: description,
         price: parseFloat(document.getElementById('product-price').value),
         category: document.getElementById('product-category').value,
-        image: document.getElementById('product-image').value.trim(),
+        image: imageUrl,
         available: document.getElementById('product-available').checked,
         defaultIngredients: selectedDefaultIngredients,
         availableIngredients: selectedAvailableIngredients
@@ -223,6 +341,7 @@ productForm.addEventListener('submit', async (e) => {
         }
         
         productModal.classList.remove('active');
+        resetImagePreview();
         await loadProducts();
     } catch (error) {
         console.error('Erro ao salvar produto:', error);
@@ -242,8 +361,14 @@ window.editProduct = async (id) => {
     document.getElementById('product-name').value = product.name;
     document.getElementById('product-price').value = product.price;
     document.getElementById('product-category').value = product.category;
-    document.getElementById('product-image').value = product.image || '';
     document.getElementById('product-available').checked = product.available !== false;
+    
+    // Carregar preview da imagem existente
+    if (product.image) {
+        loadExistingImagePreview(product.image);
+    } else {
+        resetImagePreview();
+    }
     
     // Inicializar ordem com os ingredientes padrão do produto (preservar ordem se existir)
     defaultIngredientsOrder = product.defaultIngredients ? [...product.defaultIngredients] : [];
@@ -312,6 +437,113 @@ configForm.addEventListener('submit', async (e) => {
         showToast('Erro ao salvar configurações: ' + error.message, 'error');
     }
 });
+
+// ==================== UPLOAD DE IMAGEM ====================
+
+/**
+ * Exibir preview da imagem
+ * @param {File|Blob} imageFile - Arquivo ou blob da imagem
+ */
+function showImagePreview(imageFile) {
+    if (!previewOriginalImg) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        if (previewOriginalImg) {
+            previewOriginalImg.src = e.target.result;
+        }
+    };
+    reader.readAsDataURL(imageFile);
+}
+
+/**
+ * Resetar preview de imagem
+ */
+function resetImagePreview() {
+    if (!imageUploadPlaceholder || !imagePreviewContainer) return;
+    
+    currentImageFile = null;
+    imageUploadPlaceholder.style.display = 'flex';
+    imagePreviewContainer.style.display = 'none';
+    if (previewOriginalImg) previewOriginalImg.src = '';
+    if (productImageUrl) productImageUrl.value = '';
+    if (productImageInput) {
+        productImageInput.value = '';
+    }
+}
+
+/**
+ * Processar imagem selecionada
+ */
+function handleImageSelection(file) {
+    if (!file || !imageUploadPlaceholder || !imagePreviewContainer) return;
+
+    currentImageFile = file;
+    
+    // Mostrar preview
+    showImagePreview(file);
+    imageUploadPlaceholder.style.display = 'none';
+    imagePreviewContainer.style.display = 'block';
+}
+
+/**
+ * Carregar preview da imagem existente (para edição)
+ * @param {string} imageUrl - URL da imagem
+ */
+function loadExistingImagePreview(imageUrl) {
+    if (!imageUrl) {
+        resetImagePreview();
+        return;
+    }
+
+    if (!previewOriginalImg || !productImageUrl) {
+        console.warn('Elementos de preview não disponíveis');
+        return;
+    }
+
+    // Criar um elemento temporário para carregar a imagem
+    const tempImg = new Image();
+    tempImg.crossOrigin = 'anonymous';
+    tempImg.onload = () => {
+        try {
+            // Converter para blob para manter consistência
+            const canvas = document.createElement('canvas');
+            canvas.width = tempImg.width;
+            canvas.height = tempImg.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(tempImg, 0, 0);
+            
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    // Criar um File a partir do blob para manter compatibilidade
+                    const file = new File([blob], 'existing-image.png', { type: 'image/png' });
+                    handleImageSelection(file);
+                    if (productImageUrl) productImageUrl.value = imageUrl;
+                }
+            }, 'image/png');
+        } catch (error) {
+            console.error('Erro ao processar imagem existente:', error);
+            // Fallback: apenas mostrar a imagem sem converter
+            if (previewOriginalImg) {
+                previewOriginalImg.src = imageUrl;
+                if (imageUploadPlaceholder) imageUploadPlaceholder.style.display = 'none';
+                if (imagePreviewContainer) imagePreviewContainer.style.display = 'block';
+            }
+            if (productImageUrl) productImageUrl.value = imageUrl;
+        }
+    };
+    tempImg.onerror = () => {
+        console.error('Erro ao carregar imagem existente');
+        // Fallback: tentar mostrar a URL diretamente
+        if (previewOriginalImg) {
+            previewOriginalImg.src = imageUrl;
+            if (imageUploadPlaceholder) imageUploadPlaceholder.style.display = 'none';
+            if (imagePreviewContainer) imagePreviewContainer.style.display = 'block';
+        }
+        if (productImageUrl) productImageUrl.value = imageUrl;
+    };
+    tempImg.src = imageUrl;
+}
 
 // ==================== INGREDIENTES ====================
 
@@ -1136,6 +1368,59 @@ function setupEventListeners() {
     if (feedbackModalOk) {
         feedbackModalOk.addEventListener('click', () => {
             feedbackModal.classList.remove('active');
+        });
+    }
+    
+    // Upload de imagem - File input
+    if (productImageInput) {
+        productImageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleImageSelection(file);
+            }
+        });
+    }
+    
+    // Upload de imagem - Drag and drop
+    if (imageUploadArea) {
+        imageUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            imageUploadArea.classList.add('drag-over');
+        });
+        
+        imageUploadArea.addEventListener('dragleave', () => {
+            imageUploadArea.classList.remove('drag-over');
+        });
+        
+        imageUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            imageUploadArea.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                if (productImageInput) {
+                    // Criar um DataTransfer para atualizar o input
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    productImageInput.files = dataTransfer.files;
+                    handleImageSelection(file);
+                }
+            }
+        });
+        
+        // Clique na área de upload
+        imageUploadArea.addEventListener('click', (e) => {
+            if (e.target === imageUploadArea || e.target.closest('.image-upload-placeholder')) {
+                if (productImageInput) {
+                    productImageInput.click();
+                }
+            }
+        });
+    }
+    
+    // Botão remover imagem
+    if (removeImageBtn) {
+        removeImageBtn.addEventListener('click', () => {
+            resetImagePreview();
         });
     }
     

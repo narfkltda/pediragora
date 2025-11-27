@@ -200,6 +200,38 @@
             <form id="product-form">
                 <input type="hidden" id="product-id">
                 
+                <!-- Seletor de Imagem -->
+                <div class="form-group">
+                    <label for="product-image-input">Imagem do Produto *</label>
+                    <div class="image-upload-container">
+                        <input type="file" id="product-image-input" accept="image/*" style="display: none;">
+                        <div class="image-upload-area" id="image-upload-area">
+                            <div class="image-upload-placeholder" id="image-upload-placeholder">
+                                <span class="upload-icon">📷</span>
+                                <p>Clique para selecionar uma imagem</p>
+                                <small>ou arraste e solte aqui</small>
+                            </div>
+                            <div class="image-preview-container" id="image-preview-container" style="display: none;">
+                                <div class="image-preview-wrapper">
+                                    <div class="preview-item">
+                                        <div class="image-preview" id="image-preview-original">
+                                            <img id="preview-original-img" alt="Preview da imagem">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="image-upload-controls">
+                                    <button type="button" class="btn-remove-image" id="remove-image-btn">Remover Imagem</button>
+                                </div>
+                                <div class="image-upload-loading" id="image-upload-loading" style="display: none;">
+                                    <div class="spinner"></div>
+                                    <p>Fazendo upload da imagem...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="product-image-url">
+                </div>
+                
                 <div class="form-group">
                     <label for="product-name">Nome do Produto *</label>
                     <input type="text" id="product-name" required>
@@ -221,12 +253,6 @@
                             <option value="Bebidas">Bebidas</option>
                         </select>
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="product-image">URL da Imagem</label>
-                    <input type="text" id="product-image" placeholder="../assets/images/...">
-                    <small>Exemplo: ../assets/images/Burgers_01_voMima.png</small>
                 </div>
 
                 <!-- Seção: Ingredientes (Padrão) -->
@@ -284,6 +310,7 @@
     <script type="module" src="../services/products-service.js"></script>
     <script type="module" src="../services/ingredients-service.js"></script>
     <script type="module" src="../services/config-service.js"></script>
+    <script type="module" src="../services/storage-service.js"></script>
     <!-- Modal de Feedback -->
     <div id="feedback-modal" class="modal-overlay">
         <div class="modal-content feedback-modal-content">

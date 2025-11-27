@@ -30,3 +30,4 @@ export const storage = getStorage(app);
 
 console.log('Firebase inicializado com sucesso!');
 
+
