@@ -510,7 +510,7 @@ function renderProducts() {
             console.log(`   - Definindo src da imagem:`, imageUrl);
             img.src = imageUrl;
             
-            img.onerror = function() {
+        img.onerror = function() {
                 console.error(`❌ [DEBUG] Erro ao carregar imagem do produto: "${product.name}"`);
                 console.error(`   - URL tentada:`, imageUrl);
                 console.error(`   - this.src atual:`, this.src);
@@ -539,7 +539,7 @@ function renderProducts() {
         
         // Sempre anexar a imagem ao container
         if (imageContainer) {
-            imageContainer.appendChild(img);
+        imageContainer.appendChild(img);
             console.log(`   - Imagem anexada ao container para "${product.name}"`);
         } else {
             console.error(`❌ [DEBUG] imageContainer não existe para "${product.name}"`);
@@ -614,7 +614,7 @@ function renderProducts() {
         card.appendChild(secondRow);
         
         productsGrid.appendChild(card);
-        });
+    });
     });
     
     updateSelectionUI();
@@ -1264,17 +1264,94 @@ function resetProductForm() {
     editingProductId = null;
     modalTitle.textContent = 'Adicionar Produto';
     productForm.reset();
+    
+    // Limpar campo de ID do produto
+    const productIdInput = document.getElementById('product-id');
+    if (productIdInput) {
+        productIdInput.value = '';
+    }
+    
     document.getElementById('product-available').checked = true;
     document.getElementById('product-number').value = '';
     defaultIngredientsOrder = [];
     resetImagePreview();
     currentImageFile = null;
     
+    // Desmarcar todos os checkboxes de ingredientes padrão
+    if (productDefaultIngredientsList) {
+        const defaultCheckboxes = productDefaultIngredientsList.querySelectorAll('input[type="checkbox"]');
+        defaultCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    
+    // Desmarcar todos os checkboxes de ingredientes disponíveis
+    if (productIngredientsList) {
+        const availableCheckboxes = productIngredientsList.querySelectorAll('input[type="checkbox"]');
+        availableCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+    
+    // Limpar descrição
+    if (productDescriptionInput) {
+        productDescriptionInput.value = '';
+    }
+    
     // Resetar botão de submit se estiver em estado de upload
-    const submitButton = productForm.querySelector('button[type="submit"]');
+    const submitButton = document.querySelector('.modal-footer .btn-save[form="product-form"]') ||
+                        productModal?.querySelector('.modal-footer .btn-save');
     if (submitButton) {
-        submitButton.textContent = 'Salvar';
-        submitButton.disabled = false;
+        resetButtonProgress(submitButton, 'Salvar');
+    }
+}
+
+function resetIngredientForm() {
+    editingIngredientId = null;
+    ingredientModalTitle.textContent = 'Adicionar Ingrediente';
+    ingredientForm.reset();
+    ingredientBatchForm.reset();
+    
+    // Limpar campo de ID do ingrediente
+    const ingredientIdInput = document.getElementById('ingredient-id');
+    if (ingredientIdInput) {
+        ingredientIdInput.value = '';
+    }
+    
+    // Resetar checkbox de ativo
+    document.getElementById('ingredient-active').checked = true;
+    
+    // Resetar campos do formulário de lote
+    const priceModeNone = document.querySelector('input[name="price-mode"][value="none"]');
+    if (priceModeNone) {
+        priceModeNone.checked = true;
+    }
+    const priceUniqueInput = document.getElementById('price-unique');
+    if (priceUniqueInput) {
+        priceUniqueInput.value = '';
+    }
+    const ingredientListTextarea = document.getElementById('ingredient-list');
+    if (ingredientListTextarea) {
+        ingredientListTextarea.value = '';
+    }
+    
+    // Atualizar UI do modo de preço
+    if (typeof updatePriceModeUI === 'function') {
+        updatePriceModeUI();
+    }
+    
+    // Ativar aba "Adicionar" por padrão
+    switchModalTab('single');
+    
+    // Resetar botão de submit
+    const submitButton = document.getElementById('ingredient-save-btn');
+    if (submitButton) {
+        resetButtonProgress(submitButton, 'Salvar');
+    }
+    
+    const batchSubmitButton = document.getElementById('ingredient-batch-save-btn');
+    if (batchSubmitButton) {
+        resetButtonProgress(batchSubmitButton, 'Criar Ingredientes');
     }
 }
 
@@ -1729,13 +1806,7 @@ async function deleteSelectedIngredients() {
 // Adicionar ingrediente
 if (addIngredientBtn) {
     addIngredientBtn.addEventListener('click', () => {
-        editingIngredientId = null;
-        ingredientModalTitle.textContent = 'Adicionar Ingrediente';
-        ingredientForm.reset();
-        ingredientBatchForm.reset();
-        document.getElementById('ingredient-active').checked = true;
-        // Ativar aba "Adicionar" por padrão (isso também atualiza os botões do footer)
-        switchModalTab('single');
+        resetIngredientForm();
         openModal(ingredientModal, ingredientModalContent);
     });
 }
@@ -1794,7 +1865,7 @@ if (ingredientForm) {
             price: parseFloat(document.getElementById('ingredient-price').value),
             active: document.getElementById('ingredient-active').checked
         };
-        
+
         try {
             // Configurar botão com loading
             if (submitButton) {
@@ -1814,6 +1885,8 @@ if (ingredientForm) {
                 resetButtonProgress(submitButton, 'Salvar');
             }
             
+            // Resetar formulário e estado
+            resetIngredientForm();
             closeModal(ingredientModal, ingredientModalContent);
             await loadIngredients();
             // Recarregar listas de ingredientes no formulário de produtos
@@ -2053,10 +2126,8 @@ if (ingredientBatchForm) {
                 resetButtonProgress(submitButton, 'Criar Ingredientes');
             }
             
-            // Limpar formulário e recarregar lista
-            ingredientBatchForm.reset();
-            document.querySelector('input[name="price-mode"][value="none"]').checked = true;
-            updatePriceModeUI();
+            // Resetar formulário e estado
+            resetIngredientForm();
             await loadIngredients();
             
             // Recarregar listas de ingredientes no formulário de produtos se estiver aberto
@@ -2149,20 +2220,20 @@ window.deleteIngredientConfirm = async (id) => {
         'Confirmar Exclusão',
         `Tem certeza que deseja excluir o ingrediente "${ingredient.name}"?`,
         async () => {
-            try {
-                await deleteIngredient(id);
-                showToast('Ingrediente excluído com sucesso!', 'success');
-                await loadIngredients();
-                // Recarregar listas de ingredientes no formulário de produtos
+    try {
+        await deleteIngredient(id);
+        showToast('Ingrediente excluído com sucesso!', 'success');
+        await loadIngredients();
+        // Recarregar listas de ingredientes no formulário de produtos
                 if (productModal && productModal.classList.contains('active') && productModalContent && productModalContent.classList.contains('open')) {
-                    await loadProductDefaultIngredients();
-                    await loadProductIngredients();
-                    updateDescriptionFromDefaultIngredients();
-                }
-            } catch (error) {
-                console.error('Erro ao excluir ingrediente:', error);
-                showToast('Erro ao excluir ingrediente: ' + error.message, 'error');
-            }
+            await loadProductDefaultIngredients();
+            await loadProductIngredients();
+            updateDescriptionFromDefaultIngredients();
+        }
+    } catch (error) {
+        console.error('Erro ao excluir ingrediente:', error);
+        showToast('Erro ao excluir ingrediente: ' + error.message, 'error');
+    }
         }
     );
 };
@@ -2411,44 +2482,28 @@ async function generateDescriptionFromIngredients(ingredientIds) {
         })
         .filter(name => name); // Remover nomes vazios
     
-    // Separar "Pão" dos outros ingredientes
-    const paoIndex = ingredientNames.findIndex(name => {
-        const nameLower = name.toLowerCase().trim();
-        return nameLower === 'pão' || nameLower === 'pao';
-    });
-    
-    let paoName = null;
-    let otherIngredients = [];
-    
-    if (paoIndex !== -1) {
-        paoName = ingredientNames[paoIndex];
-        otherIngredients = ingredientNames.filter((_, index) => index !== paoIndex);
-    } else {
-        otherIngredients = ingredientNames;
+    // Se não houver ingredientes, retornar vazio
+    if (ingredientNames.length === 0) {
+        return '';
     }
     
-    // Se não houver ingredientes, retornar apenas "Pão" ou vazio
-    if (otherIngredients.length === 0) {
-        return capitalizeFirstLetter(paoName || 'pão');
-    }
+    // Capitalizar apenas o primeiro ingrediente
+    const firstIngredient = capitalizeFirstLetter(ingredientNames[0]);
+    const otherIngredients = ingredientNames.slice(1);
     
-    // Formatar descrição: "Pão, ingrediente1, ingrediente2 e ingrediente3"
-    // ou "Ingrediente1, ingrediente2 e ingrediente3" se não houver Pão
-    const baseName = paoName || 'pão';
-    
+    // Formatar descrição seguindo a ordem de seleção
     let description = '';
-    if (otherIngredients.length === 1) {
-        description = `${baseName}, ${otherIngredients[0]}`;
-    } else if (otherIngredients.length === 2) {
-        description = `${baseName}, ${otherIngredients[0]} e ${otherIngredients[1]}`;
+    if (ingredientNames.length === 1) {
+        description = firstIngredient;
+    } else if (ingredientNames.length === 2) {
+        description = `${firstIngredient} e ${otherIngredients[0]}`;
     } else {
         const lastIngredient = otherIngredients[otherIngredients.length - 1];
         const otherList = otherIngredients.slice(0, -1).join(', ');
-        description = `${baseName}, ${otherList} e ${lastIngredient}`;
+        description = `${firstIngredient}, ${otherList} e ${lastIngredient}`;
     }
     
-    // Capitalizar apenas a primeira letra da descrição completa
-    return capitalizeFirstLetter(description);
+    return description;
 }
 
 // Atualizar descrição a partir dos ingredientes padrão selecionados
@@ -2490,27 +2545,21 @@ function setupEventListeners() {
     // Fechar modal de ingrediente
     if (ingredientModalClose) {
         ingredientModalClose.addEventListener('click', () => {
-            ingredientForm.reset();
-            ingredientBatchForm.reset();
-            switchModalTab('single');
+            resetIngredientForm();
             closeModal(ingredientModal, ingredientModalContent);
         });
     }
     
     if (cancelIngredientBtn) {
         cancelIngredientBtn.addEventListener('click', () => {
-            ingredientForm.reset();
-            ingredientBatchForm.reset();
-            switchModalTab('single');
+            resetIngredientForm();
             closeModal(ingredientModal, ingredientModalContent);
         });
     }
     
     if (cancelIngredientBatchBtn) {
         cancelIngredientBatchBtn.addEventListener('click', () => {
-            ingredientForm.reset();
-            ingredientBatchForm.reset();
-            switchModalTab('single');
+            resetIngredientForm();
             closeModal(ingredientModal, ingredientModalContent);
         });
     }
