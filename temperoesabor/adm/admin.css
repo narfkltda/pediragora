@@ -811,6 +811,24 @@ body {
     align-items: center;
 }
 
+.filters-toolbar #add-ingredient-btn {
+    margin-left: auto;
+    background: #eeb534;
+    border-color: #eeb534;
+    color: white;
+}
+
+.filters-toolbar #add-ingredient-btn .filter-icon,
+.filters-toolbar #add-ingredient-btn .filter-label {
+    color: white;
+}
+
+.filters-toolbar #add-ingredient-btn:hover {
+    background: #d4a02a;
+    border-color: #d4a02a;
+    transform: translateY(-2px);
+}
+
 .filter-icon-btn {
     display: flex;
     flex-direction: column;
