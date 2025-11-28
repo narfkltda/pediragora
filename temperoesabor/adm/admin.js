@@ -89,6 +89,15 @@ const ingredientsLoading = document.getElementById('ingredients-loading');
 const modalTabs = document.querySelectorAll('.modal-tab');
 const modalTabContents = document.querySelectorAll('.modal-tab-content');
 
+// Elementos DOM - Modal de Editar Ingrediente
+const ingredientEditModal = document.getElementById('ingredient-edit-modal');
+let ingredientEditModalContent = null; // Será inicializado no DOMContentLoaded
+const ingredientEditForm = document.getElementById('ingredient-edit-form');
+const ingredientEditModalTitle = document.getElementById('ingredient-edit-modal-title');
+const ingredientEditModalClose = document.getElementById('ingredient-edit-modal-close');
+const cancelIngredientEditBtn = document.getElementById('cancel-ingredient-edit-btn');
+const ingredientFormError = document.getElementById('ingredient-form-error');
+
 // Elementos DOM - Gerais
 const logoutBtn = document.getElementById('logout-btn');
 const navButtons = document.querySelectorAll('.nav-btn');
@@ -133,6 +142,8 @@ let filteredProducts = []; // Produtos após aplicar filtros
 // Estado para seleção e filtros de ingredientes
 let selectedIngredients = []; // Array de IDs selecionados
 let currentIngredientSearchTerm = '';
+let currentIngredientStatusFilter = 'all'; // 'all', 'active', 'inactive'
+let currentIngredientCategoryFilter = 'all'; // 'all' ou categoryId
 let allIngredients = []; // Todos os ingredientes (sem filtros)
 let filteredIngredients = []; // Ingredientes após aplicar filtros
 
@@ -167,6 +178,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inicializar elementos de seleção e filtros (podem não existir em outras seções)
     // Esses elementos serão verificados nas funções antes de uso
     
+    // Inicializar conteúdo da modal de editar ingrediente
+    if (ingredientEditModal) {
+        ingredientEditModalContent = ingredientEditModal.querySelector('.modal-content');
+    }
+    
     checkAuth();
     setupEventListeners();
     setupNavigation();
@@ -194,6 +210,47 @@ function checkAuth() {
 }
 
 // ==================== FUNÇÕES DE PROGRESSO NO BOTÃO ====================
+
+/**
+ * Habilitar botão de forma padronizada
+ * @param {HTMLElement} button - Botão a ser habilitado
+ */
+function enableButton(button) {
+    if (!button) return;
+    
+    // Remover atributo disabled
+    button.disabled = false;
+    button.removeAttribute('disabled');
+    
+    // Resetar todos os estilos inline que podem interferir
+    button.style.pointerEvents = 'auto';
+    button.style.opacity = '';
+    button.style.cursor = 'pointer';
+    button.style.position = '';
+    button.style.zIndex = '';
+    
+    // Remover qualquer elemento de progresso que possa estar interferindo
+    const progressBar = button.querySelector('.progress-bar');
+    const buttonText = button.querySelector('.button-text');
+    const spinner = button.querySelector('.spinner');
+    
+    if (progressBar && progressBar.style.width === '0%') {
+        progressBar.remove();
+    }
+    
+    // Se buttonText existe mas não deveria (após reset), remover
+    // Mas só se o botão não estiver em estado de loading
+    if (buttonText && button.disabled === false && !button.querySelector('.spinner')) {
+        // Se o buttonText contém apenas texto simples, podemos mantê-lo
+        // Mas se contém estrutura complexa, vamos limpar
+        const textContent = buttonText.textContent.trim();
+        if (textContent && !buttonText.querySelector('.spinner')) {
+            // Manter buttonText se tiver apenas texto
+        } else {
+            buttonText.remove();
+        }
+    }
+}
 
 /**
  * Configurar botão com loading e barra de progresso
@@ -271,32 +328,31 @@ function updateButtonProgress(button, progress, text) {
 function resetButtonProgress(button, text) {
     if (!button) return;
     
-    button.disabled = false;
-    
+    // Remover TODOS os elementos de progresso imediatamente
     const progressBar = button.querySelector('.progress-bar');
     const buttonText = button.querySelector('.button-text');
+    const spinner = button.querySelector('.spinner');
     
+    // Remover elementos de progresso
     if (progressBar) {
-        progressBar.style.width = '0%';
-        // Remover barra de progresso se necessário
-        setTimeout(() => {
-            if (progressBar && progressBar.style.width === '0%') {
-                progressBar.remove();
-            }
-        }, 300);
+        progressBar.remove();
     }
     
-    if (buttonText) {
-        buttonText.innerHTML = text;
-        // Remover spinner se existir
-        const spinner = buttonText.querySelector('.spinner');
-        if (spinner) {
-            spinner.remove();
-        }
-    } else {
-        // Limpar todo o conteúdo e adicionar apenas o texto
-        button.innerHTML = text;
+    if (spinner) {
+        spinner.remove();
     }
+    
+    // Se existe buttonText, remover e restaurar estrutura simples
+    if (buttonText) {
+        buttonText.remove();
+    }
+    
+    // Limpar todo o conteúdo e adicionar apenas o texto
+    // Isso garante que não há elementos com posicionamento absoluto interferindo
+    button.innerHTML = text;
+    
+    // Usar função padronizada para habilitar
+    enableButton(button);
 }
 
 // ==================== FUNÇÕES DE MODAL (SIDEBAR ESTILO CARRINHO) ====================
@@ -708,7 +764,7 @@ function searchIngredients(term) {
     applyIngredientFilters();
 }
 
-// Aplicar filtros de ingredientes (busca)
+// Aplicar filtros de ingredientes (busca, status, categoria)
 function applyIngredientFilters() {
     filteredIngredients = [...allIngredients];
     
@@ -720,12 +776,50 @@ function applyIngredientFilters() {
         });
     }
     
+    // Filtro por status
+    if (currentIngredientStatusFilter === 'active') {
+        filteredIngredients = filteredIngredients.filter(i => i.active !== false);
+    } else if (currentIngredientStatusFilter === 'inactive') {
+        filteredIngredients = filteredIngredients.filter(i => i.active === false);
+    }
+    
+    // Filtro por categoria
+    if (currentIngredientCategoryFilter !== 'all') {
+        filteredIngredients = filteredIngredients.filter(i => i.category === currentIngredientCategoryFilter);
+    }
+    
     // Remover seleções de ingredientes que não estão mais visíveis
     selectedIngredients = selectedIngredients.filter(id => 
         filteredIngredients.some(i => i.id === id)
     );
     
     renderIngredients();
+}
+
+// Toggle painel de filtro
+function toggleFilterPanel(filterType, button) {
+    const panelMap = {
+        'search': 'ingredient-search-panel',
+        'select': 'ingredient-select-panel',
+        'status': 'ingredient-status-panel'
+    };
+    
+    const panelId = panelMap[filterType];
+    if (!panelId) return;
+    
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+    
+    // Toggle do painel
+    const isVisible = panel.style.display !== 'none';
+    panel.style.display = isVisible ? 'none' : 'block';
+    
+    // Atualizar estado visual do botão
+    if (isVisible) {
+        button.classList.remove('active');
+    } else {
+        button.classList.add('active');
+    }
 }
 
 // Toggle selecionar todos
@@ -1134,10 +1228,11 @@ service firebase.storage {
         console.error('Erro ao salvar produto:', error);
         showToast('Erro ao salvar produto: ' + error.message, 'error');
         
-        // Resetar botão em caso de erro
-        if (submitButton) {
-            resetButtonProgress(submitButton, 'Salvar');
-        }
+            // Resetar botão em caso de erro
+            if (submitButton) {
+                resetButtonProgress(submitButton, 'Salvar');
+                submitButton.disabled = false;
+            }
     }
 });
 
@@ -1330,6 +1425,12 @@ function resetIngredientForm() {
     ingredientForm.reset();
     ingredientBatchForm.reset();
     
+    // Limpar mensagem de erro se houver
+    if (ingredientFormError) {
+        ingredientFormError.style.display = 'none';
+        ingredientFormError.textContent = '';
+    }
+    
     // Limpar campo de ID do ingrediente
     const ingredientIdInput = document.getElementById('ingredient-id');
     if (ingredientIdInput) {
@@ -1367,15 +1468,92 @@ function resetIngredientForm() {
     // Ativar aba "Adicionar" por padrão
     switchModalTab('single');
     
-    // Resetar botão de submit
+    // Resetar e habilitar botões de submit
     const submitButton = document.getElementById('ingredient-save-btn');
     if (submitButton) {
         resetButtonProgress(submitButton, 'Salvar');
+        submitButton.disabled = false;
+        submitButton.removeAttribute('disabled');
     }
     
     const batchSubmitButton = document.getElementById('ingredient-batch-save-btn');
     if (batchSubmitButton) {
         resetButtonProgress(batchSubmitButton, 'Criar Ingredientes');
+        batchSubmitButton.disabled = false;
+        batchSubmitButton.removeAttribute('disabled');
+    }
+    
+    // Resetar e habilitar botão cancelar
+    const cancelButton = document.getElementById('cancel-ingredient-btn');
+    if (cancelButton) {
+        cancelButton.disabled = false;
+        cancelButton.removeAttribute('disabled');
+    }
+}
+
+// Resetar formulário de edição de ingrediente
+function resetIngredientEditForm() {
+    editingIngredientId = null;
+    
+    if (ingredientEditForm) {
+        ingredientEditForm.reset();
+    }
+    
+    // Limpar campo de ID do ingrediente
+    const ingredientEditIdInput = document.getElementById('ingredient-edit-id');
+    if (ingredientEditIdInput) {
+        ingredientEditIdInput.value = '';
+    }
+    
+    // Resetar checkbox de ativo
+    const ingredientEditActiveInput = document.getElementById('ingredient-edit-active');
+    if (ingredientEditActiveInput) {
+        ingredientEditActiveInput.checked = true;
+    }
+    
+    // Resetar campo de categoria para padrão
+    const categoryEditSelect = document.getElementById('ingredient-edit-category');
+    if (categoryEditSelect && defaultCategoryId) {
+        categoryEditSelect.value = defaultCategoryId;
+    }
+    
+    // Resetar botão de submit
+    const submitButton = document.getElementById('ingredient-edit-save-btn');
+    if (submitButton) {
+        resetButtonProgress(submitButton, 'Salvar');
+        enableButton(submitButton);
+    }
+    
+    // Resetar e habilitar botão cancelar
+    const cancelButton = document.getElementById('cancel-ingredient-edit-btn');
+    enableButton(cancelButton);
+}
+
+// Atualizar seletor de categoria na modal de edição
+function updateCategoryEditSelector() {
+    const categoryEditSelect = document.getElementById('ingredient-edit-category');
+    if (!categoryEditSelect) return;
+    
+    categoryEditSelect.innerHTML = '';
+    
+    if (categories.length === 0) {
+        categoryEditSelect.innerHTML = '<option value="">Carregando categorias...</option>';
+        return;
+    }
+    
+    // Ordenar categorias alfabeticamente
+    const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+    
+    sortedCategories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.textContent = category.name;
+        categoryEditSelect.appendChild(option);
+    });
+    
+    // Se houver categoria padrão, selecioná-la
+    if (defaultCategoryId) {
+        categoryEditSelect.value = defaultCategoryId;
     }
 }
 
@@ -1625,6 +1803,41 @@ function updateCategorySelector() {
     }
 }
 
+// Atualizar seletor de categoria no filtro
+function updateCategoryFilterSelector() {
+    const categoryFilterSelect = document.getElementById('ingredient-category-filter');
+    if (!categoryFilterSelect) return;
+    
+    // Manter opção "Todas as Categorias"
+    const allOption = categoryFilterSelect.querySelector('option[value="all"]');
+    categoryFilterSelect.innerHTML = '';
+    if (allOption) {
+        categoryFilterSelect.appendChild(allOption);
+    } else {
+        const defaultOption = document.createElement('option');
+        defaultOption.value = 'all';
+        defaultOption.textContent = 'Todas as Categorias';
+        categoryFilterSelect.appendChild(defaultOption);
+    }
+    
+    if (categories.length === 0) {
+        return;
+    }
+    
+    // Ordenar categorias alfabeticamente
+    const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+    
+    sortedCategories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.textContent = category.name;
+        categoryFilterSelect.appendChild(option);
+    });
+    
+    // Restaurar seleção atual
+    categoryFilterSelect.value = currentIngredientCategoryFilter;
+}
+
 async function loadIngredients() {
     try {
         if (ingredientsLoading) ingredientsLoading.style.display = 'block';
@@ -1633,10 +1846,17 @@ async function loadIngredients() {
         // Carregar categorias primeiro
         await loadCategories();
         
+        // Atualizar seletor de categoria no filtro
+        updateCategoryFilterSelector();
+        
         ingredients = await getIngredients();
         allIngredients = [...ingredients];
         filteredIngredients = [...ingredients];
         renderIngredients();
+        
+        // Atualizar seletor de categoria no filtro novamente após carregar ingredientes
+        // (caso novas categorias tenham sido criadas)
+        updateCategoryFilterSelector();
         
         if (ingredientsLoading) ingredientsLoading.style.display = 'none';
     } catch (error) {
@@ -1948,6 +2168,14 @@ async function deleteSelectedIngredients() {
 if (addIngredientBtn) {
     addIngredientBtn.addEventListener('click', () => {
         resetIngredientForm();
+        
+        // Garantir que os botões estão habilitados ao abrir modal para adicionar
+        const submitButton = document.getElementById('ingredient-save-btn');
+        const cancelButton = document.getElementById('cancel-ingredient-btn');
+        
+        enableButton(submitButton);
+        enableButton(cancelButton);
+        
         openModal(ingredientModal, ingredientModalContent);
     });
 }
@@ -1976,11 +2204,17 @@ function switchModalTab(tabName) {
     const ingredientSaveBtn = document.getElementById('ingredient-save-btn');
     const ingredientBatchSaveBtn = document.getElementById('ingredient-batch-save-btn');
     if (tabName === 'single') {
-        if (ingredientSaveBtn) ingredientSaveBtn.style.display = '';
+        if (ingredientSaveBtn) {
+            ingredientSaveBtn.style.display = '';
+            enableButton(ingredientSaveBtn);
+        }
         if (ingredientBatchSaveBtn) ingredientBatchSaveBtn.style.display = 'none';
     } else if (tabName === 'batch') {
         if (ingredientSaveBtn) ingredientSaveBtn.style.display = 'none';
-        if (ingredientBatchSaveBtn) ingredientBatchSaveBtn.style.display = '';
+        if (ingredientBatchSaveBtn) {
+            ingredientBatchSaveBtn.style.display = '';
+            enableButton(ingredientBatchSaveBtn);
+        }
     }
 }
 
@@ -1994,22 +2228,128 @@ if (modalTabs.length > 0) {
     });
 }
 
-// Salvar ingrediente (único)
+// Salvar ingrediente (único) - Modal de Adicionar
 if (ingredientForm) {
+    // Adicionar listener para limpar mensagem de erro quando o usuário digitar
+    const ingredientNameInput = document.getElementById('ingredient-name');
+    if (ingredientNameInput) {
+        ingredientNameInput.addEventListener('input', () => {
+            // Limpar mensagem de erro quando o usuário começar a digitar
+            if (ingredientFormError) {
+                ingredientFormError.style.display = 'none';
+                ingredientFormError.textContent = '';
+            }
+            
+            // Garantir que os botões estão habilitados
+            const submitButton = document.getElementById('ingredient-save-btn');
+            const cancelButton = document.getElementById('cancel-ingredient-btn');
+            
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.removeAttribute('disabled');
+                submitButton.style.pointerEvents = 'auto';
+                submitButton.style.opacity = '1';
+                submitButton.style.cursor = 'pointer';
+            }
+            
+            if (cancelButton) {
+                cancelButton.disabled = false;
+                cancelButton.removeAttribute('disabled');
+                cancelButton.style.pointerEvents = 'auto';
+                cancelButton.style.opacity = '1';
+                cancelButton.style.cursor = 'pointer';
+            }
+        });
+    }
+    
     ingredientForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('🟢 Submit do formulário de ingrediente acionado (ADICIONAR)');
         
         const submitButton = document.getElementById('ingredient-save-btn');
         
+        // Esconder mensagem de erro anterior
+        if (ingredientFormError) {
+            ingredientFormError.style.display = 'none';
+            ingredientFormError.textContent = '';
+        }
+        
+        const ingredientName = document.getElementById('ingredient-name').value.trim();
         const categorySelect = document.getElementById('ingredient-category');
         const categoryId = categorySelect ? categorySelect.value : defaultCategoryId;
         
         const ingredientData = {
-            name: document.getElementById('ingredient-name').value.trim(),
+            name: ingredientName,
             price: parseFloat(document.getElementById('ingredient-price').value),
             active: document.getElementById('ingredient-active').checked,
             category: categoryId || null
         };
+
+        // Validar se já existe ingrediente com mesmo nome (case-insensitive)
+        console.log('🔍 Validando duplicados para:', ingredientName);
+        try {
+            const existingIngredients = await getIngredients();
+            console.log('📋 Ingredientes existentes:', existingIngredients.length);
+            
+            const normalizedName = normalizeIngredientName(ingredientName);
+            console.log('🔤 Nome normalizado:', normalizedName);
+            
+            const duplicate = existingIngredients.find(ing => {
+                const existingNormalized = normalizeIngredientName(ing.name);
+                const isDuplicate = existingNormalized === normalizedName;
+                if (isDuplicate) {
+                    console.log('⚠️ Duplicado encontrado:', ing.name, 'vs', ingredientName);
+                }
+                return isDuplicate;
+            });
+            
+            if (duplicate) {
+                console.log('❌ Duplicado detectado! Bloqueando salvamento.');
+                // Mostrar mensagem de erro na modal
+                if (ingredientFormError) {
+                    ingredientFormError.textContent = `Já existe um ingrediente com este nome: "${duplicate.name}"`;
+                    ingredientFormError.style.display = 'block';
+                    // Scroll para a mensagem de erro
+                    ingredientFormError.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                
+                // Resetar botão - FORÇAR reabilitação completa
+                if (submitButton) {
+                    resetButtonProgress(submitButton, 'Salvar');
+                    submitButton.disabled = false;
+                    submitButton.removeAttribute('disabled');
+                    submitButton.style.pointerEvents = 'auto';
+                    submitButton.style.opacity = '1';
+                    submitButton.style.cursor = 'pointer';
+                    console.log("->Resetar botão");
+                }
+                
+                // Garantir que o botão cancelar também está habilitado
+                const cancelButton = document.getElementById('cancel-ingredient-btn');
+                if (cancelButton) {
+                    cancelButton.disabled = false;
+                    cancelButton.removeAttribute('disabled');
+                    cancelButton.style.pointerEvents = 'auto';
+                    cancelButton.style.opacity = '1';
+                    cancelButton.style.cursor = 'pointer';
+                }
+                
+                showToast('Ingrediente duplicado! Corrija o nome e tente novamente.', 'error');
+                return; // Não continuar com o salvamento
+            }
+            console.log('✅ Nenhum duplicado encontrado. Prosseguindo com salvamento.');
+        } catch (error) {
+            console.error('❌ Erro ao validar duplicados:', error);
+            showToast('Erro ao validar ingrediente. Tente novamente.', 'error');
+            // Resetar botão em caso de erro na validação
+            if (submitButton) {
+                resetButtonProgress(submitButton, 'Salvar');
+                enableButton(submitButton);
+            }
+            return; // Não continuar se houver erro na validação
+        }
 
         try {
             // Configurar botão com loading
@@ -2017,22 +2357,34 @@ if (ingredientForm) {
                 setupButtonWithProgress(submitButton, 'Salvando...');
             }
             
-            if (editingIngredientId) {
-                await updateIngredient(editingIngredientId, ingredientData);
-                showToast('Ingrediente atualizado com sucesso!', 'success');
-            } else {
-                await addIngredient(ingredientData);
-                showToast('Ingrediente adicionado com sucesso!', 'success');
+            await addIngredient(ingredientData);
+            showToast('Ingrediente adicionado com sucesso!', 'success');
+            
+            // Esconder mensagem de erro se houver
+            if (ingredientFormError) {
+                ingredientFormError.style.display = 'none';
+                ingredientFormError.textContent = '';
             }
             
-            // Resetar botão
+            // Resetar formulário e estado ANTES de fechar modal
+            resetIngredientForm();
+            
+            // Garantir que editingIngredientId está null (não deve ser usado no formulário de adicionar)
+            editingIngredientId = null;
+            
+            // Resetar e habilitar botões após reset do form
             if (submitButton) {
                 resetButtonProgress(submitButton, 'Salvar');
+                enableButton(submitButton);
             }
             
-            // Resetar formulário e estado
-            resetIngredientForm();
+            const cancelButton = document.getElementById('cancel-ingredient-btn');
+            enableButton(cancelButton);
+            
+            // Fechar modal
             closeModal(ingredientModal, ingredientModalContent);
+            
+            // Recarregar ingredientes
             await loadIngredients();
             // Recarregar listas de ingredientes no formulário de produtos
             if (productModal && productModal.classList.contains('active') && productModalContent && productModalContent.classList.contains('open')) {
@@ -2047,7 +2399,131 @@ if (ingredientForm) {
             // Resetar botão em caso de erro
             if (submitButton) {
                 resetButtonProgress(submitButton, 'Salvar');
+                enableButton(submitButton);
             }
+            
+            const cancelButton = document.getElementById('cancel-ingredient-btn');
+            enableButton(cancelButton);
+        }
+    });
+}
+
+// Salvar ingrediente editado - Modal de Edição
+if (ingredientEditForm) {
+    ingredientEditForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('🟢 Submit do formulário de edição de ingrediente acionado');
+        console.log('   - editingIngredientId:', editingIngredientId);
+        
+        const submitButton = document.getElementById('ingredient-edit-save-btn');
+        
+        const ingredientEditName = document.getElementById('ingredient-edit-name').value.trim();
+        const categoryEditSelect = document.getElementById('ingredient-edit-category');
+        const categoryId = categoryEditSelect ? categoryEditSelect.value : defaultCategoryId;
+        
+        const ingredientData = {
+            name: ingredientEditName,
+            price: parseFloat(document.getElementById('ingredient-edit-price').value),
+            active: document.getElementById('ingredient-edit-active').checked,
+            category: categoryId || null
+        };
+
+        // Validar se já existe outro ingrediente com mesmo nome (excluindo o atual)
+        try {
+            const existingIngredients = await getIngredients();
+            const normalizedName = normalizeIngredientName(ingredientEditName);
+            const duplicate = existingIngredients.find(ing => {
+                // Excluir o próprio ingrediente que está sendo editado
+                if (ing.id === editingIngredientId) return false;
+                const existingNormalized = normalizeIngredientName(ing.name);
+                return existingNormalized === normalizedName;
+            });
+            
+            if (duplicate) {
+                showToast(`Já existe outro ingrediente com este nome: "${duplicate.name}"`, 'error');
+                
+                // Resetar botão
+                if (submitButton) {
+                    resetButtonProgress(submitButton, 'Salvar');
+                    submitButton.disabled = false;
+                    submitButton.removeAttribute('disabled');
+                }
+                return; // Não continuar com o salvamento
+            }
+        } catch (error) {
+            console.error('Erro ao validar duplicados:', error);
+            // Continuar mesmo se houver erro na validação
+        }
+
+        try {
+            // Configurar botão com loading
+            if (submitButton) {
+                setupButtonWithProgress(submitButton, 'Salvando...');
+            }
+            
+            if (editingIngredientId) {
+                await updateIngredient(editingIngredientId, ingredientData);
+                showToast('Ingrediente atualizado com sucesso!', 'success');
+            } else {
+                showToast('Erro: ID do ingrediente não encontrado', 'error');
+                if (submitButton) {
+                    resetButtonProgress(submitButton, 'Salvar');
+                    submitButton.disabled = false;
+                    submitButton.removeAttribute('disabled');
+                }
+                return;
+            }
+            
+            // Resetar formulário e estado ANTES de fechar modal
+            resetIngredientEditForm();
+            
+            // Garantir que editingIngredientId está null após salvar
+            editingIngredientId = null;
+            
+            // Resetar botão após reset do form - FORÇAR reabilitação
+            if (submitButton) {
+                resetButtonProgress(submitButton, 'Salvar');
+                submitButton.disabled = false;
+                submitButton.removeAttribute('disabled');
+                submitButton.style.pointerEvents = 'auto';
+                submitButton.style.opacity = '1';
+                submitButton.style.cursor = 'pointer';
+            }
+            
+            const cancelButton = document.getElementById('cancel-ingredient-edit-btn');
+            if (cancelButton) {
+                cancelButton.disabled = false;
+                cancelButton.removeAttribute('disabled');
+                cancelButton.style.pointerEvents = 'auto';
+                cancelButton.style.opacity = '1';
+                cancelButton.style.cursor = 'pointer';
+            }
+            
+            // Fechar modal
+            closeModal(ingredientEditModal, ingredientEditModalContent);
+            
+            // Recarregar ingredientes
+            await loadIngredients();
+            // Recarregar listas de ingredientes no formulário de produtos
+            if (productModal && productModal.classList.contains('active') && productModalContent && productModalContent.classList.contains('open')) {
+                await loadProductDefaultIngredients();
+                await loadProductIngredients();
+                updateDescriptionFromDefaultIngredients();
+            }
+        } catch (error) {
+            console.error('Erro ao salvar ingrediente:', error);
+            showToast('Erro ao salvar ingrediente: ' + error.message, 'error');
+            
+            // Resetar botão em caso de erro - FORÇAR reabilitação
+            if (submitButton) {
+                resetButtonProgress(submitButton, 'Salvar');
+                enableButton(submitButton);
+            }
+            
+            const cancelButton = document.getElementById('cancel-ingredient-edit-btn');
+            enableButton(cancelButton);
         }
     });
 }
@@ -2338,33 +2814,81 @@ if (ingredientBatchForm) {
     }
 }
 
-// Editar ingrediente
+// Editar ingrediente - Usa modal separada
 window.editIngredient = async (id) => {
+    console.log('🔵 editIngredient chamado para ID:', id);
     const ingredient = ingredients.find(i => i.id === id);
-    if (!ingredient) return;
+    if (!ingredient) {
+        console.error('❌ Ingrediente não encontrado:', id);
+        return;
+    }
 
-    editingIngredientId = id;
-    ingredientModalTitle.textContent = 'Editar Ingrediente';
+    console.log('✅ Ingrediente encontrado:', ingredient.name);
     
-    document.getElementById('ingredient-id').value = ingredient.id;
-    document.getElementById('ingredient-name').value = ingredient.name;
-    document.getElementById('ingredient-price').value = ingredient.price;
-    document.getElementById('ingredient-active').checked = ingredient.active !== false;
+    // Fechar modal de edição se estiver aberta (garantir estado limpo)
+    if (ingredientEditModal && ingredientEditModal.classList.contains('active')) {
+        closeModal(ingredientEditModal, ingredientEditModalContent);
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    // Resetar formulário de edição antes de preencher
+    resetIngredientEditForm();
+    
+    editingIngredientId = id;
+    
+    // Preencher campos da modal de edição
+    const ingredientEditIdInput = document.getElementById('ingredient-edit-id');
+    const ingredientEditNameInput = document.getElementById('ingredient-edit-name');
+    const ingredientEditPriceInput = document.getElementById('ingredient-edit-price');
+    const ingredientEditActiveInput = document.getElementById('ingredient-edit-active');
+    
+    if (ingredientEditIdInput) ingredientEditIdInput.value = ingredient.id;
+    if (ingredientEditNameInput) ingredientEditNameInput.value = ingredient.name;
+    if (ingredientEditPriceInput) ingredientEditPriceInput.value = ingredient.price;
+    if (ingredientEditActiveInput) ingredientEditActiveInput.checked = ingredient.active !== false;
     
     // Carregar categorias se ainda não foram carregadas
     if (categories.length === 0) {
         await loadCategories();
     }
     
+    // Atualizar seletor de categoria na modal de edição
+    updateCategoryEditSelector();
+    
     // Selecionar categoria do ingrediente
-    const categorySelect = document.getElementById('ingredient-category');
-    if (categorySelect) {
-        categorySelect.value = ingredient.category || defaultCategoryId || '';
+    const categoryEditSelect = document.getElementById('ingredient-edit-category');
+    if (categoryEditSelect) {
+        categoryEditSelect.value = ingredient.category || defaultCategoryId || '';
     }
     
-    // Ativar aba "Adicionar" ao editar
-    switchModalTab('single');
-    openModal(ingredientModal, ingredientModalContent);
+    // Garantir que os botões estão habilitados
+    const submitButton = document.getElementById('ingredient-edit-save-btn');
+    const cancelButton = document.getElementById('cancel-ingredient-edit-btn');
+    
+    if (submitButton) {
+        resetButtonProgress(submitButton, 'Salvar');
+        enableButton(submitButton);
+    }
+    
+    enableButton(cancelButton);
+    
+    // Abrir modal de edição
+    openModal(ingredientEditModal, ingredientEditModalContent);
+    
+    // Garantir novamente APÓS abrir a modal (pode haver código que desabilita)
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    const submitButtonAfter = document.getElementById('ingredient-edit-save-btn');
+    const cancelButtonAfter = document.getElementById('cancel-ingredient-edit-btn');
+    
+    enableButton(submitButtonAfter);
+    enableButton(cancelButtonAfter);
+    
+    if (submitButtonAfter) {
+        submitButtonAfter.style.display = '';
+    }
+    
+    console.log('✅ Modal de edição aberta - botões verificados');
 };
 
 // Deletar ingrediente
@@ -2720,6 +3244,21 @@ function setupEventListeners() {
         });
     }
     
+    // Fechar modal de editar ingrediente
+    if (ingredientEditModalClose) {
+        ingredientEditModalClose.addEventListener('click', () => {
+            resetIngredientEditForm();
+            closeModal(ingredientEditModal, ingredientEditModalContent);
+        });
+    }
+    
+    if (cancelIngredientEditBtn) {
+        cancelIngredientEditBtn.addEventListener('click', () => {
+            resetIngredientEditForm();
+            closeModal(ingredientEditModal, ingredientEditModalContent);
+        });
+    }
+    
     // Fechar modais ao clicar no overlay
     if (productModal) {
         productModal.addEventListener('click', (e) => {
@@ -2751,11 +3290,11 @@ function setupEventListeners() {
             if (productModal && productModal.classList.contains('active')) {
                 resetProductForm();
                 closeModal(productModal, productModalContent);
-            }
-            if (ingredientModal && ingredientModal.classList.contains('active')) {
-                ingredientForm.reset();
-                ingredientBatchForm.reset();
-                switchModalTab('single');
+            } else if (ingredientEditModal && ingredientEditModal.classList.contains('active')) {
+                resetIngredientEditForm();
+                closeModal(ingredientEditModal, ingredientEditModalContent);
+            } else if (ingredientModal && ingredientModal.classList.contains('active')) {
+                resetIngredientForm();
                 closeModal(ingredientModal, ingredientModalContent);
             }
         }
@@ -2951,6 +3490,38 @@ function setupEventListeners() {
             if (clearIngredientSearchBtn) {
                 clearIngredientSearchBtn.style.display = term.trim() ? 'block' : 'none';
             }
+        });
+    }
+    
+    // Event listeners para barra de filtros com ícones
+    const filterIconBtns = document.querySelectorAll('.filter-icon-btn[data-filter]');
+    filterIconBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const filterType = btn.getAttribute('data-filter');
+            toggleFilterPanel(filterType, btn);
+        });
+    });
+    
+    // Event listeners para filtros de status
+    const statusFilterBtns = document.querySelectorAll('.status-filter-btn');
+    statusFilterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remover active de todos
+            statusFilterBtns.forEach(b => b.classList.remove('active'));
+            // Adicionar active no clicado
+            btn.classList.add('active');
+            const status = btn.getAttribute('data-status');
+            currentIngredientStatusFilter = status;
+            applyIngredientFilters();
+        });
+    });
+    
+    // Event listener para seletor de categoria
+    const ingredientCategoryFilter = document.getElementById('ingredient-category-filter');
+    if (ingredientCategoryFilter) {
+        ingredientCategoryFilter.addEventListener('change', (e) => {
+            currentIngredientCategoryFilter = e.target.value;
+            applyIngredientFilters();
         });
     }
     
@@ -3228,6 +3799,8 @@ async function saveCategory() {
         await loadCategoriesList();
         await loadCategories(); // Recarregar categorias para atualizar seletor
         updateCategorySelector();
+        updateCategoryEditSelector(); // Atualizar também o seletor da modal de edição
+        updateCategoryFilterSelector(); // Atualizar também o filtro de categoria
     } catch (error) {
         console.error('Erro ao salvar categoria:', error);
         
@@ -3315,6 +3888,8 @@ window.deleteCategoryConfirm = async (id) => {
                     await loadCategoriesList();
                     await loadCategories(); // Recarregar categorias
                     updateCategorySelector();
+                    updateCategoryEditSelector(); // Atualizar também o seletor da modal de edição
+                    updateCategoryFilterSelector(); // Atualizar também o filtro de categoria
                 } catch (error) {
                     console.error('Erro ao excluir categoria:', error);
                     showToast(error.message || 'Erro ao excluir categoria', 'error');

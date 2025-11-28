@@ -97,8 +97,32 @@
                 Carregando ingredientes...
             </div>
 
-            <!-- Controles de Seleção em Massa e Filtros -->
-            <div class="products-controls ingredients-controls">
+            <!-- Barra de Filtros com Ícones -->
+            <div class="filters-toolbar">
+                <div class="filter-icon-btn" data-filter="search" title="Buscar">
+                    <span class="filter-icon">🔍</span>
+                    <span class="filter-label">Buscar</span>
+                </div>
+                <div class="filter-icon-btn" data-filter="select" title="Selecionar">
+                    <span class="filter-icon">☑️</span>
+                    <span class="filter-label">Selecionar</span>
+                </div>
+                <div class="filter-icon-btn" data-filter="status" title="Status">
+                    <span class="filter-icon">📊</span>
+                    <span class="filter-label">Status</span>
+                </div>
+            </div>
+
+            <!-- Painel de Busca -->
+            <div class="filter-panel" id="ingredient-search-panel" style="display: none;">
+                <div class="search-container">
+                    <input type="text" id="ingredient-search-input" class="search-input" placeholder="Buscar ingrediente...">
+                    <button id="clear-ingredient-search-btn" class="clear-search-btn" style="display: none;">&times;</button>
+                </div>
+            </div>
+
+            <!-- Painel de Seleção -->
+            <div class="filter-panel" id="ingredient-select-panel" style="display: none;">
                 <div class="bulk-actions">
                     <label class="select-all-label">
                         <input type="checkbox" id="select-all-ingredients-checkbox">
@@ -117,12 +141,23 @@
                         </button>
                     </div>
                 </div>
-                <div class="products-filters">
-                    <div class="search-container">
-                        <input type="text" id="ingredient-search-input" class="search-input" placeholder="Buscar ingrediente...">
-                        <button id="clear-ingredient-search-btn" class="clear-search-btn" style="display: none;">&times;</button>
-                    </div>
+            </div>
+
+            <!-- Painel de Status -->
+            <div class="filter-panel" id="ingredient-status-panel" style="display: none;">
+                <div class="status-filters">
+                    <button class="status-filter-btn active" data-status="all">Todos</button>
+                    <button class="status-filter-btn" data-status="active">Ativos</button>
+                    <button class="status-filter-btn" data-status="inactive">Inativos</button>
                 </div>
+            </div>
+
+            <!-- Seletor de Categorias -->
+            <div class="category-filter-bar">
+                <label class="category-filter-label">Categoria:</label>
+                <select id="ingredient-category-filter" class="category-filter-select">
+                    <option value="all">Todas as Categorias</option>
+                </select>
             </div>
 
             <div class="products-grid" id="ingredients-grid">
@@ -184,6 +219,9 @@
                 <div id="ingredient-tab-single" class="modal-tab-content active">
                     <form id="ingredient-form">
                         <input type="hidden" id="ingredient-id">
+                        
+                        <!-- Área de mensagem de erro -->
+                        <div id="ingredient-form-error" class="form-error-message" style="display: none;"></div>
                         
                     <div class="form-group">
                         <label for="ingredient-name">Nome do Ingrediente *</label>
@@ -255,6 +293,51 @@
                 <button type="button" class="btn-cancel" id="cancel-ingredient-btn">Cancelar</button>
                 <button type="submit" form="ingredient-form" class="btn-save" id="ingredient-save-btn" style="display: none;">Salvar</button>
                 <button type="submit" form="ingredient-batch-form" class="btn-save" id="ingredient-batch-save-btn" style="display: none;">Criar Ingredientes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Editar Ingrediente -->
+    <div id="ingredient-edit-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="ingredient-edit-modal-title">Editar Ingrediente</h3>
+                <button class="modal-close" id="ingredient-edit-modal-close">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="ingredient-edit-form">
+                    <input type="hidden" id="ingredient-edit-id">
+                    
+                    <div class="form-group">
+                        <label for="ingredient-edit-name">Nome do Ingrediente *</label>
+                        <input type="text" id="ingredient-edit-name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ingredient-edit-category">Categoria *</label>
+                        <select id="ingredient-edit-category" required>
+                            <option value="">Carregando categorias...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ingredient-edit-price">Preço (R$) *</label>
+                        <input type="number" id="ingredient-edit-price" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="ingredient-edit-active" checked>
+                            <span>Ingrediente ativo</span>
+                        </label>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" id="cancel-ingredient-edit-btn">Cancelar</button>
+                <button type="submit" form="ingredient-edit-form" class="btn-save" id="ingredient-edit-save-btn">Salvar</button>
             </div>
         </div>
     </div>
