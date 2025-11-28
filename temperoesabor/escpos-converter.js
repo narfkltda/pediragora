@@ -10,6 +10,10 @@ class ESCPOSConverter {
         this.GS = '\x1D';
         this.LF = '\x0A';
         this.CR = '\x0D';
+        
+        // Configuração para papel térmico 80mm
+        this.PAPER_WIDTH = 80; // mm
+        this.CHARS_PER_LINE = 50; // caracteres por linha (otimizado para 80mm)
     }
 
     /**
@@ -25,15 +29,16 @@ class ESCPOSConverter {
         // Array para armazenar os comandos
         const commands = [];
 
-        // Inicializar impressora
+        // Inicializar impressora com configurações para 80mm
         commands.push(this.initialize());
+        commands.push(this.setPaperWidth80mm());
 
         // Processar elementos
         this.processElement(tempDiv, commands);
 
         // Adicionar alimentação e corte
         commands.push(this.feedLines(3));
-        commands.push(this.cut());
+        commands.push(this.cut(1)); // Corte total
 
         // Converter para Uint8Array
         const fullCommand = commands.join('');
@@ -206,6 +211,18 @@ class ESCPOSConverter {
     }
 
     /**
+     * Configura impressora para papel 80mm
+     * Define densidade térmica otimizada para 80mm
+     */
+    setPaperWidth80mm() {
+        // Configurar densidade térmica (GS (E) n)
+        // n: bits 0-2 = densidade (0-7), bits 3-4 = velocidade (0-3)
+        // 0x37 = densidade 7 (máxima), velocidade 0 (normal)
+        // Compatível com impressoras ESC/POS padrão
+        return this.GS + String.fromCharCode(0x45) + String.fromCharCode(0x37);
+    }
+
+    /**
      * Define alinhamento do texto
      * @param {string} align - 'left', 'center', 'right'
      */
@@ -248,7 +265,7 @@ class ESCPOSConverter {
      * Desenha linha separadora
      */
     drawLine() {
-        const line = '-'.repeat(48); // 48 caracteres para papel 80mm
+        const line = '-'.repeat(this.CHARS_PER_LINE);
         return line + this.LF;
     }
 
