@@ -278,6 +278,10 @@ function renderProducts() {
         const card = document.createElement('div');
         card.className = 'item-card horizontal';
         
+        // PRIMEIRA LINHA: Checkbox, Imagem, Nome + Descrição, Valor
+        const firstRow = document.createElement('div');
+        firstRow.className = 'item-card-first-row';
+        
         // 1. Checkbox de seleção
         const checkboxContainer = document.createElement('div');
         checkboxContainer.className = 'product-checkbox-container';
@@ -289,17 +293,7 @@ function renderProducts() {
         checkbox.addEventListener('change', () => toggleProductSelection(product.id));
         checkboxContainer.appendChild(checkbox);
         
-        // 2. Status (disponibilidade)
-        const status = document.createElement('span');
-        status.className = `product-status-badge ${product.available ? 'available' : 'unavailable'}`;
-        status.textContent = product.available ? '✓ Disponível' : '✗ Indisponível';
-        
-        // 3. Categoria
-        const categoryBadge = document.createElement('span');
-        categoryBadge.className = 'product-category-badge';
-        categoryBadge.textContent = escapeHtml(product.category);
-        
-        // 4. Imagem (pequena)
+        // 2. Imagem (pequena)
         const imageContainer = document.createElement('div');
         imageContainer.className = 'item-image-container';
         
@@ -376,7 +370,7 @@ function renderProducts() {
             console.error(`❌ [DEBUG] imageContainer não existe para "${product.name}"`);
         }
         
-        // 5. Nome e 6. Descrição (em container de conteúdo)
+        // 3. Nome e Descrição (em container vertical)
         const contentContainer = document.createElement('div');
         contentContainer.className = 'item-content';
         
@@ -393,12 +387,32 @@ function renderProducts() {
         contentContainer.appendChild(title);
         contentContainer.appendChild(description);
         
-        // 7. Preço
+        // 4. Preço (Valor)
         const price = document.createElement('div');
         price.className = 'item-price';
         price.textContent = `R$ ${product.price.toFixed(2)}`;
         
-        // 8. Botões
+        // Adicionar elementos à primeira linha
+        firstRow.appendChild(checkboxContainer);
+        firstRow.appendChild(imageContainer);
+        firstRow.appendChild(contentContainer);
+        firstRow.appendChild(price);
+        
+        // SEGUNDA LINHA: Status, Categoria, Botões
+        const secondRow = document.createElement('div');
+        secondRow.className = 'item-card-second-row';
+        
+        // 1. Status (disponibilidade)
+        const status = document.createElement('span');
+        status.className = `product-status-badge ${product.available ? 'available' : 'unavailable'}`;
+        status.textContent = product.available ? '✓ Disponível' : '✗ Indisponível';
+        
+        // 2. Categoria
+        const categoryBadge = document.createElement('span');
+        categoryBadge.className = 'product-category-badge';
+        categoryBadge.textContent = escapeHtml(product.category);
+        
+        // 3. Botões
         const buttonsContainer = document.createElement('div');
         buttonsContainer.className = 'item-buttons';
         
@@ -415,14 +429,14 @@ function renderProducts() {
         buttonsContainer.appendChild(editBtn);
         buttonsContainer.appendChild(deleteBtn);
         
-        // Adicionar elementos ao card na ordem: checkbox, status, categoria, imagem, conteúdo, preço, botões
-        card.appendChild(checkboxContainer);
-        card.appendChild(status);
-        card.appendChild(categoryBadge);
-        card.appendChild(imageContainer);
-        card.appendChild(contentContainer);
-        card.appendChild(price);
-        card.appendChild(buttonsContainer);
+        // Adicionar elementos à segunda linha
+        secondRow.appendChild(status);
+        secondRow.appendChild(categoryBadge);
+        secondRow.appendChild(buttonsContainer);
+        
+        // Adicionar as duas linhas ao card
+        card.appendChild(firstRow);
+        card.appendChild(secondRow);
         
         productsGrid.appendChild(card);
         });
@@ -1297,6 +1311,10 @@ function renderIngredients() {
         const card = document.createElement('div');
         card.className = 'item-card horizontal';
         
+        // PRIMEIRA LINHA: Checkbox, Nome, Preço
+        const firstRow = document.createElement('div');
+        firstRow.className = 'item-card-first-row';
+        
         // 1. Checkbox de seleção
         const checkboxContainer = document.createElement('div');
         checkboxContainer.className = 'product-checkbox-container';
@@ -1308,17 +1326,7 @@ function renderIngredients() {
         checkbox.addEventListener('change', () => toggleIngredientSelection(ingredient.id));
         checkboxContainer.appendChild(checkbox);
         
-        // 2. Status (ativo/inativo)
-        const status = document.createElement('span');
-        status.className = `product-status-badge ${ingredient.active ? 'available' : 'unavailable'}`;
-        status.textContent = ingredient.active ? '✓ Ativo' : '✗ Inativo';
-        
-        // 3. Categoria (Ingrediente)
-        const categoryBadge = document.createElement('span');
-        categoryBadge.className = 'product-category-badge';
-        categoryBadge.textContent = 'Ingrediente';
-        
-        // 4. Conteúdo (nome)
+        // 2. Nome
         const contentContainer = document.createElement('div');
         contentContainer.className = 'item-content';
         
@@ -1328,12 +1336,31 @@ function renderIngredients() {
         
         contentContainer.appendChild(title);
         
-        // 5. Preço
+        // 3. Preço
         const price = document.createElement('div');
         price.className = 'item-price';
         price.textContent = `R$ ${ingredient.price.toFixed(2)}`;
         
-        // 6. Botões
+        // Adicionar elementos à primeira linha
+        firstRow.appendChild(checkboxContainer);
+        firstRow.appendChild(contentContainer);
+        firstRow.appendChild(price);
+        
+        // SEGUNDA LINHA: Status, Categoria, Botões
+        const secondRow = document.createElement('div');
+        secondRow.className = 'item-card-second-row';
+        
+        // 1. Status (ativo/inativo)
+        const status = document.createElement('span');
+        status.className = `product-status-badge ${ingredient.active ? 'available' : 'unavailable'}`;
+        status.textContent = ingredient.active ? '✓ Ativo' : '✗ Inativo';
+        
+        // 2. Categoria (Ingrediente)
+        const categoryBadge = document.createElement('span');
+        categoryBadge.className = 'product-category-badge';
+        categoryBadge.textContent = 'Ingrediente';
+        
+        // 3. Botões
         const buttonsContainer = document.createElement('div');
         buttonsContainer.className = 'item-buttons';
         
@@ -1350,13 +1377,14 @@ function renderIngredients() {
         buttonsContainer.appendChild(editBtn);
         buttonsContainer.appendChild(deleteBtn);
         
-        // Adicionar elementos ao card na ordem: checkbox, status, categoria, conteúdo, preço, botões
-        card.appendChild(checkboxContainer);
-        card.appendChild(status);
-        card.appendChild(categoryBadge);
-        card.appendChild(contentContainer);
-        card.appendChild(price);
-        card.appendChild(buttonsContainer);
+        // Adicionar elementos à segunda linha
+        secondRow.appendChild(status);
+        secondRow.appendChild(categoryBadge);
+        secondRow.appendChild(buttonsContainer);
+        
+        // Adicionar as duas linhas ao card
+        card.appendChild(firstRow);
+        card.appendChild(secondRow);
         
         ingredientsGrid.appendChild(card);
     });
