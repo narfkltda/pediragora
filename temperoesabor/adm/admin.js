@@ -31,6 +31,7 @@ import { uploadProductImage } from '../services/storage-service.js';
 const productsGrid = document.getElementById('products-grid');
 const addProductBtn = document.getElementById('add-product-btn');
 const productModal = document.getElementById('product-modal');
+let productModalContent = null; // Será inicializado no DOMContentLoaded
 const productForm = document.getElementById('product-form');
 const modalTitle = document.getElementById('modal-title');
 const modalClose = document.getElementById('modal-close');
@@ -69,6 +70,7 @@ let imageUploadLoading;
 const ingredientsGrid = document.getElementById('ingredients-grid');
 const addIngredientBtn = document.getElementById('add-ingredient-btn');
 const ingredientModal = document.getElementById('ingredient-modal');
+let ingredientModalContent = null; // Será inicializado no DOMContentLoaded
 const ingredientForm = document.getElementById('ingredient-form');
 const ingredientBatchForm = document.getElementById('ingredient-batch-form');
 const ingredientModalTitle = document.getElementById('ingredient-modal-title');
@@ -126,8 +128,19 @@ let currentIngredientSearchTerm = '';
 let allIngredients = []; // Todos os ingredientes (sem filtros)
 let filteredIngredients = []; // Ingredientes após aplicar filtros
 
+// Estado para controle de scroll das modais (estilo sidebar)
+let modalScrollPosition = 0;
+
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
+    // Inicializar elementos DOM de modal content (sidebar)
+    if (productModal) {
+        productModalContent = productModal.querySelector('.modal-content');
+    }
+    if (ingredientModal) {
+        ingredientModalContent = ingredientModal.querySelector('.modal-content');
+    }
+    
     // Inicializar elementos DOM de upload de imagem
     productImageInput = document.getElementById('product-image-input');
     productImageUrl = document.getElementById('product-image-url');
@@ -160,6 +173,168 @@ function checkAuth() {
             window.location.href = 'login.html';
         }
     });
+}
+
+// ==================== FUNÇÕES DE PROGRESSO NO BOTÃO ====================
+
+/**
+ * Configurar botão com loading e barra de progresso
+ * @param {HTMLElement} button - Botão a ser configurado
+ * @param {string} text - Texto a ser exibido
+ */
+function setupButtonWithProgress(button, text) {
+    if (!button) return;
+    
+    button.disabled = true;
+    
+    // Criar estrutura de progresso se não existir
+    let progressBar = button.querySelector('.progress-bar');
+    let buttonText = button.querySelector('.button-text');
+    
+    if (!progressBar) {
+        progressBar = document.createElement('div');
+        progressBar.className = 'progress-bar';
+        button.appendChild(progressBar);
+    }
+    
+    if (!buttonText) {
+        buttonText = document.createElement('span');
+        buttonText.className = 'button-text';
+        // Mover conteúdo existente para buttonText
+        const existingContent = Array.from(button.childNodes);
+        existingContent.forEach(node => {
+            if (node.nodeType === Node.TEXT_NODE || (node.nodeType === Node.ELEMENT_NODE && !node.classList.contains('progress-bar'))) {
+                buttonText.appendChild(node);
+            }
+        });
+        button.appendChild(buttonText);
+    }
+    
+    // Adicionar spinner se não existir
+    let spinner = buttonText.querySelector('.spinner');
+    if (!spinner) {
+        spinner = document.createElement('div');
+        spinner.className = 'spinner';
+        buttonText.insertBefore(spinner, buttonText.firstChild);
+    }
+    
+    buttonText.innerHTML = `<div class="spinner"></div>${text}`;
+    progressBar.style.width = '0%';
+}
+
+/**
+ * Atualizar progresso do botão
+ * @param {HTMLElement} button - Botão a ser atualizado
+ * @param {number} progress - Progresso (0-100)
+ * @param {string} text - Texto a ser exibido
+ */
+function updateButtonProgress(button, progress, text) {
+    if (!button) return;
+    
+    const progressBar = button.querySelector('.progress-bar');
+    const buttonText = button.querySelector('.button-text');
+    
+    if (progressBar) {
+        progressBar.style.width = `${progress}%`;
+    }
+    
+    if (buttonText) {
+        buttonText.innerHTML = `<div class="spinner"></div>${text} ${progress}%`;
+    } else {
+        button.innerHTML = `<div class="spinner"></div>${text} ${progress}%`;
+    }
+}
+
+/**
+ * Resetar botão removendo loading e progresso
+ * @param {HTMLElement} button - Botão a ser resetado
+ * @param {string} text - Texto final do botão
+ */
+function resetButtonProgress(button, text) {
+    if (!button) return;
+    
+    button.disabled = false;
+    
+    const progressBar = button.querySelector('.progress-bar');
+    const buttonText = button.querySelector('.button-text');
+    
+    if (progressBar) {
+        progressBar.style.width = '0%';
+        // Remover barra de progresso se necessário
+        setTimeout(() => {
+            if (progressBar && progressBar.style.width === '0%') {
+                progressBar.remove();
+            }
+        }, 300);
+    }
+    
+    if (buttonText) {
+        buttonText.innerHTML = text;
+        // Remover spinner se existir
+        const spinner = buttonText.querySelector('.spinner');
+        if (spinner) {
+            spinner.remove();
+        }
+    } else {
+        // Limpar todo o conteúdo e adicionar apenas o texto
+        button.innerHTML = text;
+    }
+}
+
+// ==================== FUNÇÕES DE MODAL (SIDEBAR ESTILO CARRINHO) ====================
+
+/**
+ * Abrir modal como sidebar (estilo carrinho)
+ * @param {HTMLElement} modalOverlay - Elemento overlay da modal
+ * @param {HTMLElement} modalContent - Elemento content da modal
+ */
+function openModal(modalOverlay, modalContent) {
+    if (!modalOverlay || !modalContent) return;
+    
+    // Salvar posição de scroll atual
+    modalScrollPosition = window.pageYOffset || document.documentElement.scrollTop || window.scrollY;
+    
+    // Adicionar classes para abrir
+    modalOverlay.classList.add('active');
+    modalContent.classList.add('open');
+    
+    // Bloquear scroll do body (igual carrinho)
+    document.body.classList.add('modal-open');
+    document.documentElement.classList.add('modal-open');
+    document.body.style.top = `-${modalScrollPosition}px`;
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+    document.documentElement.style.overflow = 'hidden';
+    document.documentElement.style.height = '100%';
+}
+
+/**
+ * Fechar modal sidebar
+ * @param {HTMLElement} modalOverlay - Elemento overlay da modal
+ * @param {HTMLElement} modalContent - Elemento content da modal
+ */
+function closeModal(modalOverlay, modalContent) {
+    if (!modalOverlay || !modalContent) return;
+    
+    // Remover classes
+    modalOverlay.classList.remove('active');
+    modalContent.classList.remove('open');
+    
+    // Restaurar scroll do body
+    document.body.classList.remove('modal-open');
+    document.documentElement.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+    document.body.style.height = '';
+    document.body.style.top = '';
+    document.documentElement.style.overflow = '';
+    document.documentElement.style.height = '';
+    
+    // Restaurar posição de scroll
+    window.scrollTo(0, modalScrollPosition);
 }
 
 // Carregar produtos
@@ -742,7 +917,7 @@ if (addProductBtn) {
         await loadProductDefaultIngredients();
         await loadProductIngredients();
         updateDescriptionFromDefaultIngredients();
-        productModal.classList.add('active');
+        openModal(productModal, productModalContent);
     });
 }
 
@@ -761,20 +936,29 @@ productForm.addEventListener('submit', async (e) => {
     
     // Fazer upload da imagem se houver nova imagem selecionada
     if (currentImageFile) {
-        const submitButton = productForm.querySelector('button[type="submit"]');
+        const submitButton = document.querySelector('.modal-footer .btn-save[form="product-form"]') ||
+                            productModal?.querySelector('.modal-footer .btn-save');
         
         try {
             console.log('Iniciando upload da imagem...', currentImageFile.name);
             if (imageUploadLoading) {
                 imageUploadLoading.style.display = 'block';
             }
+            
+            // Configurar botão com loading e progresso
             if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.textContent = 'Fazendo upload...';
+                setupButtonWithProgress(submitButton, 'Fazendo upload...');
             }
             
+            // Callback de progresso
+            const onProgress = (progress) => {
+                if (submitButton) {
+                    updateButtonProgress(submitButton, progress, 'Fazendo upload...');
+                }
+            };
+            
             // Adicionar timeout para evitar loop infinito
-            const uploadPromise = uploadProductImage(currentImageFile, editingProductId || null);
+            const uploadPromise = uploadProductImage(currentImageFile, editingProductId || null, onProgress);
             const timeoutPromise = new Promise((_, reject) => {
                 setTimeout(() => reject(new Error('Upload demorou muito tempo. Verifique sua conexão e tente novamente.')), 60000); // 60 segundos
             });
@@ -782,6 +966,11 @@ productForm.addEventListener('submit', async (e) => {
             imageUrl = await Promise.race([uploadPromise, timeoutPromise]);
             console.log('Upload concluído com sucesso. URL:', imageUrl);
             if (productImageUrl) productImageUrl.value = imageUrl;
+            
+            // Atualizar botão para "Salvando..."
+            if (submitButton) {
+                updateButtonProgress(submitButton, 100, 'Salvando...');
+            }
         } catch (error) {
             console.error('Erro detalhado ao fazer upload da imagem:', error);
             console.error('Stack trace:', error.stack);
@@ -824,23 +1013,22 @@ service firebase.storage {
             // Não continuar se o upload falhou
             if (imageUploadLoading) imageUploadLoading.style.display = 'none';
             if (submitButton) {
-                submitButton.disabled = false;
-                submitButton.textContent = 'Salvar';
+                resetButtonProgress(submitButton, 'Salvar');
             }
             return;
         } finally {
-            // Sempre esconder o loading e reabilitar o botão no finally
+            // Sempre esconder o loading no finally (mas não resetar botão se continuou o fluxo)
             if (imageUploadLoading) {
                 imageUploadLoading.style.display = 'none';
             }
-            if (submitButton && !submitButton.disabled) {
-                // Só atualizar o texto se o botão não estiver desabilitado (ou seja, se não continuou o fluxo)
-                const currentText = submitButton.textContent;
-                if (currentText === 'Fazendo upload...') {
-                    submitButton.textContent = 'Salvar';
-                }
-            }
         }
+    }
+    
+    // Configurar botão para "Salvando..." se não houver upload
+    const submitButton = document.querySelector('.modal-footer .btn-save[form="product-form"]') ||
+                        productModal?.querySelector('.modal-footer .btn-save');
+    if (submitButton && !currentImageFile) {
+        setupButtonWithProgress(submitButton, 'Salvando...');
     }
     
     // Coletar ingredientes padrão selecionados na ordem de seleção
@@ -897,6 +1085,16 @@ service firebase.storage {
     };
 
     try {
+        // Atualizar botão para "Salvando..." se ainda não estiver
+        if (submitButton) {
+            const currentText = submitButton.querySelector('.button-text')?.textContent || submitButton.textContent;
+            if (!currentText.includes('Salvando') && !currentText.includes('Fazendo upload')) {
+                setupButtonWithProgress(submitButton, 'Salvando...');
+            } else if (currentText.includes('Fazendo upload')) {
+                updateButtonProgress(submitButton, 100, 'Salvando...');
+            }
+        }
+        
         if (editingProductId) {
             await updateProduct(editingProductId, productData);
             showToast('Produto atualizado com sucesso!', 'success');
@@ -905,13 +1103,23 @@ service firebase.storage {
             showToast('Produto adicionado com sucesso!', 'success');
         }
         
+        // Resetar botão
+        if (submitButton) {
+            resetButtonProgress(submitButton, 'Salvar');
+        }
+        
         // Resetar formulário e estado
         resetProductForm();
-        productModal.classList.remove('active');
+        closeModal(productModal, productModalContent);
         await loadProducts();
     } catch (error) {
         console.error('Erro ao salvar produto:', error);
         showToast('Erro ao salvar produto: ' + error.message, 'error');
+        
+        // Resetar botão em caso de erro
+        if (submitButton) {
+            resetButtonProgress(submitButton, 'Salvar');
+        }
     }
 });
 
@@ -962,7 +1170,7 @@ window.editProduct = async (id) => {
     // Atualizar descrição
     updateDescriptionFromDefaultIngredients();
     
-    productModal.classList.add('active');
+    openModal(productModal, productModalContent);
 };
 
 // Função para exibir modal de confirmação
@@ -1526,9 +1734,9 @@ if (addIngredientBtn) {
         ingredientForm.reset();
         ingredientBatchForm.reset();
         document.getElementById('ingredient-active').checked = true;
-        // Ativar aba "Adicionar" por padrão
+        // Ativar aba "Adicionar" por padrão (isso também atualiza os botões do footer)
         switchModalTab('single');
-        ingredientModal.classList.add('active');
+        openModal(ingredientModal, ingredientModalContent);
     });
 }
 
@@ -1551,6 +1759,17 @@ function switchModalTab(tabName) {
             content.classList.remove('active');
         }
     });
+    
+    // Atualizar botões do footer
+    const ingredientSaveBtn = document.getElementById('ingredient-save-btn');
+    const ingredientBatchSaveBtn = document.getElementById('ingredient-batch-save-btn');
+    if (tabName === 'single') {
+        if (ingredientSaveBtn) ingredientSaveBtn.style.display = '';
+        if (ingredientBatchSaveBtn) ingredientBatchSaveBtn.style.display = 'none';
+    } else if (tabName === 'batch') {
+        if (ingredientSaveBtn) ingredientSaveBtn.style.display = 'none';
+        if (ingredientBatchSaveBtn) ingredientBatchSaveBtn.style.display = '';
+    }
 }
 
 // Event listeners para abas
@@ -1568,13 +1787,20 @@ if (ingredientForm) {
     ingredientForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        const submitButton = document.getElementById('ingredient-save-btn');
+        
         const ingredientData = {
             name: document.getElementById('ingredient-name').value.trim(),
             price: parseFloat(document.getElementById('ingredient-price').value),
             active: document.getElementById('ingredient-active').checked
         };
-
+        
         try {
+            // Configurar botão com loading
+            if (submitButton) {
+                setupButtonWithProgress(submitButton, 'Salvando...');
+            }
+            
             if (editingIngredientId) {
                 await updateIngredient(editingIngredientId, ingredientData);
                 showToast('Ingrediente atualizado com sucesso!', 'success');
@@ -1583,10 +1809,15 @@ if (ingredientForm) {
                 showToast('Ingrediente adicionado com sucesso!', 'success');
             }
             
-            ingredientModal.classList.remove('active');
+            // Resetar botão
+            if (submitButton) {
+                resetButtonProgress(submitButton, 'Salvar');
+            }
+            
+            closeModal(ingredientModal, ingredientModalContent);
             await loadIngredients();
             // Recarregar listas de ingredientes no formulário de produtos
-            if (productModal && productModal.classList.contains('active')) {
+            if (productModal && productModal.classList.contains('active') && productModalContent && productModalContent.classList.contains('open')) {
                 await loadProductDefaultIngredients();
                 await loadProductIngredients();
                 updateDescriptionFromDefaultIngredients();
@@ -1594,6 +1825,11 @@ if (ingredientForm) {
         } catch (error) {
             console.error('Erro ao salvar ingrediente:', error);
             showToast('Erro ao salvar ingrediente: ' + error.message, 'error');
+            
+            // Resetar botão em caso de erro
+            if (submitButton) {
+                resetButtonProgress(submitButton, 'Salvar');
+            }
         }
     });
 }
@@ -1652,6 +1888,8 @@ if (ingredientBatchForm) {
     ingredientBatchForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        const submitButton = document.getElementById('ingredient-batch-save-btn');
+        
         const listText = document.getElementById('ingredient-list').value.trim();
         const priceMode = document.querySelector('input[name="price-mode"]:checked')?.value || 'none';
         const priceUniqueInput = document.getElementById('price-unique');
@@ -1668,6 +1906,11 @@ if (ingredientBatchForm) {
                 showToast('Por favor, informe um preço único válido maior que zero.', 'error');
                 return;
             }
+        }
+        
+        // Configurar botão com loading
+        if (submitButton) {
+            setupButtonWithProgress(submitButton, 'Criando ingredientes...');
         }
         
         let ingredientsList = [];
@@ -1693,6 +1936,9 @@ if (ingredientBatchForm) {
         
         if (ingredientsList.length === 0) {
             showToast('Nenhum ingrediente válido encontrado.', 'error');
+            if (submitButton) {
+                resetButtonProgress(submitButton, 'Criar Ingredientes');
+            }
             return;
         }
         
@@ -1701,6 +1947,9 @@ if (ingredientBatchForm) {
         
         if (uniqueIngredients.length === 0) {
             showToast('Todos os ingredientes são duplicados. Nenhum ingrediente será criado.', 'error');
+            if (submitButton) {
+                resetButtonProgress(submitButton, 'Criar Ingredientes');
+            }
             return;
         }
         
@@ -1745,14 +1994,28 @@ if (ingredientBatchForm) {
                     errors: []
                 });
                 showToast('Nenhum ingrediente novo para criar.', 'warning');
+                
+                // Resetar botão
+                if (submitButton) {
+                    resetButtonProgress(submitButton, 'Criar Ingredientes');
+                }
                 return;
             }
             
-            // Criar ingredientes
+            // Criar ingredientes com progresso
             const created = [];
             const errors = [];
+            const total = ingredientsToCreate.length;
             
-            for (const { name: ingredientName, price } of ingredientsToCreate) {
+            for (let i = 0; i < ingredientsToCreate.length; i++) {
+                const { name: ingredientName, price } = ingredientsToCreate[i];
+                const progress = Math.round(((i + 1) / total) * 100);
+                
+                // Atualizar progresso no botão
+                if (submitButton) {
+                    updateButtonProgress(submitButton, progress, `Criando ingredientes...`);
+                }
+                
                 try {
                     const ingredientData = {
                         name: ingredientName,
@@ -1785,6 +2048,11 @@ if (ingredientBatchForm) {
                 showToast('Erro ao criar ingredientes.', 'error');
             }
             
+            // Resetar botão
+            if (submitButton) {
+                resetButtonProgress(submitButton, 'Criar Ingredientes');
+            }
+            
             // Limpar formulário e recarregar lista
             ingredientBatchForm.reset();
             document.querySelector('input[name="price-mode"][value="none"]').checked = true;
@@ -1792,7 +2060,7 @@ if (ingredientBatchForm) {
             await loadIngredients();
             
             // Recarregar listas de ingredientes no formulário de produtos se estiver aberto
-            if (productModal && productModal.classList.contains('active')) {
+            if (productModal && productModal.classList.contains('active') && productModalContent && productModalContent.classList.contains('open')) {
                 await loadProductDefaultIngredients();
                 await loadProductIngredients();
                 updateDescriptionFromDefaultIngredients();
@@ -1800,11 +2068,16 @@ if (ingredientBatchForm) {
             
             // Fechar modal se todos foram criados com sucesso
             if (errors.length === 0 && alreadyExisting.length === 0) {
-                ingredientModal.classList.remove('active');
+                closeModal(ingredientModal, ingredientModalContent);
             }
         } catch (error) {
             console.error('Erro ao criar ingredientes em lote:', error);
             showToast('Erro ao criar ingredientes: ' + error.message, 'error');
+            
+            // Resetar botão em caso de erro
+            if (submitButton) {
+                resetButtonProgress(submitButton, 'Criar Ingredientes');
+            }
         }
     });
     
@@ -1864,7 +2137,7 @@ window.editIngredient = async (id) => {
     
     // Ativar aba "Adicionar" ao editar
     switchModalTab('single');
-    ingredientModal.classList.add('active');
+    openModal(ingredientModal, ingredientModalContent);
 };
 
 // Deletar ingrediente
@@ -1872,24 +2145,26 @@ window.deleteIngredientConfirm = async (id) => {
     const ingredient = ingredients.find(i => i.id === id);
     if (!ingredient) return;
     
-    if (!confirm(`Tem certeza que deseja excluir o ingrediente "${ingredient.name}"?`)) {
-        return;
-    }
-    
-    try {
-        await deleteIngredient(id);
-        showToast('Ingrediente excluído com sucesso!', 'success');
-        await loadIngredients();
-        // Recarregar listas de ingredientes no formulário de produtos
-        if (productModal && productModal.classList.contains('active')) {
-            await loadProductDefaultIngredients();
-            await loadProductIngredients();
-            updateDescriptionFromDefaultIngredients();
+    showConfirmModal(
+        'Confirmar Exclusão',
+        `Tem certeza que deseja excluir o ingrediente "${ingredient.name}"?`,
+        async () => {
+            try {
+                await deleteIngredient(id);
+                showToast('Ingrediente excluído com sucesso!', 'success');
+                await loadIngredients();
+                // Recarregar listas de ingredientes no formulário de produtos
+                if (productModal && productModal.classList.contains('active') && productModalContent && productModalContent.classList.contains('open')) {
+                    await loadProductDefaultIngredients();
+                    await loadProductIngredients();
+                    updateDescriptionFromDefaultIngredients();
+                }
+            } catch (error) {
+                console.error('Erro ao excluir ingrediente:', error);
+                showToast('Erro ao excluir ingrediente: ' + error.message, 'error');
+            }
         }
-    } catch (error) {
-        console.error('Erro ao excluir ingrediente:', error);
-        showToast('Erro ao excluir ingrediente: ' + error.message, 'error');
-    }
+    );
 };
 
 // Variável para rastrear a ordem de seleção dos ingredientes padrão
@@ -2201,42 +2476,42 @@ function setupEventListeners() {
     if (modalClose) {
         modalClose.addEventListener('click', () => {
             resetProductForm();
-            productModal.classList.remove('active');
+            closeModal(productModal, productModalContent);
         });
     }
     
     if (cancelBtn) {
         cancelBtn.addEventListener('click', () => {
             resetProductForm();
-            productModal.classList.remove('active');
+            closeModal(productModal, productModalContent);
         });
     }
     
     // Fechar modal de ingrediente
     if (ingredientModalClose) {
         ingredientModalClose.addEventListener('click', () => {
-            ingredientModal.classList.remove('active');
             ingredientForm.reset();
             ingredientBatchForm.reset();
             switchModalTab('single');
+            closeModal(ingredientModal, ingredientModalContent);
         });
     }
     
     if (cancelIngredientBtn) {
         cancelIngredientBtn.addEventListener('click', () => {
-            ingredientModal.classList.remove('active');
             ingredientForm.reset();
             ingredientBatchForm.reset();
             switchModalTab('single');
+            closeModal(ingredientModal, ingredientModalContent);
         });
     }
     
     if (cancelIngredientBatchBtn) {
         cancelIngredientBatchBtn.addEventListener('click', () => {
-            ingredientModal.classList.remove('active');
             ingredientForm.reset();
             ingredientBatchForm.reset();
             switchModalTab('single');
+            closeModal(ingredientModal, ingredientModalContent);
         });
     }
     
@@ -2245,7 +2520,7 @@ function setupEventListeners() {
         productModal.addEventListener('click', (e) => {
             if (e.target === productModal) {
                 resetProductForm();
-                productModal.classList.remove('active');
+                closeModal(productModal, productModalContent);
             }
         });
     }
@@ -2253,7 +2528,7 @@ function setupEventListeners() {
     if (ingredientModal) {
         ingredientModal.addEventListener('click', (e) => {
             if (e.target === ingredientModal) {
-                ingredientModal.classList.remove('active');
+                closeModal(ingredientModal, ingredientModalContent);
             }
         });
     }
@@ -2264,6 +2539,22 @@ function setupEventListeners() {
             await loadProductIngredients();
         });
     }
+    
+    // Fechar modais com tecla ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' || e.key === 'Esc') {
+            if (productModal && productModal.classList.contains('active')) {
+                resetProductForm();
+                closeModal(productModal, productModalContent);
+            }
+            if (ingredientModal && ingredientModal.classList.contains('active')) {
+                ingredientForm.reset();
+                ingredientBatchForm.reset();
+                switchModalTab('single');
+                closeModal(ingredientModal, ingredientModalContent);
+            }
+        }
+    });
     
     // Logout
     if (logoutBtn) {

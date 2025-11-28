@@ -5,7 +5,8 @@
 
 import { 
   ref, 
-  uploadBytes, 
+  uploadBytes,
+  uploadBytesResumable,
   getDownloadURL 
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 import { storage, auth } from '../firebase-config.js';
@@ -44,12 +45,13 @@ function validateImageFile(file) {
 }
 
 /**
- * Faz upload da imagem do produto para Firebase Storage
+ * Faz upload da imagem do produto para Firebase Storage com tracker de progresso
  * @param {File} file - Arquivo de imagem
  * @param {string} productId - ID do produto (opcional, para edição)
+ * @param {Function} onProgress - Callback de progresso (progress: number) => void
  * @returns {Promise<string>} URL de download da imagem
  */
-export async function uploadProductImage(file, productId = null) {
+export async function uploadProductImage(file, productId = null, onProgress = null) {
   try {
     console.log('uploadProductImage chamado com:', { 
       fileName: file.name, 
@@ -112,12 +114,35 @@ export async function uploadProductImage(file, productId = null) {
     console.log('Auth configurado:', auth ? 'Sim' : 'Não');
     console.log('Usuário atual:', auth.currentUser ? auth.currentUser.email : 'Nenhum');
 
-    // Fazer upload com timeout mais curto para detectar CORS mais rapidamente
-    console.log('Iniciando uploadBytes...', new Date().toISOString());
+    // Fazer upload com tracker de progresso
+    console.log('Iniciando uploadBytesResumable...', new Date().toISOString());
     const uploadStartTime = Date.now();
     
     try {
-      await uploadBytes(storageRef, file);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      
+      // Se houver callback de progresso, configurar listener
+      if (onProgress && typeof onProgress === 'function') {
+        uploadTask.on('state_changed', 
+          (snapshot) => {
+            // Calcular progresso
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            console.log(`Upload progress: ${progress.toFixed(1)}%`);
+            onProgress(Math.round(progress));
+          },
+          (error) => {
+            // Erro durante upload
+            console.error('Erro durante upload:', error);
+            throw error;
+          },
+          () => {
+            // Upload completo
+            console.log('Upload concluído com sucesso');
+          }
+        );
+      }
+      
+      await uploadTask;
     } catch (uploadError) {
       // Se for erro de CORS, fornecer instruções detalhadas
       if (uploadError.message && (

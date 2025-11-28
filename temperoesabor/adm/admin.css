@@ -979,9 +979,12 @@ body {
 }
 
 .modal-body {
+    flex: 1;
+    overflow-y: auto;
     padding: 20px;
     color: #333;
     line-height: 1.6;
+    -webkit-overflow-scrolling: touch;
 }
 
 .modal-body p {
@@ -995,6 +998,12 @@ body {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
+    background: white;
+    flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+    z-index: 10;
 }
 
 .btn-secondary {
@@ -1181,32 +1190,78 @@ body {
 }
 
 /* Modal */
+/* Modal Overlay - Estilo Sidebar (igual carrinho) */
 .modal-overlay {
-    display: none;
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .modal-overlay.active {
-    display: flex;
+    opacity: 1;
+    visibility: visible;
 }
 
+/* Modal Content - Sidebar deslizante da direita (igual carrinho) */
 .modal-content {
+    position: fixed;
+    right: -400px; /* Fora da tela inicialmente */
+    top: 0;
+    width: 400px;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile browsers */
     background: white;
-    border-radius: 8px;
-    width: 100%;
-    max-width: 600px;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+    transition: right 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Não permitir scroll no container principal */
+    border-radius: 0; /* Remover border-radius para sidebar */
+}
+
+.modal-content.open {
+    right: 0; /* Dentro da tela quando aberto */
+}
+
+/* Modal de Confirmação - Centralizada (não sidebar) */
+#confirm-modal .modal-content {
+    position: fixed;
+    right: auto;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: auto;
+    min-width: 400px;
+    max-width: 90%;
+    height: auto;
     max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#confirm-modal .modal-content.open {
+    right: auto;
+    transform: translate(-50%, -50%);
+}
+
+#confirm-modal.active .modal-content {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+}
+
+#confirm-modal:not(.active) .modal-content {
+    opacity: 0;
+    transform: translate(-50%, -60%);
+    pointer-events: none;
 }
 
 .modal-header {
@@ -1350,13 +1405,9 @@ body {
     cursor: pointer;
 }
 
+/* Remover form-actions - agora usamos modal-footer */
 .form-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #f0f0f0;
+    display: none;
 }
 
 .btn-save, .btn-cancel {
@@ -1366,6 +1417,9 @@ body {
     cursor: pointer;
     font-size: 14px;
     transition: background 0.2s;
+    position: relative;
+    overflow: hidden;
+    min-width: 100px;
 }
 
 .btn-save {
@@ -1373,8 +1427,46 @@ body {
     color: white;
 }
 
-.btn-save:hover {
+.btn-save:hover:not(:disabled) {
     background: #45a049;
+}
+
+.btn-save:disabled {
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* Barra de progresso no botão */
+.btn-save .progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.3);
+    transition: width 0.3s ease;
+    z-index: 1;
+}
+
+.btn-save .button-text {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-save .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 .btn-cancel {
@@ -1780,19 +1872,14 @@ body {
         gap: 15px;
     }
     
-    /* Modal */
-    .modal-overlay {
-        padding: 10px;
-        align-items: flex-start;
-        padding-top: 20px;
+    /* Modal - Sidebar responsivo */
+    .modal-content {
+        width: 100%;
+        right: -100%; /* Fora da tela em mobile */
     }
     
-    .modal-content {
-        max-width: 100%;
-        width: 100%;
-        max-height: calc(100vh - 40px);
-        margin: 0;
-        border-radius: 8px 8px 0 0;
+    .modal-content.open {
+        right: 0;
     }
     
     .modal-header {
@@ -1807,6 +1894,15 @@ body {
     
     .modal-body {
         padding: 15px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .modal-footer {
+        padding: 12px 15px;
+        position: sticky;
+        bottom: 0;
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
     }
     
     /* Form Groups */
@@ -1948,12 +2044,35 @@ body {
         max-height: calc(100vh - 20px);
     }
     
+    .modal-content {
+        width: 100%;
+        right: -100%;
+    }
+    
+    .modal-content.open {
+        right: 0;
+    }
+    
     .modal-header {
         padding: 12px;
     }
     
     .modal-body {
         padding: 12px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .modal-footer {
+        padding: 10px 12px;
+        position: sticky;
+        bottom: 0;
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-save, .btn-cancel {
+        padding: 10px 16px;
+        font-size: 14px;
     }
     
     .products-controls,

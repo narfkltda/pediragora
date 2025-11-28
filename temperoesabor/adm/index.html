@@ -174,77 +174,75 @@
                 <button class="modal-tab" data-tab="batch">+ Lista de ingredientes</button>
             </div>
             
-            <!-- Aba: Adicionar único -->
-            <div id="ingredient-tab-single" class="modal-tab-content active">
-                <form id="ingredient-form">
-                    <input type="hidden" id="ingredient-id">
-                    
-                    <div class="form-group">
-                        <label for="ingredient-name">Nome do Ingrediente *</label>
-                        <input type="text" id="ingredient-name" required>
-                    </div>
+            <div class="modal-body">
+                <!-- Aba: Adicionar único -->
+                <div id="ingredient-tab-single" class="modal-tab-content active">
+                    <form id="ingredient-form">
+                        <input type="hidden" id="ingredient-id">
+                        
+                        <div class="form-group">
+                            <label for="ingredient-name">Nome do Ingrediente *</label>
+                            <input type="text" id="ingredient-name" required>
+                        </div>
 
-                    <div class="form-group">
-                        <label for="ingredient-price">Preço (R$) *</label>
-                        <input type="number" id="ingredient-price" step="0.01" min="0" required>
-                    </div>
+                        <div class="form-group">
+                            <label for="ingredient-price">Preço (R$) *</label>
+                            <input type="number" id="ingredient-price" step="0.01" min="0" required>
+                        </div>
 
-                    <div class="form-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="ingredient-active" checked>
-                            <span>Ingrediente ativo</span>
-                        </label>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="button" class="btn-cancel" id="cancel-ingredient-btn">Cancelar</button>
-                        <button type="submit" class="btn-save">Salvar</button>
-                    </div>
-                </form>
-            </div>
-            
-            <!-- Aba: Lista de ingredientes -->
-            <div id="ingredient-tab-batch" class="modal-tab-content">
-                <form id="ingredient-batch-form">
-                    <div class="form-group">
-                        <label>Opção de Preço *</label>
-                        <div class="radio-group">
-                            <label class="radio-label">
-                                <input type="radio" name="price-mode" value="none" checked>
-                                <span>Sem preço (R$ 0,00)</span>
-                            </label>
-                            <label class="radio-label">
-                                <input type="radio" name="price-mode" value="individual">
-                                <span>Preço individual</span>
-                            </label>
-                            <label class="radio-label">
-                                <input type="radio" name="price-mode" value="unique">
-                                <span>Preço único para todos</span>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="ingredient-active" checked>
+                                <span>Ingrediente ativo</span>
                             </label>
                         </div>
-                    </div>
+                    </form>
+                </div>
+                
+                <!-- Aba: Lista de ingredientes -->
+                <div id="ingredient-tab-batch" class="modal-tab-content">
+                    <form id="ingredient-batch-form">
+                        <div class="form-group">
+                            <label>Opção de Preço *</label>
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="price-mode" value="none" checked>
+                                    <span>Sem preço (R$ 0,00)</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="price-mode" value="individual">
+                                    <span>Preço individual</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="price-mode" value="unique">
+                                    <span>Preço único para todos</span>
+                                </label>
+                            </div>
+                        </div>
 
-                    <div class="form-group" id="price-unique-group" style="display: none;">
-                        <label for="price-unique">Preço Único (R$) *</label>
-                        <input type="number" id="price-unique" step="0.01" min="0" placeholder="0.00">
-                        <small>Este preço será aplicado a todos os ingredientes da lista.</small>
-                    </div>
+                        <div class="form-group" id="price-unique-group" style="display: none;">
+                            <label for="price-unique">Preço Único (R$) *</label>
+                            <input type="number" id="price-unique" step="0.01" min="0" placeholder="0.00">
+                            <small>Este preço será aplicado a todos os ingredientes da lista.</small>
+                        </div>
 
-                    <div class="form-group">
-                        <label for="ingredient-list">Lista de Ingredientes *</label>
-                        <textarea 
-                            id="ingredient-list" 
-                            rows="6" 
-                            placeholder="Digite os ingredientes separados por vírgula&#10;Exemplo: Pão, Molho Mima, Alface, Tomate, Cebola"
-                            required></textarea>
-                        <small id="ingredient-list-hint">Separe os ingredientes por vírgula. Todos serão criados com preço R$ 0,00 e como ativos.</small>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="button" class="btn-cancel" id="cancel-ingredient-batch-btn">Cancelar</button>
-                        <button type="submit" class="btn-save">Criar Ingredientes</button>
-                    </div>
-                </form>
+                        <div class="form-group">
+                            <label for="ingredient-list">Lista de Ingredientes *</label>
+                            <textarea 
+                                id="ingredient-list" 
+                                rows="6" 
+                                placeholder="Digite os ingredientes separados por vírgula&#10;Exemplo: Pão, Molho Mima, Alface, Tomate, Cebola"
+                                required></textarea>
+                            <small id="ingredient-list-hint">Separe os ingredientes por vírgula. Todos serão criados com preço R$ 0,00 e como ativos.</small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" id="cancel-ingredient-btn">Cancelar</button>
+                <button type="submit" form="ingredient-form" class="btn-save" id="ingredient-save-btn" style="display: none;">Salvar</button>
+                <button type="submit" form="ingredient-batch-form" class="btn-save" id="ingredient-batch-save-btn" style="display: none;">Criar Ingredientes</button>
             </div>
         </div>
     </div>
@@ -256,10 +254,11 @@
                 <h3 id="modal-title">Adicionar Produto</h3>
                 <button class="modal-close" id="modal-close">&times;</button>
             </div>
-            <form id="product-form">
-                <input type="hidden" id="product-id">
-                
-                <!-- Seletor de Imagem -->
+            <div class="modal-body">
+                <form id="product-form">
+                    <input type="hidden" id="product-id">
+                    
+                    <!-- Seletor de Imagem -->
                 <div class="form-group">
                     <label for="product-image-input">Imagem do Produto *</label>
                     <div class="image-upload-container">
@@ -354,18 +353,18 @@
                     <small>Marque os ingredientes que podem ser adicionados/removidos neste produto</small>
                 </div>
 
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="product-available" checked>
-                        <span>Produto disponível</span>
-                    </label>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn-cancel" id="cancel-btn">Cancelar</button>
-                    <button type="submit" class="btn-save">Salvar</button>
-                </div>
-            </form>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="product-available" checked>
+                            <span>Produto disponível</span>
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" id="cancel-btn">Cancelar</button>
+                <button type="submit" form="product-form" class="btn-save">Salvar</button>
+            </div>
         </div>
     </div>
 
