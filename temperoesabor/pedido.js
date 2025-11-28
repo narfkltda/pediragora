@@ -11,6 +11,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const backBtn = document.getElementById('back-btn');
     const previewSection = document.getElementById('preview-section');
     const orderPreview = document.getElementById('order-preview');
+    
+    // Elementos Bluetooth
+    const connectBtn = document.getElementById('connect-btn');
+    const disconnectBtn = document.getElementById('disconnect-btn');
+    const statusIndicator = document.getElementById('status-indicator');
+    const statusText = document.getElementById('status-text');
+    const bluetoothMessage = document.getElementById('bluetooth-message');
 
     // Botão formatar
     formatBtn.addEventListener('click', function() {
@@ -49,9 +56,165 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Botão imprimir
-    printBtn.addEventListener('click', function() {
-        window.print();
+    printBtn.addEventListener('click', async function() {
+        await handlePrint();
     });
+
+    // Botão conectar Bluetooth
+    connectBtn.addEventListener('click', async function() {
+        await handleBluetoothConnect();
+    });
+
+    // Botão desconectar Bluetooth
+    disconnectBtn.addEventListener('click', async function() {
+        await handleBluetoothDisconnect();
+    });
+
+    // Inicializar status Bluetooth
+    updateBluetoothStatus();
+
+    /**
+     * Atualiza o status da conexão Bluetooth na interface
+     */
+    function updateBluetoothStatus() {
+        const status = bluetoothPrinter.getConnectionStatus();
+        
+        if (status.connected) {
+            statusIndicator.className = 'status-indicator connected';
+            statusIndicator.textContent = '●';
+            statusText.textContent = `Conectado: ${status.deviceName || 'Impressora'}`;
+            connectBtn.style.display = 'none';
+            disconnectBtn.style.display = 'inline-block';
+            bluetoothMessage.textContent = '';
+            bluetoothMessage.className = 'bluetooth-message';
+        } else {
+            statusIndicator.className = 'status-indicator disconnected';
+            statusIndicator.textContent = '●';
+            
+            if (!status.supported) {
+                statusText.textContent = 'Web Bluetooth não suportado';
+                connectBtn.disabled = true;
+                bluetoothMessage.textContent = 'Use Chrome, Edge ou Opera para conectar via Bluetooth.';
+                bluetoothMessage.className = 'bluetooth-message warning';
+            } else if (!status.secureContext) {
+                statusText.textContent = 'Requer HTTPS';
+                connectBtn.disabled = true;
+                bluetoothMessage.textContent = 'Web Bluetooth requer HTTPS ou localhost para funcionar.';
+                bluetoothMessage.className = 'bluetooth-message warning';
+            } else {
+                statusText.textContent = 'Não conectado';
+                connectBtn.disabled = false;
+                bluetoothMessage.textContent = '';
+                bluetoothMessage.className = 'bluetooth-message';
+            }
+            
+            connectBtn.style.display = 'inline-block';
+            disconnectBtn.style.display = 'none';
+        }
+    }
+
+    /**
+     * Trata conexão Bluetooth
+     */
+    async function handleBluetoothConnect() {
+        try {
+            connectBtn.disabled = true;
+            connectBtn.textContent = 'Conectando...';
+            bluetoothMessage.textContent = 'Buscando impressora...';
+            bluetoothMessage.className = 'bluetooth-message info';
+
+            await bluetoothPrinter.connect();
+            
+            updateBluetoothStatus();
+            bluetoothMessage.textContent = 'Conectado com sucesso!';
+            bluetoothMessage.className = 'bluetooth-message success';
+            
+        } catch (error) {
+            console.error('Erro ao conectar:', error);
+            bluetoothMessage.textContent = error.message || 'Erro ao conectar à impressora.';
+            bluetoothMessage.className = 'bluetooth-message error';
+            updateBluetoothStatus();
+        } finally {
+            connectBtn.disabled = false;
+            connectBtn.textContent = '📱 Conectar Impressora Bluetooth';
+        }
+    }
+
+    /**
+     * Trata desconexão Bluetooth
+     */
+    async function handleBluetoothDisconnect() {
+        try {
+            disconnectBtn.disabled = true;
+            disconnectBtn.textContent = 'Desconectando...';
+            
+            await bluetoothPrinter.disconnect();
+            
+            updateBluetoothStatus();
+            bluetoothMessage.textContent = 'Desconectado com sucesso.';
+            bluetoothMessage.className = 'bluetooth-message info';
+            
+        } catch (error) {
+            console.error('Erro ao desconectar:', error);
+            bluetoothMessage.textContent = 'Erro ao desconectar.';
+            bluetoothMessage.className = 'bluetooth-message error';
+        } finally {
+            disconnectBtn.disabled = false;
+            disconnectBtn.textContent = 'Desconectar';
+        }
+    }
+
+    /**
+     * Trata impressão (Bluetooth ou tradicional)
+     */
+    async function handlePrint() {
+        const status = bluetoothPrinter.getConnectionStatus();
+        
+        if (status.connected) {
+            // Imprimir via Bluetooth
+            try {
+                printBtn.disabled = true;
+                printBtn.textContent = 'Imprimindo...';
+                bluetoothMessage.textContent = 'Enviando para impressora...';
+                bluetoothMessage.className = 'bluetooth-message info';
+
+                // Obter HTML do pedido
+                const orderHTML = orderPreview.innerHTML;
+                
+                // Converter para ESC/POS
+                const escposData = escposConverter.convertHTMLToESCPOS(orderHTML);
+                
+                // Enviar para impressora
+                await bluetoothPrinter.sendData(escposData);
+                
+                bluetoothMessage.textContent = 'Pedido enviado para impressora com sucesso!';
+                bluetoothMessage.className = 'bluetooth-message success';
+                
+                // Limpar mensagem após 3 segundos
+                setTimeout(() => {
+                    bluetoothMessage.textContent = '';
+                    bluetoothMessage.className = 'bluetooth-message';
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Erro ao imprimir:', error);
+                bluetoothMessage.textContent = error.message || 'Erro ao imprimir. Tente novamente ou use impressão tradicional.';
+                bluetoothMessage.className = 'bluetooth-message error';
+                
+                // Oferecer fallback
+                const useTraditional = confirm('Erro ao imprimir via Bluetooth. Deseja usar impressão tradicional?');
+                if (useTraditional) {
+                    window.print();
+                }
+            } finally {
+                printBtn.disabled = false;
+                printBtn.textContent = '🖨️ Imprimir Pedido';
+            }
+        } else {
+            // Usar impressão tradicional
+            window.print();
+        }
+    }
 
     /**
      * Parse do pedido do WhatsApp
