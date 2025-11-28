@@ -171,15 +171,30 @@ async function loadProducts() {
         allProducts = await getProducts();
         products = allProducts;
         
-        // Debug: verificar imagens dos produtos
-        console.log('Produtos carregados:', allProducts.length);
+        // Debug detalhado: verificar imagens dos produtos
+        console.log('🔍 [DEBUG] Produtos carregados:', allProducts.length);
+        let produtosComImagem = 0;
+        let produtosSemImagem = 0;
         allProducts.forEach(product => {
-            if (!product.image || product.image.trim() === '') {
-                console.warn(`Produto "${product.name}" não tem imagem`);
+            const hasImage = product.image && product.image.trim() !== '';
+            if (!hasImage) {
+                produtosSemImagem++;
+                console.warn(`⚠️ [DEBUG] Produto "${product.name}" (ID: ${product.id}) NÃO tem imagem`);
+                console.warn(`   - product.image:`, product.image);
+                console.warn(`   - Tipo:`, typeof product.image);
             } else {
-                console.log(`Produto "${product.name}" tem imagem:`, product.image.substring(0, 50) + '...');
+                produtosComImagem++;
+                const imageUrl = product.image;
+                console.log(`✅ [DEBUG] Produto "${product.name}" (ID: ${product.id}) tem imagem`);
+                console.log(`   - URL completa:`, imageUrl);
+                console.log(`   - Tipo:`, typeof imageUrl);
+                console.log(`   - Tamanho:`, imageUrl.length, 'caracteres');
+                console.log(`   - Começa com http:`, imageUrl.startsWith('http'));
+                console.log(`   - Começa com https:`, imageUrl.startsWith('https'));
+                console.log(`   - Contém firebasestorage:`, imageUrl.includes('firebasestorage'));
             }
         });
+        console.log(`📊 [DEBUG] Resumo: ${produtosComImagem} com imagem, ${produtosSemImagem} sem imagem`);
         
         populateCategoryFilter();
         applyFilters();
@@ -194,6 +209,10 @@ async function loadProducts() {
 
 // Renderizar produtos
 function renderProducts() {
+    console.log('🎨 [DEBUG] renderProducts() chamado');
+    console.log('   - filteredProducts.length:', filteredProducts.length);
+    console.log('   - allProducts.length:', allProducts.length);
+    
     productsGrid.innerHTML = '';
     
     // Usar filteredProducts em vez de products
@@ -284,39 +303,78 @@ function renderProducts() {
         const imageContainer = document.createElement('div');
         imageContainer.className = 'item-image-container';
         
+        // Garantir que o container seja visível
+        imageContainer.style.display = 'flex';
+        imageContainer.style.visibility = 'visible';
+        imageContainer.style.opacity = '1';
+        
         const img = document.createElement('img');
         img.className = 'item-image';
-        const imageUrl = product.image || '';
+        let imageUrl = product.image || '';
         
-        // Configurar imagem - mesma abordagem do site público (sem crossOrigin)
-        // O Firebase Storage permite leitura pública, então não precisa de crossOrigin
-        if (imageUrl && imageUrl.trim() !== '' && imageUrl.startsWith('http')) {
+        // Normalizar URL: adicionar https:// se não tiver protocolo
+        if (imageUrl && imageUrl.trim() !== '') {
+            imageUrl = imageUrl.trim();
+            // Se não começar com http://, https:// ou data:, adicionar https://
+            if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('data:')) {
+                console.warn(`⚠️ [DEBUG] URL sem protocolo detectada para "${product.name}", adicionando https://`);
+                imageUrl = 'https://' + imageUrl;
+            }
+        }
+        
+        console.log(`🖼️ [DEBUG] Renderizando imagem para "${product.name}"`);
+        console.log(`   - URL original:`, product.image);
+        console.log(`   - URL normalizada:`, imageUrl);
+        
+        // Sempre definir alt e loading primeiro
+        img.alt = escapeHtml(product.name);
+        img.loading = 'lazy';
+        img.style.display = 'block';
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'contain';
+        img.style.visibility = 'visible';
+        img.style.opacity = '1';
+        
+        // Configurar imagem - aceitar qualquer URL não vazia
+        if (imageUrl && imageUrl.trim() !== '') {
+            console.log(`   - Definindo src da imagem:`, imageUrl);
             img.src = imageUrl;
+            
+            img.onerror = function() {
+                console.error(`❌ [DEBUG] Erro ao carregar imagem do produto: "${product.name}"`);
+                console.error(`   - URL tentada:`, imageUrl);
+                console.error(`   - this.src atual:`, this.src);
+                console.error(`   - Tipo de erro:`, this.error || 'desconhecido');
+                
+                // Verificar se é erro de CORS
+                if (imageUrl.includes('firebasestorage')) {
+                    console.error('⚠️ Possível problema de CORS ou URL inválida do Firebase Storage');
+                    console.error('Verifique se a URL está correta e se as regras do Storage permitem leitura pública');
+                }
+                
+                // Mostrar placeholder de erro
+                this.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3ESem Imagem%3C/text%3E%3C/svg%3E';
+                this.onerror = null; // Prevenir loop infinito
+            };
+            
+            img.onload = function() {
+                console.log(`✅ [DEBUG] Imagem carregada com sucesso no card: "${product.name}"`);
+                console.log(`   - Dimensões: ${this.naturalWidth}x${this.naturalHeight}`);
+            };
         } else {
+            // Sem imagem - mostrar placeholder
+            console.warn(`⚠️ [DEBUG] Produto "${product.name}" não tem URL de imagem, usando placeholder`);
             img.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3ESem Imagem%3C/text%3E%3C/svg%3E';
         }
         
-        img.alt = escapeHtml(product.name);
-        img.loading = 'lazy';
-        img.onerror = function() {
-            console.error('❌ Erro ao carregar imagem do produto:', product.name);
-            console.error('URL da imagem:', imageUrl);
-            console.error('URL completa:', this.src);
-            // Verificar se é erro de CORS
-            if (imageUrl && imageUrl.includes('firebasestorage')) {
-                console.error('⚠️ Possível problema de CORS ou URL inválida do Firebase Storage');
-                console.error('Verifique se a URL está correta e se as regras do Storage permitem leitura pública');
-            }
-            this.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3C/svg%3E';
-            this.onerror = null; // Prevenir loop infinito
-        };
-        img.onload = function() {
-            if (imageUrl) {
-                console.log('✅ Imagem carregada com sucesso:', product.name);
-            }
-        };
-        
-        imageContainer.appendChild(img);
+        // Sempre anexar a imagem ao container
+        if (imageContainer) {
+            imageContainer.appendChild(img);
+            console.log(`   - Imagem anexada ao container para "${product.name}"`);
+        } else {
+            console.error(`❌ [DEBUG] imageContainer não existe para "${product.name}"`);
+        }
         
         // 5. Nome e 6. Descrição (em container de conteúdo)
         const contentContainer = document.createElement('div');
@@ -865,11 +923,24 @@ window.editProduct = async (id) => {
         resetImagePreview();
     }
     
-    // Inicializar ordem com os ingredientes padrão do produto (preservar ordem se existir)
-    defaultIngredientsOrder = product.defaultIngredients ? [...product.defaultIngredients] : [];
-    
     // Carregar e marcar ingredientes padrão
-    await loadProductDefaultIngredients(product.defaultIngredients || []);
+    // Garantir que defaultIngredients seja um array válido
+    let defaultIngredientIds = [];
+    if (product.defaultIngredients) {
+        // Se for array, usar diretamente; se for outro tipo, converter
+        defaultIngredientIds = Array.isArray(product.defaultIngredients) 
+            ? [...product.defaultIngredients] 
+            : [];
+    }
+    
+    console.log('🔍 Editando produto - defaultIngredients:', defaultIngredientIds);
+    console.log('🔍 Produto completo:', product);
+    console.log('🔍 Tipo de defaultIngredients:', typeof product.defaultIngredients, Array.isArray(product.defaultIngredients));
+    
+    // Inicializar ordem ANTES de carregar para garantir que os checkboxes sejam marcados corretamente
+    defaultIngredientsOrder = [...defaultIngredientIds];
+    
+    await loadProductDefaultIngredients(defaultIngredientIds);
     
     // Carregar e marcar ingredientes disponíveis
     await loadProductIngredients(product.availableIngredients || []);
@@ -1017,58 +1088,87 @@ function handleImageSelection(file) {
  * @param {string} imageUrl - URL da imagem
  */
 function loadExistingImagePreview(imageUrl) {
-    if (!imageUrl) {
+    console.log('🖼️ [DEBUG] loadExistingImagePreview chamado');
+    console.log('   - URL recebida:', imageUrl);
+    console.log('   - Tipo:', typeof imageUrl);
+    console.log('   - É string vazia?', imageUrl === '');
+    console.log('   - Trim vazio?', !imageUrl || imageUrl.trim() === '');
+    
+    if (!imageUrl || !imageUrl.trim()) {
+        console.warn('⚠️ [DEBUG] URL vazia ou inválida, resetando preview');
         resetImagePreview();
         return;
     }
 
     if (!previewOriginalImg || !productImageUrl) {
-        console.warn('Elementos de preview não disponíveis');
+        console.error('❌ [DEBUG] Elementos de preview não disponíveis');
+        console.error('   - previewOriginalImg existe?', !!previewOriginalImg);
+        console.error('   - productImageUrl existe?', !!productImageUrl);
         return;
     }
 
-    // Criar um elemento temporário para carregar a imagem
-    const tempImg = new Image();
-    tempImg.crossOrigin = 'anonymous';
-    tempImg.onload = () => {
-        try {
-            // Converter para blob para manter consistência
-            const canvas = document.createElement('canvas');
-            canvas.width = tempImg.width;
-            canvas.height = tempImg.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(tempImg, 0, 0);
-            
-            canvas.toBlob((blob) => {
-                if (blob) {
-                    // Criar um File a partir do blob para manter compatibilidade
-                    const file = new File([blob], 'existing-image.png', { type: 'image/png' });
-                    handleImageSelection(file);
-                    if (productImageUrl) productImageUrl.value = imageUrl;
-                }
-            }, 'image/png');
-        } catch (error) {
-            console.error('Erro ao processar imagem existente:', error);
-            // Fallback: apenas mostrar a imagem sem converter
-            if (previewOriginalImg) {
-                previewOriginalImg.src = imageUrl;
-                if (imageUploadPlaceholder) imageUploadPlaceholder.style.display = 'none';
-                if (imagePreviewContainer) imagePreviewContainer.style.display = 'block';
-            }
-            if (productImageUrl) productImageUrl.value = imageUrl;
+    // Normalizar URL: adicionar https:// se não tiver protocolo
+    let normalizedUrl = imageUrl.trim();
+    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://') && !normalizedUrl.startsWith('data:')) {
+        console.warn('⚠️ [DEBUG] URL sem protocolo detectada, adicionando https://');
+        normalizedUrl = 'https://' + normalizedUrl;
+    }
+
+    console.log('🖼️ [DEBUG] Carregando imagem existente no preview');
+    console.log('   - URL original:', imageUrl);
+    console.log('   - URL normalizada:', normalizedUrl);
+
+    // Carregar imagem diretamente (sem crossOrigin para evitar problemas de CORS)
+    // O Firebase Storage permite leitura pública, então não precisa de crossOrigin
+    // NÃO limpar src antes de definir nova URL (pode causar flicker)
+    
+    // Configurar handlers ANTES de definir src
+    previewOriginalImg.onload = () => {
+        console.log('✅ [DEBUG] Imagem carregada com sucesso no preview');
+        console.log('   - Dimensões:', previewOriginalImg.naturalWidth, 'x', previewOriginalImg.naturalHeight);
+        if (imageUploadPlaceholder) {
+            imageUploadPlaceholder.style.display = 'none';
+            console.log('   - Placeholder escondido');
+        }
+        if (imagePreviewContainer) {
+            imagePreviewContainer.style.display = 'block';
+            console.log('   - Container de preview mostrado');
         }
     };
-    tempImg.onerror = () => {
-        console.error('Erro ao carregar imagem existente');
-        // Fallback: tentar mostrar a URL diretamente
-        if (previewOriginalImg) {
-            previewOriginalImg.src = imageUrl;
-            if (imageUploadPlaceholder) imageUploadPlaceholder.style.display = 'none';
-            if (imagePreviewContainer) imagePreviewContainer.style.display = 'block';
+    
+    previewOriginalImg.onerror = () => {
+        console.error('❌ [DEBUG] Erro ao carregar imagem no preview');
+        console.error('   - URL tentada:', normalizedUrl);
+        console.error('   - this.src atual:', previewOriginalImg.src);
+        // Mostrar placeholder de erro
+        if (imageUploadPlaceholder) {
+            imageUploadPlaceholder.style.display = 'flex';
+            console.log('   - Placeholder mostrado (erro)');
         }
-        if (productImageUrl) productImageUrl.value = imageUrl;
+        if (imagePreviewContainer) {
+            imagePreviewContainer.style.display = 'none';
+            console.log('   - Container de preview escondido (erro)');
+        }
     };
-    tempImg.src = imageUrl;
+    
+    // Definir src da imagem (sem limpar antes)
+    console.log('   - Definindo src:', normalizedUrl);
+    previewOriginalImg.src = normalizedUrl;
+    
+    // Atualizar campo de URL
+    if (productImageUrl) {
+        productImageUrl.value = normalizedUrl;
+        console.log('   - Campo de URL atualizado');
+    }
+    
+    // Mostrar container de preview imediatamente
+    if (imageUploadPlaceholder) {
+        imageUploadPlaceholder.style.display = 'none';
+    }
+    if (imagePreviewContainer) {
+        imagePreviewContainer.style.display = 'block';
+    }
+    console.log('   - UI atualizada para mostrar preview');
 }
 
 // ==================== INGREDIENTES ====================
@@ -1782,9 +1882,13 @@ async function loadProductDefaultIngredients(selectedIds = []) {
         }
         
         // Inicializar ordem com os IDs já selecionados (preservar ordem se existir)
+        // Só inicializar se defaultIngredientsOrder estiver vazio E selectedIds tiver valores
         if (selectedIds.length > 0 && defaultIngredientsOrder.length === 0) {
             defaultIngredientsOrder = [...selectedIds];
         }
+        
+        console.log('🔍 loadProductDefaultIngredients - selectedIds recebidos:', selectedIds);
+        console.log('🔍 loadProductDefaultIngredients - defaultIngredientsOrder:', defaultIngredientsOrder);
         
         activeIngredients.forEach(ingredient => {
             const label = document.createElement('label');
@@ -1797,7 +1901,14 @@ async function loadProductDefaultIngredients(selectedIds = []) {
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.value = ingredient.id;
-            checkbox.checked = selectedIds.includes(ingredient.id);
+            // Marcar checkbox se o ingrediente estiver em selectedIds
+            // Converter ambos para string para garantir comparação correta
+            const isSelected = selectedIds.some(id => String(id) === String(ingredient.id));
+            checkbox.checked = isSelected;
+            
+            if (isSelected) {
+                console.log(`✅ Checkbox marcado para ingrediente: ${ingredient.name} (ID: ${ingredient.id})`);
+            }
             
             // Event listener para atualizar descrição em tempo real e rastrear ordem
             checkbox.addEventListener('change', () => {
