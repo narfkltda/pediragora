@@ -820,6 +820,24 @@ function toggleFilterPanel(filterType, button) {
     } else {
         button.classList.add('active');
     }
+    
+    // Se for o painel de seleção, atualizar visibilidade dos checkboxes
+    if (filterType === 'select') {
+        const isSelectionActive = panel.style.display !== 'none';
+        updateIngredientCheckboxesVisibility(isSelectionActive);
+    }
+}
+
+// Atualizar visibilidade dos checkboxes dos cards de ingredientes
+function updateIngredientCheckboxesVisibility(show) {
+    const checkboxContainers = document.querySelectorAll('.ingredients-category-grid .product-checkbox-container');
+    checkboxContainers.forEach(container => {
+        if (show) {
+            container.style.display = '';
+        } else {
+            container.style.display = 'none';
+        }
+    });
 }
 
 // Toggle selecionar todos
@@ -1928,6 +1946,11 @@ function renderIngredients() {
     }
     
     updateIngredientSelectionUI();
+    
+    // Atualizar visibilidade dos checkboxes baseado no estado do painel de seleção
+    const selectPanel = document.getElementById('ingredient-select-panel');
+    const isSelectionPanelActive = selectPanel && selectPanel.style.display !== 'none';
+    updateIngredientCheckboxesVisibility(isSelectionPanelActive);
 }
 
 // Renderizar seção de categoria
@@ -1957,7 +1980,7 @@ function renderCategorySection(category, categoryIngredients) {
         const firstRow = document.createElement('div');
         firstRow.className = 'item-card-first-row';
         
-        // 1. Checkbox de seleção
+        // 1. Checkbox de seleção (sempre criar, mas esconder se o painel não estiver ativo)
         const checkboxContainer = document.createElement('div');
         checkboxContainer.className = 'product-checkbox-container';
         const checkbox = document.createElement('input');
@@ -1967,6 +1990,13 @@ function renderCategorySection(category, categoryIngredients) {
         checkbox.checked = selectedIngredients.includes(ingredient.id);
         checkbox.addEventListener('change', () => toggleIngredientSelection(ingredient.id));
         checkboxContainer.appendChild(checkbox);
+        
+        // Verificar se o painel de seleção está ativo para mostrar/esconder
+        const selectPanel = document.getElementById('ingredient-select-panel');
+        const isSelectionPanelActive = selectPanel && selectPanel.style.display !== 'none';
+        if (!isSelectionPanelActive) {
+            checkboxContainer.style.display = 'none';
+        }
         
         // 2. Nome
         const contentContainer = document.createElement('div');

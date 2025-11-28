@@ -707,7 +707,8 @@ body {
     
     .item-card-first-row {
         gap: 10px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap; /* Não permitir quebra de linha */
+        align-items: center;
     }
     
     .item-card-second-row {
@@ -735,6 +736,7 @@ body {
     .item-card.horizontal .item-content {
         min-width: 0;
         flex: 1;
+        overflow: hidden; /* Evitar que o conteúdo empurre o preço */
     }
     
     .item-card.horizontal .item-title {
@@ -747,12 +749,15 @@ body {
         margin-bottom: 0;
     }
     
+    /* Preço na primeira linha - manter na mesma linha, não quebrar */
     .item-card-first-row .item-price {
         font-size: 1rem;
-        margin-left: 0;
-        width: 100%;
+        margin-left: auto; /* Alinha à direita mas mantém na mesma linha */
+        width: auto; /* Não ocupar 100% da largura */
         text-align: right;
-        margin-top: 4px;
+        margin-top: 0; /* Remover margin-top que empurra para baixo */
+        flex-shrink: 0; /* Não encolher */
+        white-space: nowrap; /* Não quebrar texto */
     }
     
     .item-card-second-row {
@@ -2214,6 +2219,8 @@ body {
     
     .item-card-first-row {
         gap: 8px;
+        flex-wrap: nowrap; /* Não permitir quebra de linha */
+        align-items: center;
     }
     
     .item-card-second-row {
@@ -2243,8 +2250,14 @@ body {
         font-size: 0.75rem;
     }
     
+    /* Preço na primeira linha - manter na mesma linha */
     .item-card-first-row .item-price {
         font-size: 0.95rem;
+        margin-left: auto; /* Alinha à direita mas mantém na mesma linha */
+        width: auto; /* Não ocupar 100% da largura */
+        margin-top: 0; /* Remover margin-top */
+        flex-shrink: 0; /* Não encolher */
+        white-space: nowrap; /* Não quebrar texto */
     }
     
     .item-card-second-row .product-status-badge,
