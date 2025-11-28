@@ -19,8 +19,16 @@ import {
   getActiveIngredients,
   addIngredient,
   updateIngredient,
-  deleteIngredient
+  deleteIngredient,
+  hasIngredientsUsingCategory
 } from '../services/ingredients-service.js';
+import { 
+  getCategories,
+  addCategory,
+  updateCategory,
+  deleteCategory,
+  getOrCreateDefaultCategory
+} from '../services/categories-service.js';
 import { 
   getRestaurantConfig, 
   saveRestaurantConfig 
@@ -128,6 +136,10 @@ let currentIngredientSearchTerm = '';
 let allIngredients = []; // Todos os ingredientes (sem filtros)
 let filteredIngredients = []; // Ingredientes após aplicar filtros
 
+// Estado para categorias
+let categories = []; // Todas as categorias
+let defaultCategoryId = null; // ID da categoria padrão "Geral"
+
 // Estado para controle de scroll das modais (estilo sidebar)
 let modalScrollPosition = 0;
 
@@ -158,6 +170,12 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
     setupEventListeners();
     setupNavigation();
+    
+    // Executar migração de ingredientes (apenas uma vez)
+    migrateExistingIngredients();
+    
+    // Configurar modal de categorias
+    setupCategoriesModal();
 });
 
 // Verificar autenticação
@@ -1321,6 +1339,12 @@ function resetIngredientForm() {
     // Resetar checkbox de ativo
     document.getElementById('ingredient-active').checked = true;
     
+    // Resetar campo de categoria para padrão
+    const categorySelect = document.getElementById('ingredient-category');
+    if (categorySelect && defaultCategoryId) {
+        categorySelect.value = defaultCategoryId;
+    }
+    
     // Resetar campos do formulário de lote
     const priceModeNone = document.querySelector('input[name="price-mode"][value="none"]');
     if (priceModeNone) {
@@ -1550,10 +1574,64 @@ function updateIngredientSelectionUI() {
 }
 
 // Carregar ingredientes
+// Carregar categorias
+async function loadCategories() {
+    try {
+        categories = await getCategories();
+        
+        // Buscar ID da categoria padrão "Geral"
+        const defaultCategory = categories.find(cat => cat.name.toLowerCase() === 'geral');
+        if (defaultCategory) {
+            defaultCategoryId = defaultCategory.id;
+        } else {
+            // Criar categoria "Geral" se não existir
+            defaultCategoryId = await getOrCreateDefaultCategory();
+            categories = await getCategories(); // Recarregar após criar
+        }
+        
+        // Atualizar seletor de categoria na modal de ingrediente
+        updateCategorySelector();
+    } catch (error) {
+        console.error('Erro ao carregar categorias:', error);
+        showToast('Erro ao carregar categorias', 'error');
+    }
+}
+
+// Atualizar seletor de categoria na modal de ingrediente
+function updateCategorySelector() {
+    const categorySelect = document.getElementById('ingredient-category');
+    if (!categorySelect) return;
+    
+    categorySelect.innerHTML = '';
+    
+    if (categories.length === 0) {
+        categorySelect.innerHTML = '<option value="">Carregando categorias...</option>';
+        return;
+    }
+    
+    // Ordenar categorias alfabeticamente
+    const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+    
+    sortedCategories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.textContent = category.name;
+        categorySelect.appendChild(option);
+    });
+    
+    // Se houver categoria padrão, selecioná-la
+    if (defaultCategoryId) {
+        categorySelect.value = defaultCategoryId;
+    }
+}
+
 async function loadIngredients() {
     try {
         if (ingredientsLoading) ingredientsLoading.style.display = 'block';
         if (ingredientsGrid) ingredientsGrid.innerHTML = '';
+        
+        // Carregar categorias primeiro
+        await loadCategories();
         
         ingredients = await getIngredients();
         allIngredients = [...ingredients];
@@ -1568,7 +1646,7 @@ async function loadIngredients() {
     }
 }
 
-// Renderizar ingredientes
+// Renderizar ingredientes agrupados por categoria
 function renderIngredients() {
     if (!ingredientsGrid) return;
     ingredientsGrid.innerHTML = '';
@@ -1591,8 +1669,67 @@ function renderIngredients() {
         return;
     }
     
-    // Renderizar ingredientes com cards horizontais
-    ingredientsToRender.forEach((ingredient) => {
+    // Agrupar ingredientes por categoria
+    const ingredientsByCategory = {};
+    const uncategorizedIngredients = [];
+    
+    ingredientsToRender.forEach(ingredient => {
+        const categoryId = ingredient.category || null;
+        if (categoryId) {
+            if (!ingredientsByCategory[categoryId]) {
+                ingredientsByCategory[categoryId] = [];
+            }
+            ingredientsByCategory[categoryId].push(ingredient);
+        } else {
+            uncategorizedIngredients.push(ingredient);
+        }
+    });
+    
+    // Ordenar ingredientes dentro de cada categoria por nome
+    Object.keys(ingredientsByCategory).forEach(categoryId => {
+        ingredientsByCategory[categoryId].sort((a, b) => a.name.localeCompare(b.name));
+    });
+    uncategorizedIngredients.sort((a, b) => a.name.localeCompare(b.name));
+    
+    // Obter categorias ordenadas alfabeticamente
+    const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+    
+    // Renderizar seções por categoria
+    sortedCategories.forEach(category => {
+        const categoryIngredients = ingredientsByCategory[category.id];
+        if (categoryIngredients && categoryIngredients.length > 0) {
+            renderCategorySection(category, categoryIngredients);
+        }
+    });
+    
+    // Renderizar ingredientes sem categoria no final (se houver)
+    if (uncategorizedIngredients.length > 0) {
+        renderCategorySection({ id: null, name: 'Sem categoria' }, uncategorizedIngredients);
+    }
+    
+    updateIngredientSelectionUI();
+}
+
+// Renderizar seção de categoria
+function renderCategorySection(category, categoryIngredients) {
+    if (!ingredientsGrid) return;
+    
+    // Criar container da seção
+    const categorySection = document.createElement('div');
+    categorySection.className = 'ingredients-category-section';
+    
+    // Título da categoria
+    const categoryTitle = document.createElement('h3');
+    categoryTitle.className = 'category-section-title';
+    categoryTitle.textContent = category.name;
+    categorySection.appendChild(categoryTitle);
+    
+    // Container para os cards da categoria
+    const categoryGrid = document.createElement('div');
+    categoryGrid.className = 'ingredients-category-grid';
+    
+    // Renderizar cards de ingredientes
+    categoryIngredients.forEach((ingredient) => {
         const card = document.createElement('div');
         card.className = 'item-card horizontal';
         
@@ -1640,10 +1777,13 @@ function renderIngredients() {
         status.className = `product-status-badge ${ingredient.active ? 'available' : 'unavailable'}`;
         status.textContent = ingredient.active ? '✓ Ativo' : '✗ Inativo';
         
-        // 2. Categoria (Ingrediente)
+        // 2. Categoria
         const categoryBadge = document.createElement('span');
         categoryBadge.className = 'product-category-badge';
-        categoryBadge.textContent = 'Ingrediente';
+        // Buscar nome da categoria
+        const ingredientCategory = categories.find(cat => cat.id === ingredient.category);
+        const categoryName = ingredientCategory ? ingredientCategory.name : 'Sem categoria';
+        categoryBadge.textContent = escapeHtml(categoryName);
         
         // 3. Botões
         const buttonsContainer = document.createElement('div');
@@ -1671,10 +1811,11 @@ function renderIngredients() {
         card.appendChild(firstRow);
         card.appendChild(secondRow);
         
-        ingredientsGrid.appendChild(card);
+        categoryGrid.appendChild(card);
     });
     
-    updateIngredientSelectionUI();
+    categorySection.appendChild(categoryGrid);
+    ingredientsGrid.appendChild(categorySection);
 }
 
 // Ações em massa para ingredientes
@@ -1860,10 +2001,14 @@ if (ingredientForm) {
         
         const submitButton = document.getElementById('ingredient-save-btn');
         
+        const categorySelect = document.getElementById('ingredient-category');
+        const categoryId = categorySelect ? categorySelect.value : defaultCategoryId;
+        
         const ingredientData = {
             name: document.getElementById('ingredient-name').value.trim(),
             price: parseFloat(document.getElementById('ingredient-price').value),
-            active: document.getElementById('ingredient-active').checked
+            active: document.getElementById('ingredient-active').checked,
+            category: categoryId || null
         };
 
         try {
@@ -2205,6 +2350,17 @@ window.editIngredient = async (id) => {
     document.getElementById('ingredient-name').value = ingredient.name;
     document.getElementById('ingredient-price').value = ingredient.price;
     document.getElementById('ingredient-active').checked = ingredient.active !== false;
+    
+    // Carregar categorias se ainda não foram carregadas
+    if (categories.length === 0) {
+        await loadCategories();
+    }
+    
+    // Selecionar categoria do ingrediente
+    const categorySelect = document.getElementById('ingredient-category');
+    if (categorySelect) {
+        categorySelect.value = ingredient.category || defaultCategoryId || '';
+    }
     
     // Ativar aba "Adicionar" ao editar
     switchModalTab('single');
@@ -2913,6 +3069,263 @@ function showFeedbackModal(data) {
     
     feedbackModal.classList.add('active');
 }
+
+// Migração de ingredientes existentes para categoria padrão
+async function migrateExistingIngredients() {
+    const migrationKey = 'ingredients_category_migration_done';
+    if (localStorage.getItem(migrationKey) === 'true') {
+        return; // Migração já foi executada
+    }
+    
+    try {
+        // Garantir que categoria "Geral" existe
+        defaultCategoryId = await getOrCreateDefaultCategory();
+        categories = await getCategories();
+        
+        // Buscar todos os ingredientes
+        const allIngredients = await getIngredients();
+        
+        // Atualizar ingredientes sem categoria
+        let updatedCount = 0;
+        for (const ingredient of allIngredients) {
+            if (!ingredient.category && defaultCategoryId) {
+                await updateIngredient(ingredient.id, {
+                    name: ingredient.name,
+                    price: ingredient.price,
+                    active: ingredient.active !== false,
+                    category: defaultCategoryId
+                });
+                updatedCount++;
+            }
+        }
+        
+        if (updatedCount > 0) {
+            console.log(`Migração concluída: ${updatedCount} ingrediente(s) atualizado(s) com categoria padrão.`);
+        }
+        
+        // Marcar migração como concluída
+        localStorage.setItem(migrationKey, 'true');
+    } catch (error) {
+        console.error('Erro na migração de ingredientes:', error);
+    }
+}
+
+// Configurar modal de categorias
+function setupCategoriesModal() {
+    const manageCategoriesBtn = document.getElementById('manage-categories-btn');
+    const categoriesModal = document.getElementById('categories-modal');
+    const categoriesModalClose = document.getElementById('categories-modal-close');
+    const closeCategoriesModalBtn = document.getElementById('close-categories-modal-btn');
+    let categoriesModalContent = null;
+    
+    if (categoriesModal) {
+        categoriesModalContent = categoriesModal.querySelector('.modal-content');
+    }
+    
+    // Abrir modal
+    if (manageCategoriesBtn && categoriesModal) {
+        manageCategoriesBtn.addEventListener('click', async () => {
+            await loadCategoriesList();
+            openModal(categoriesModal, categoriesModalContent);
+        });
+    }
+    
+    // Fechar modal
+    if (categoriesModalClose) {
+        categoriesModalClose.addEventListener('click', () => {
+            closeModal(categoriesModal, categoriesModalContent);
+        });
+    }
+    
+    if (closeCategoriesModalBtn) {
+        closeCategoriesModalBtn.addEventListener('click', () => {
+            closeModal(categoriesModal, categoriesModalContent);
+        });
+    }
+    
+    // Formulário de categoria
+    const categoryForm = document.getElementById('category-form');
+    if (categoryForm) {
+        categoryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await saveCategory();
+        });
+    }
+    
+    // Botão cancelar categoria
+    const cancelCategoryBtn = document.getElementById('cancel-category-btn');
+    if (cancelCategoryBtn) {
+        cancelCategoryBtn.addEventListener('click', () => {
+            resetCategoryForm();
+        });
+    }
+}
+
+// Carregar lista de categorias
+async function loadCategoriesList() {
+    const categoriesList = document.getElementById('categories-list');
+    const categoriesLoading = document.getElementById('categories-loading');
+    
+    if (!categoriesList) return;
+    
+    try {
+        if (categoriesLoading) categoriesLoading.style.display = 'block';
+        categoriesList.innerHTML = '';
+        
+        await loadCategories();
+        
+        if (categories.length === 0) {
+            categoriesList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Nenhuma categoria cadastrada ainda.</p>';
+        } else {
+            const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+            
+            sortedCategories.forEach(category => {
+                const categoryItem = document.createElement('div');
+                categoryItem.className = 'category-item';
+                categoryItem.innerHTML = `
+                    <span class="category-name">${escapeHtml(category.name)}</span>
+                    <div class="category-actions">
+                        <button class="btn-edit" onclick="editCategory('${category.id}')">✏️ Editar</button>
+                        <button class="btn-delete" onclick="deleteCategoryConfirm('${category.id}')">🗑️ Excluir</button>
+                    </div>
+                `;
+                categoriesList.appendChild(categoryItem);
+            });
+        }
+        
+        if (categoriesLoading) categoriesLoading.style.display = 'none';
+    } catch (error) {
+        console.error('Erro ao carregar categorias:', error);
+        showToast('Erro ao carregar categorias', 'error');
+        if (categoriesLoading) categoriesLoading.style.display = 'none';
+    }
+}
+
+// Salvar categoria
+let editingCategoryId = null;
+async function saveCategory() {
+    const categoryNameInput = document.getElementById('category-name');
+    const categoryFormTitle = document.getElementById('category-form-title');
+    
+    if (!categoryNameInput) return;
+    
+    const categoryName = categoryNameInput.value.trim();
+    if (!categoryName) {
+        showToast('Nome da categoria é obrigatório', 'error');
+        return;
+    }
+    
+    try {
+        if (editingCategoryId) {
+            await updateCategory(editingCategoryId, categoryName);
+            showToast('Categoria atualizada com sucesso!', 'success');
+        } else {
+            await addCategory(categoryName);
+            showToast('Categoria adicionada com sucesso!', 'success');
+        }
+        
+        resetCategoryForm();
+        await loadCategoriesList();
+        await loadCategories(); // Recarregar categorias para atualizar seletor
+        updateCategorySelector();
+    } catch (error) {
+        console.error('Erro ao salvar categoria:', error);
+        
+        // Verificar se é erro de permissões
+        if (error.code === 'permission-denied' || error.message.includes('permission') || error.message.includes('insufficient permissions')) {
+            showToast('Erro de permissões: Atualize as regras do Firestore. Veja FIRESTORE_RULES.md', 'error');
+            console.error('\n🚨 ERRO DE PERMISSÕES DETECTADO');
+            console.error('========================================');
+            console.error('É necessário atualizar as regras do Firestore para permitir operações na collection "ingredientCategories"');
+            console.error('\n📋 PASSO A PASSO:');
+            console.error('1. Acesse: https://console.firebase.google.com/project/temperoesabor-57382/firestore/rules');
+            console.error('2. Adicione as seguintes regras para ingredientCategories:');
+            console.error(`
+    match /ingredientCategories/{categoryId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }`);
+            console.error('3. Clique em "PUBLISH" (Publicar)');
+            console.error('4. Aguarde alguns segundos e tente novamente');
+            console.error('\n📄 Para mais detalhes, veja o arquivo: FIRESTORE_RULES.md');
+            console.error('========================================\n');
+        } else {
+            showToast(error.message || 'Erro ao salvar categoria', 'error');
+        }
+    }
+}
+
+// Editar categoria
+window.editCategory = async (id) => {
+    const category = categories.find(c => c.id === id);
+    if (!category) return;
+    
+    editingCategoryId = id;
+    const categoryNameInput = document.getElementById('category-name');
+    const categoryIdInput = document.getElementById('category-id');
+    const categoryFormTitle = document.getElementById('category-form-title');
+    const cancelCategoryBtn = document.getElementById('cancel-category-btn');
+    
+    if (categoryNameInput) categoryNameInput.value = category.name;
+    if (categoryIdInput) categoryIdInput.value = id;
+    if (categoryFormTitle) categoryFormTitle.textContent = 'Editar Categoria';
+    if (cancelCategoryBtn) cancelCategoryBtn.style.display = 'inline-block';
+    
+    // Scroll para o formulário
+    const categoryFormContainer = document.querySelector('.category-form-container');
+    if (categoryFormContainer) {
+        categoryFormContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+};
+
+// Resetar formulário de categoria
+function resetCategoryForm() {
+    editingCategoryId = null;
+    const categoryNameInput = document.getElementById('category-name');
+    const categoryIdInput = document.getElementById('category-id');
+    const categoryFormTitle = document.getElementById('category-form-title');
+    const cancelCategoryBtn = document.getElementById('cancel-category-btn');
+    
+    if (categoryNameInput) categoryNameInput.value = '';
+    if (categoryIdInput) categoryIdInput.value = '';
+    if (categoryFormTitle) categoryFormTitle.textContent = 'Adicionar Categoria';
+    if (cancelCategoryBtn) cancelCategoryBtn.style.display = 'none';
+}
+
+// Confirmar exclusão de categoria
+window.deleteCategoryConfirm = async (id) => {
+    const category = categories.find(c => c.id === id);
+    if (!category) return;
+    
+    try {
+        // Verificar se há ingredientes usando esta categoria
+        const inUse = await hasIngredientsUsingCategory(id);
+        if (inUse) {
+            showToast('Não é possível excluir categoria que está sendo usada por ingredientes', 'error');
+            return;
+        }
+        
+        showConfirmModal(
+            'Confirmar Exclusão',
+            `Tem certeza que deseja excluir a categoria "${escapeHtml(category.name)}"?`,
+            async () => {
+                try {
+                    await deleteCategory(id, hasIngredientsUsingCategory);
+                    showToast('Categoria excluída com sucesso!', 'success');
+                    await loadCategoriesList();
+                    await loadCategories(); // Recarregar categorias
+                    updateCategorySelector();
+                } catch (error) {
+                    console.error('Erro ao excluir categoria:', error);
+                    showToast(error.message || 'Erro ao excluir categoria', 'error');
+                }
+            }
+        );
+    } catch (error) {
+        console.error('Erro ao verificar categoria:', error);
+        showToast('Erro ao verificar categoria', 'error');
+    }
+};
 
 // Criar seção de feedback
 function createFeedbackSection(type, title, items) {

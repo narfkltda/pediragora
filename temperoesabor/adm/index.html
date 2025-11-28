@@ -83,9 +83,14 @@
         <section id="ingredients-section" class="admin-section">
             <div class="section-header">
                 <h2>Gerenciar Ingredientes</h2>
-                <button id="add-ingredient-btn" class="btn-primary">
-                    <span>+</span> Adicionar Ingrediente
-                </button>
+                <div class="section-header-actions">
+                    <button id="manage-categories-btn" class="btn-secondary">
+                        <span>📁</span> Gerenciar Categorias
+                    </button>
+                    <button id="add-ingredient-btn" class="btn-primary">
+                        <span>+</span> Adicionar Ingrediente
+                    </button>
+                </div>
             </div>
 
             <div class="loading" id="ingredients-loading" style="display: none;">
@@ -180,15 +185,22 @@
                     <form id="ingredient-form">
                         <input type="hidden" id="ingredient-id">
                         
-                        <div class="form-group">
-                            <label for="ingredient-name">Nome do Ingrediente *</label>
-                            <input type="text" id="ingredient-name" required>
-                        </div>
+                    <div class="form-group">
+                        <label for="ingredient-name">Nome do Ingrediente *</label>
+                        <input type="text" id="ingredient-name" required>
+                    </div>
 
-                        <div class="form-group">
-                            <label for="ingredient-price">Preço (R$) *</label>
-                            <input type="number" id="ingredient-price" step="0.01" min="0" required>
-                        </div>
+                    <div class="form-group">
+                        <label for="ingredient-category">Categoria *</label>
+                        <select id="ingredient-category" required>
+                            <option value="">Carregando categorias...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ingredient-price">Preço (R$) *</label>
+                        <input type="number" id="ingredient-price" step="0.01" min="0" required>
+                    </div>
 
                         <div class="form-group">
                             <label class="checkbox-label">
@@ -369,12 +381,52 @@
     </div>
 
     <!-- Notificação Toast -->
-    <div id="toast" class="toast"></div>
+    <div id="toast" class="toast">    </div>
+
+    <!-- Modal de Gerenciamento de Categorias -->
+    <div id="categories-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="categories-modal-title">Gerenciar Categorias</h3>
+                <button class="modal-close" id="categories-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="categories-list-container">
+                    <div class="loading" id="categories-loading" style="display: none;">
+                        Carregando categorias...
+                    </div>
+                    <div id="categories-list">
+                        <!-- Categorias serão carregadas aqui -->
+                    </div>
+                </div>
+                
+                <!-- Formulário para adicionar/editar categoria -->
+                <div class="category-form-container" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #f0f0f0;">
+                    <h4 id="category-form-title">Adicionar Categoria</h4>
+                    <form id="category-form">
+                        <input type="hidden" id="category-id">
+                        <div class="form-group">
+                            <label for="category-name">Nome da Categoria *</label>
+                            <input type="text" id="category-name" required placeholder="Ex: Carnes, Vegetais, Molhos...">
+                        </div>
+                        <div class="form-actions" style="margin-top: 15px;">
+                            <button type="button" class="btn-cancel" id="cancel-category-btn" style="display: none;">Cancelar</button>
+                            <button type="submit" class="btn-save">Salvar Categoria</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="close-categories-modal-btn">Fechar</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script type="module" src="../firebase-config.js"></script>
     <script type="module" src="../services/products-service.js"></script>
     <script type="module" src="../services/ingredients-service.js"></script>
+    <script type="module" src="../services/categories-service.js"></script>
     <script type="module" src="../services/config-service.js"></script>
     <script type="module" src="../services/storage-service.js"></script>
     <!-- Modal de Feedback -->

@@ -120,6 +120,18 @@ body {
     margin-bottom: 20px;
 }
 
+.section-header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.section-header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
 .section-header h2 {
     font-size: 24px;
 }
@@ -2082,6 +2094,112 @@ body {
     
     #ingredients-grid {
         padding: 12px;
+    }
+    
+    .section-header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .section-header-actions .btn-primary,
+    .section-header-actions .btn-secondary {
+        width: 100%;
+    }
+}
+
+/* Estilos para categorias de ingredientes */
+.ingredients-category-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.ingredients-category-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.category-section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.ingredients-category-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+}
+
+/* Estilos para modal de categorias */
+.category-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.category-name {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+}
+
+.category-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.category-form-container {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.category-form-container h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.category-form-container .form-group {
+    margin-bottom: 15px;
+}
+
+.category-form-container .form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* Responsividade para categorias */
+@media (max-width: 768px) {
+    .category-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .category-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+    
+    .category-form-container .form-actions {
+        flex-direction: column;
+    }
+    
+    .category-form-container .form-actions button {
+        width: 100%;
     }
 }
 

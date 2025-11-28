@@ -100,6 +100,7 @@ export async function addIngredient(ingredient) {
       name: ingredient.name.trim(),
       price: parseFloat(ingredient.price),
       active: ingredient.active !== undefined ? ingredient.active : true,
+      category: ingredient.category || null, // Campo de categoria (opcional)
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
@@ -125,12 +126,68 @@ export async function updateIngredient(id, ingredient) {
       name: ingredient.name.trim(),
       price: parseFloat(ingredient.price),
       active: ingredient.active !== undefined ? ingredient.active : true,
+      category: ingredient.category !== undefined ? ingredient.category : null, // Campo de categoria
       updatedAt: serverTimestamp()
     };
     await updateDoc(docRef, updateData);
     console.log('Ingrediente atualizado:', id);
   } catch (error) {
     console.error('Erro ao atualizar ingrediente:', error);
+    throw error;
+  }
+}
+
+/**
+ * Buscar ingredientes por categoria
+ * @param {string} categoryId - ID da categoria
+ * @returns {Promise<Array>} Array de ingredientes da categoria
+ */
+export async function getIngredientsByCategory(categoryId) {
+  try {
+    const q = query(
+      collection(db, INGREDIENTS_COLLECTION),
+      where('category', '==', categoryId),
+      orderBy('name', 'asc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Erro ao buscar ingredientes por categoria:', error);
+    // Fallback: buscar todos e filtrar
+    if (error.code === 'failed-precondition') {
+      const allIngredients = await getIngredients();
+      return allIngredients
+        .filter(ing => ing.category === categoryId)
+        .sort((a, b) => a.name.localeCompare(b.name));
+    }
+    throw error;
+  }
+}
+
+/**
+ * Verificar se há ingredientes usando uma categoria
+ * @param {string} categoryId - ID da categoria
+ * @returns {Promise<boolean>} True se há ingredientes usando a categoria
+ */
+export async function hasIngredientsUsingCategory(categoryId) {
+  try {
+    const q = query(
+      collection(db, INGREDIENTS_COLLECTION),
+      where('category', '==', categoryId),
+      orderBy('name', 'asc')
+    );
+    const snapshot = await getDocs(q);
+    return !snapshot.empty;
+  } catch (error) {
+    console.error('Erro ao verificar ingredientes usando categoria:', error);
+    // Fallback: buscar todos e filtrar
+    if (error.code === 'failed-precondition') {
+      const allIngredients = await getIngredients();
+      return allIngredients.some(ing => ing.category === categoryId);
+    }
     throw error;
   }
 }
