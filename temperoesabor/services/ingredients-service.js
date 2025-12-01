@@ -58,14 +58,30 @@ export async function getActiveIngredients() {
       ...doc.data()
     }));
   } catch (error) {
-    console.error('Erro ao buscar ingredientes ativos:', error);
-    // Fallback: buscar todos e filtrar
-    if (error.code === 'failed-precondition') {
-      const allIngredients = await getIngredients();
-      return allIngredients
-        .filter(ing => ing.active !== false)
-        .sort((a, b) => a.name.localeCompare(b.name));
+    // Fallback: buscar todos e filtrar se houver erro de índice
+    // Firebase pode retornar diferentes códigos de erro para índices faltantes
+    const isIndexError = error.code === 'failed-precondition' || 
+                        error.code === 'unavailable' || 
+                        error.message?.includes('index') ||
+                        error.message?.includes('The query requires an index');
+    
+    if (isIndexError) {
+      // Não mostrar erro no console se for apenas falta de índice (fallback funcionará)
+      console.log('ℹ️ Índice composto não disponível, usando fallback para buscar ingredientes ativos');
+      try {
+        const allIngredients = await getIngredients();
+        const activeIngredients = allIngredients
+          .filter(ing => ing.active === true) // Filtrar apenas os que são explicitamente true
+          .sort((a, b) => a.name.localeCompare(b.name));
+        console.log(`✅ Fallback: ${activeIngredients.length} ingredientes ativos encontrados`);
+        return activeIngredients;
+      } catch (fallbackError) {
+        console.error('❌ Erro no fallback ao buscar ingredientes ativos:', fallbackError);
+        throw fallbackError;
+      }
     }
+    // Se não for erro de índice, mostrar erro e relançar
+    console.error('❌ Erro ao buscar ingredientes ativos:', error);
     throw error;
   }
 }

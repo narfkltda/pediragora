@@ -164,8 +164,40 @@ export async function addProduct(product) {
       updatedAt: serverTimestamp()
     };
     
+    // Log detalhado do que está sendo salvo no Firebase
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('💾 [addProduct] DADOS SENDO SALVOS NO FIREBASE');
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('📦 productData completo:', {
+      name: productData.name,
+      description: productData.description,
+      descriptionLength: productData.description ? productData.description.length : 0,
+      price: productData.price,
+      category: productData.category,
+      image: productData.image ? 'URL presente' : 'Sem imagem',
+      available: productData.available,
+      number: productData.number,
+      numberType: typeof productData.number,
+      defaultIngredients: productData.defaultIngredients,
+      defaultIngredientsLength: productData.defaultIngredients.length,
+      defaultIngredientsArray: productData.defaultIngredients,
+      availableIngredients: productData.availableIngredients,
+      availableIngredientsLength: productData.availableIngredients.length,
+      availableIngredientsArray: productData.availableIngredients
+    });
+    console.log('🔍 Dados recebidos (product):', {
+      defaultIngredients: product.defaultIngredients,
+      defaultIngredientsType: typeof product.defaultIngredients,
+      defaultIngredientsIsArray: Array.isArray(product.defaultIngredients),
+      availableIngredients: product.availableIngredients,
+      availableIngredientsType: typeof product.availableIngredients,
+      availableIngredientsIsArray: Array.isArray(product.availableIngredients),
+      number: product.number
+    });
+    console.log('═══════════════════════════════════════════════════════════');
+    
     const docRef = await addDoc(collection(db, PRODUCTS_COLLECTION), productData);
-    console.log('Produto adicionado com ID:', docRef.id);
+    console.log('✅ [addProduct] Produto adicionado no Firebase com ID:', docRef.id);
     return docRef.id;
   } catch (error) {
     console.error('Erro ao adicionar produto:', error);
@@ -209,8 +241,41 @@ export async function updateProduct(id, product) {
     if (product.price === undefined) {
       delete updateData.price;
     }
+    
+    // Log detalhado do que está sendo salvo no Firebase
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('💾 [updateProduct] DADOS SENDO SALVOS NO FIREBASE');
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('📦 updateData completo:', {
+      name: updateData.name,
+      description: updateData.description,
+      descriptionLength: updateData.description ? updateData.description.length : 0,
+      price: updateData.price,
+      category: updateData.category,
+      image: updateData.image ? 'URL presente' : 'Sem imagem',
+      available: updateData.available,
+      number: updateData.number,
+      numberType: typeof updateData.number,
+      defaultIngredients: updateData.defaultIngredients,
+      defaultIngredientsLength: updateData.defaultIngredients.length,
+      defaultIngredientsArray: updateData.defaultIngredients,
+      availableIngredients: updateData.availableIngredients,
+      availableIngredientsLength: updateData.availableIngredients.length,
+      availableIngredientsArray: updateData.availableIngredients
+    });
+    console.log('🔍 Dados recebidos (product):', {
+      defaultIngredients: product.defaultIngredients,
+      defaultIngredientsType: typeof product.defaultIngredients,
+      defaultIngredientsIsArray: Array.isArray(product.defaultIngredients),
+      availableIngredients: product.availableIngredients,
+      availableIngredientsType: typeof product.availableIngredients,
+      availableIngredientsIsArray: Array.isArray(product.availableIngredients),
+      number: product.number
+    });
+    console.log('═══════════════════════════════════════════════════════════');
+    
     await updateDoc(docRef, updateData);
-    console.log('Produto atualizado:', id);
+    console.log('✅ [updateProduct] Produto atualizado no Firebase:', id);
   } catch (error) {
     console.error('Erro ao atualizar produto:', error);
     throw error;

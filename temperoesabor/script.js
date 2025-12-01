@@ -36,7 +36,8 @@ const CONFIG = {
 // Test Mode - Para testar horários diferentes
 const TEST_MODE = {
     enabled: true, // Modo teste ativado
-    simulatedTime: '20:00' // Horário simulado para teste (formato HH:MM)
+    simulatedTime: '20:00', // Horário simulado para teste (formato HH:MM)
+    forceOpen: true // Forçar loja aberta mesmo em dias fechados (para testes)
 };
 
 
@@ -3159,6 +3160,18 @@ function formatCurrentDate() {
  * @returns {Object} { isOpen: boolean, status: string, openTime: string, closeTime: string }
  */
 function getCurrentDayStatus() {
+    // Se modo teste estiver ativo e forceOpen for true, forçar loja aberta
+    if (typeof TEST_MODE !== 'undefined' && TEST_MODE.enabled && TEST_MODE.forceOpen) {
+        console.log('[TEST MODE] Forçando loja aberta para testes');
+        return {
+            isOpen: true,
+            status: 'Aberto (Modo Teste)',
+            statusKey: 'open',
+            openTime: '19:00',
+            closeTime: '22:45'
+        };
+    }
+    
     const currentDay = getCurrentDayInPortuguese();
     const dayHours = CONFIG.openingHours[currentDay.key];
     

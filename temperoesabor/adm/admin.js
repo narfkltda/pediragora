@@ -1259,6 +1259,31 @@ service firebase.storage {
         number: productNumber // Incluir número (pode ser null)
     };
 
+    // Log detalhado dos dados que serão salvos
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('💾 [SAVE PRODUCT] DADOS QUE SERÃO SALVOS NO FIREBASE');
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('📦 productData completo:', {
+        name: productData.name,
+        description: productData.description,
+        descriptionLength: productData.description ? productData.description.length : 0,
+        price: productData.price,
+        category: productData.category,
+        image: productData.image ? 'URL presente' : 'Sem imagem',
+        available: productData.available,
+        number: productData.number,
+        numberType: typeof productData.number,
+        defaultIngredients: productData.defaultIngredients,
+        defaultIngredientsLength: productData.defaultIngredients.length,
+        defaultIngredientsArray: productData.defaultIngredients,
+        availableIngredients: productData.availableIngredients,
+        availableIngredientsLength: productData.availableIngredients.length,
+        availableIngredientsArray: productData.availableIngredients
+    });
+    console.log('🔍 Ingredientes Padrão selecionados:', selectedDefaultIngredients);
+    console.log('🔍 Ingredientes Disponíveis selecionados:', selectedAvailableIngredients);
+    console.log('═══════════════════════════════════════════════════════════');
+
     try {
         // Atualizar botão para "Salvando..." se ainda não estiver
         if (submitButton) {
@@ -1271,10 +1296,14 @@ service firebase.storage {
         }
         
         if (editingProductId) {
+            console.log('🔄 [SAVE PRODUCT] Atualizando produto existente (ID:', editingProductId, ')');
             await updateProduct(editingProductId, productData);
+            console.log('✅ [SAVE PRODUCT] Produto atualizado com sucesso no Firebase');
             showToast('Produto atualizado com sucesso!', 'success');
         } else {
+            console.log('➕ [SAVE PRODUCT] Adicionando novo produto');
             await addProduct(productData);
+            console.log('✅ [SAVE PRODUCT] Produto adicionado com sucesso no Firebase');
             showToast('Produto adicionado com sucesso!', 'success');
         }
         
@@ -1307,12 +1336,55 @@ window.editProduct = async (id) => {
     editingProductId = id;
     modalTitle.textContent = 'Editar Produto';
     
+    // Log completo do produto antes de processar
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('🔍 [EDIT PRODUCT] INICIANDO EDIÇÃO DO PRODUTO');
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('📦 Produto completo ao editar:', {
+        id: product.id,
+        name: product.name,
+        number: product.number,
+        numberType: typeof product.number,
+        defaultIngredients: product.defaultIngredients,
+        defaultIngredientsLength: Array.isArray(product.defaultIngredients) ? product.defaultIngredients.length : 'N/A',
+        defaultIngredientsType: typeof product.defaultIngredients,
+        defaultIngredientsIsArray: Array.isArray(product.defaultIngredients),
+        availableIngredients: product.availableIngredients,
+        availableIngredientsLength: Array.isArray(product.availableIngredients) ? product.availableIngredients.length : 'N/A',
+        availableIngredientsType: typeof product.availableIngredients,
+        availableIngredientsIsArray: Array.isArray(product.availableIngredients),
+        description: product.description,
+        descriptionType: typeof product.description
+    });
+    console.log('═══════════════════════════════════════════════════════════');
+    
+    // Preencher campos básicos
     document.getElementById('product-id').value = product.id;
     document.getElementById('product-name').value = product.name;
     document.getElementById('product-price').value = product.price;
     document.getElementById('product-category').value = product.category;
     document.getElementById('product-available').checked = product.available !== false;
-    document.getElementById('product-number').value = product.number || ''; // Carregar número se existir
+    
+    // Corrigir carregamento do número do produto - tratar null e undefined explicitamente
+    const productNumberInput = document.getElementById('product-number');
+    if (productNumberInput) {
+        // Campo é do tipo number, então precisamos converter corretamente
+        if (product.number !== null && product.number !== undefined) {
+            const productNumberValue = Number(product.number);
+            if (!isNaN(productNumberValue)) {
+                productNumberInput.value = productNumberValue;
+                console.log('✅ [EDIT PRODUCT] Número do produto carregado:', productNumberValue, '(original:', product.number, ')');
+            } else {
+                productNumberInput.value = '';
+                console.warn('⚠️ [EDIT PRODUCT] Número do produto inválido:', product.number);
+            }
+        } else {
+            productNumberInput.value = '';
+            console.log('✅ [EDIT PRODUCT] Número do produto vazio (produto sem numeração)');
+        }
+    } else {
+        console.error('❌ [EDIT PRODUCT] Campo product-number não encontrado no DOM!');
+    }
     
     // Carregar preview da imagem existente
     if (product.image) {
@@ -1327,25 +1399,52 @@ window.editProduct = async (id) => {
     if (product.defaultIngredients) {
         // Se for array, usar diretamente; se for outro tipo, converter
         defaultIngredientIds = Array.isArray(product.defaultIngredients) 
-            ? [...product.defaultIngredients] 
+            ? [...product.defaultIngredients].map(id => String(id)) // Converter para string para comparação
             : [];
     }
     
-    console.log('🔍 Editando produto - defaultIngredients:', defaultIngredientIds);
-    console.log('🔍 Produto completo:', product);
-    console.log('🔍 Tipo de defaultIngredients:', typeof product.defaultIngredients, Array.isArray(product.defaultIngredients));
+    console.log('🔍 [EDIT PRODUCT] defaultIngredients (original):', product.defaultIngredients);
+    console.log('🔍 [EDIT PRODUCT] defaultIngredients (convertido):', defaultIngredientIds);
+    console.log('🔍 [EDIT PRODUCT] defaultIngredients length:', defaultIngredientIds.length);
+    console.log('🔍 [EDIT PRODUCT] Tipo de defaultIngredients:', typeof product.defaultIngredients, Array.isArray(product.defaultIngredients));
     
     // Inicializar ordem ANTES de carregar para garantir que os checkboxes sejam marcados corretamente
     defaultIngredientsOrder = [...defaultIngredientIds];
+    console.log('🔍 [EDIT PRODUCT] defaultIngredientsOrder inicializado:', defaultIngredientsOrder);
     
     await loadProductDefaultIngredients(defaultIngredientIds);
+    console.log('✅ [EDIT PRODUCT] loadProductDefaultIngredients concluído');
     
     // Carregar e marcar ingredientes disponíveis
-    await loadProductIngredients(product.availableIngredients || []);
+    // Garantir que availableIngredients seja um array válido e converter IDs para string
+    let availableIngredientIds = [];
+    if (product.availableIngredients) {
+        availableIngredientIds = Array.isArray(product.availableIngredients)
+            ? [...product.availableIngredients].map(id => String(id)) // Converter para string para comparação
+            : [];
+    }
+    console.log('🔍 [EDIT PRODUCT] availableIngredients (original):', product.availableIngredients);
+    console.log('🔍 [EDIT PRODUCT] availableIngredients (convertido):', availableIngredientIds);
     
-    // Atualizar descrição
-    updateDescriptionFromDefaultIngredients();
+    // Aguardar carregamento completo dos ingredientes disponíveis
+    await loadProductIngredients(availableIngredientIds);
     
+    // Carregar descrição existente do produto primeiro
+    // Só gerar descrição automaticamente se não houver descrição salva
+    if (productDescriptionInput) {
+        if (product.description && product.description.trim() !== '') {
+            productDescriptionInput.value = product.description;
+            console.log('✅ [EDIT PRODUCT] Descrição carregada do produto:', product.description);
+        } else {
+            // Só gerar se não houver descrição salva
+            console.log('⚠️ [EDIT PRODUCT] Produto sem descrição salva, gerando automaticamente...');
+            await updateDescriptionFromDefaultIngredients();
+        }
+    } else {
+        console.error('❌ [EDIT PRODUCT] Campo product-description não encontrado no DOM!');
+    }
+    
+    // Abrir modal após todos os dados serem carregados
     openModal(productModal, productModalContent);
 };
 
@@ -3016,9 +3115,11 @@ async function loadProductDefaultIngredients(selectedIds = []) {
             defaultIngredientsOrder = [...selectedIds];
         }
         
-        console.log('🔍 loadProductDefaultIngredients - selectedIds recebidos:', selectedIds);
-        console.log('🔍 loadProductDefaultIngredients - defaultIngredientsOrder:', defaultIngredientsOrder);
+        console.log('🔍 [loadProductDefaultIngredients] selectedIds recebidos:', selectedIds);
+        console.log('🔍 [loadProductDefaultIngredients] defaultIngredientsOrder:', defaultIngredientsOrder);
+        console.log('🔍 [loadProductDefaultIngredients] activeIngredients IDs:', activeIngredients.map(ing => ({ id: ing.id, type: typeof ing.id, name: ing.name })));
         
+        let checkedCount = 0;
         activeIngredients.forEach(ingredient => {
             const label = document.createElement('label');
             label.className = 'checkbox-label';
@@ -3029,14 +3130,19 @@ async function loadProductDefaultIngredients(selectedIds = []) {
             
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
-            checkbox.value = ingredient.id;
+            checkbox.value = String(ingredient.id); // Garantir que o value seja sempre string
+            
             // Marcar checkbox se o ingrediente estiver em selectedIds
             // Converter ambos para string para garantir comparação correta
-            const isSelected = selectedIds.some(id => String(id) === String(ingredient.id));
+            const ingredientIdStr = String(ingredient.id);
+            const isSelected = selectedIds.some(id => String(id) === ingredientIdStr);
             checkbox.checked = isSelected;
             
             if (isSelected) {
-                console.log(`✅ Checkbox marcado para ingrediente: ${ingredient.name} (ID: ${ingredient.id})`);
+                checkedCount++;
+                console.log(`✅ [loadProductDefaultIngredients] Checkbox marcado: ${ingredient.name} (ID: ${ingredient.id}, comparado com: ${selectedIds.find(id => String(id) === ingredientIdStr)})`);
+            } else {
+                console.log(`⚪ [loadProductDefaultIngredients] Checkbox NÃO marcado: ${ingredient.name} (ID: ${ingredient.id}, não encontrado em selectedIds)`);
             }
             
             // Event listener para atualizar descrição em tempo real e rastrear ordem
@@ -3083,8 +3189,11 @@ async function loadProductDefaultIngredients(selectedIds = []) {
         
         // Atualizar posições após carregar
         updateIngredientPositions();
+        
+        console.log(`✅ [loadProductDefaultIngredients] Total de checkboxes marcados: ${checkedCount} de ${activeIngredients.length}`);
+        console.log(`✅ [loadProductDefaultIngredients] selectedIds esperados: ${selectedIds.length}, checkboxes marcados: ${checkedCount}`);
     } catch (error) {
-        console.error('Erro ao carregar ingredientes padrão para produto:', error);
+        console.error('❌ [loadProductDefaultIngredients] Erro ao carregar ingredientes padrão para produto:', error);
         productDefaultIngredientsList.innerHTML = '<p class="loading-text">Erro ao carregar ingredientes.</p>';
     }
 }
@@ -3124,6 +3233,10 @@ async function loadProductIngredients(selectedIds = []) {
             return;
         }
         
+        console.log('🔍 [loadProductIngredients] selectedIds recebidos:', selectedIds);
+        console.log('🔍 [loadProductIngredients] activeIngredients IDs:', activeIngredients.map(ing => ({ id: ing.id, type: typeof ing.id, name: ing.name })));
+        
+        let checkedCount = 0;
         activeIngredients.forEach(ingredient => {
             const label = document.createElement('label');
             label.className = 'checkbox-label';
@@ -3134,8 +3247,19 @@ async function loadProductIngredients(selectedIds = []) {
             
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
-            checkbox.value = ingredient.id;
-            checkbox.checked = selectedIds.includes(ingredient.id);
+            checkbox.value = String(ingredient.id); // Garantir que o value seja sempre string
+            
+            // Converter ambos para string para garantir comparação correta
+            const ingredientIdStr = String(ingredient.id);
+            const isSelected = selectedIds.some(id => String(id) === ingredientIdStr);
+            checkbox.checked = isSelected;
+            
+            if (isSelected) {
+                checkedCount++;
+                console.log(`✅ [loadProductIngredients] Checkbox marcado: ${ingredient.name} (ID: ${ingredient.id}, comparado com: ${selectedIds.find(id => String(id) === ingredientIdStr)})`);
+            } else {
+                console.log(`⚪ [loadProductIngredients] Checkbox NÃO marcado: ${ingredient.name} (ID: ${ingredient.id}, não encontrado em selectedIds)`);
+            }
             
             // Event listener para atualizar estado do botão "Selecionar Todos"
             checkbox.addEventListener('change', () => {
@@ -3151,8 +3275,11 @@ async function loadProductIngredients(selectedIds = []) {
         });
         
         updateSelectAllButtonState();
+        
+        console.log(`✅ [loadProductIngredients] Total de checkboxes marcados: ${checkedCount} de ${activeIngredients.length}`);
+        console.log(`✅ [loadProductIngredients] selectedIds esperados: ${selectedIds.length}, checkboxes marcados: ${checkedCount}`);
     } catch (error) {
-        console.error('Erro ao carregar ingredientes disponíveis para produto:', error);
+        console.error('❌ [loadProductIngredients] Erro ao carregar ingredientes disponíveis para produto:', error);
         productIngredientsList.innerHTML = '<p class="loading-text">Erro ao carregar ingredientes.</p>';
         updateSelectAllButtonState();
     }
