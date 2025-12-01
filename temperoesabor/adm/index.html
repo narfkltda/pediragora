@@ -54,6 +54,10 @@
                     <span class="filter-icon">📊</span>
                     <span class="filter-label">Status</span>
                 </div>
+                <div id="manage-product-categories-btn" class="filter-icon-btn" title="Categorias">
+                    <span class="filter-icon">📁</span>
+                    <span class="filter-label">Categorias</span>
+                </div>
                 <div id="add-product-btn" class="filter-icon-btn" title="Adicionar Produto">
                     <span class="filter-icon">+</span>
                     <span class="filter-label">Produto</span>
@@ -538,11 +542,51 @@
         </div>
     </div>
 
+    <!-- Modal de Categorias de Produtos -->
+    <div id="product-categories-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="product-categories-modal-title">Gerenciar Categorias de Produtos</h3>
+                <button class="modal-close" id="product-categories-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="product-categories-list-container">
+                    <div class="loading" id="product-categories-loading" style="display: none;">
+                        Carregando categorias...
+                    </div>
+                    <div id="product-categories-list">
+                        <!-- Categorias serão carregadas aqui -->
+                    </div>
+                </div>
+                
+                <!-- Formulário para adicionar/editar categoria -->
+                <div class="category-form-container" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #f0f0f0;">
+                    <h4 id="product-category-form-title">Adicionar Categoria</h4>
+                    <form id="product-category-form">
+                        <input type="hidden" id="product-category-id">
+                        <div class="form-group">
+                            <label for="product-category-name">Nome da Categoria *</label>
+                            <input type="text" id="product-category-name" required placeholder="Ex: Burguers, Hot-Dogs, Bebidas...">
+                        </div>
+                        <div class="form-actions" style="margin-top: 15px;">
+                            <button type="button" class="btn-cancel" id="cancel-product-category-btn" style="display: none;">Cancelar</button>
+                            <button type="submit" class="btn-save">Salvar Categoria</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="close-product-categories-modal-btn">Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script type="module" src="../firebase-config.js"></script>
     <script type="module" src="../services/products-service.js"></script>
     <script type="module" src="../services/ingredients-service.js"></script>
     <script type="module" src="../services/categories-service.js"></script>
+    <script type="module" src="../services/product-categories-service.js"></script>
     <script type="module" src="../services/config-service.js"></script>
     <script type="module" src="../services/storage-service.js"></script>
     <!-- Modal de Feedback -->

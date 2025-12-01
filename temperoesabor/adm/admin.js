@@ -30,6 +30,13 @@ import {
   getOrCreateDefaultCategory
 } from '../services/categories-service.js';
 import { 
+  getProductCategories,
+  addProductCategory,
+  updateProductCategory,
+  deleteProductCategory,
+  getOrCreateDefaultProductCategory
+} from '../services/product-categories-service.js';
+import { 
   getRestaurantConfig, 
   saveRestaurantConfig 
 } from '../services/config-service.js';
@@ -152,6 +159,9 @@ let filteredIngredients = []; // Ingredientes após aplicar filtros
 let categories = []; // Todas as categorias
 let defaultCategoryId = null; // ID da categoria padrão "Geral"
 
+// Estado para categorias de produtos
+let productCategories = []; // Todas as categorias de produtos
+
 // Estado para controle de scroll das modais (estilo sidebar)
 let modalScrollPosition = 0;
 
@@ -194,6 +204,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Configurar modal de categorias
     setupCategoriesModal();
+    
+    // Configurar modal de categorias de produtos
+    setupProductCategoriesModal();
 });
 
 // Verificar autenticação
@@ -203,6 +216,7 @@ function checkAuth() {
             console.log('Usuário autenticado:', user.email);
             loadProducts();
             loadIngredients();
+            loadProductCategories();
             loadConfig();
         } else {
             console.log('Usuário não autenticado');
@@ -717,15 +731,26 @@ function populateCategoryFilter() {
         categoryFilter.appendChild(defaultOption);
     }
     
-    // Obter categorias únicas dos produtos
-    const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))].sort();
-    
-    categories.forEach(category => {
-        const option = document.createElement('option');
-        option.value = category;
-        option.textContent = category;
-        categoryFilter.appendChild(option);
-    });
+    // Usar categorias do Firebase se disponíveis, senão usar categorias dos produtos
+    if (productCategories && productCategories.length > 0) {
+        // Ordenar por nome
+        const sortedCategories = [...productCategories].sort((a, b) => a.name.localeCompare(b.name));
+        sortedCategories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.name;
+            option.textContent = category.name;
+            categoryFilter.appendChild(option);
+        });
+    } else {
+        // Fallback: obter categorias únicas dos produtos
+        const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))].sort();
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categoryFilter.appendChild(option);
+        });
+    }
 }
 
 // Aplicar filtros (categoria + busca + status)
@@ -1089,6 +1114,7 @@ async function deleteSelected() {
 if (addProductBtn) {
     addProductBtn.addEventListener('click', async () => {
         resetProductForm();
+        updateProductCategorySelector(); // Atualizar seletor de categorias
         await loadProductDefaultIngredients();
         await loadProductIngredients();
         updateDescriptionFromDefaultIngredients();
@@ -1358,11 +1384,14 @@ window.editProduct = async (id) => {
     });
     console.log('═══════════════════════════════════════════════════════════');
     
+    // Atualizar seletor de categorias ANTES de preencher os campos
+    updateProductCategorySelector();
+    
     // Preencher campos básicos
     document.getElementById('product-id').value = product.id;
     document.getElementById('product-name').value = product.name;
     document.getElementById('product-price').value = product.price;
-    document.getElementById('product-category').value = product.category;
+    document.getElementById('product-category').value = product.category || '';
     document.getElementById('product-available').checked = product.available !== false;
     
     // Corrigir carregamento do número do produto - tratar null e undefined explicitamente
@@ -4296,5 +4325,341 @@ function createFeedbackSection(type, title, items) {
     section.appendChild(list);
     
     return section;
+}
+
+// ==================== GERENCIAMENTO DE CATEGORIAS DE PRODUTOS ====================
+
+// Carregar categorias de produtos do Firebase
+async function loadProductCategories() {
+    try {
+        productCategories = await getProductCategories();
+        console.log('✅ Categorias de produtos carregadas:', productCategories.length);
+        
+        // Migrar categorias padrão se necessário
+        await migrateDefaultProductCategories();
+        
+        // Recarregar categorias após migração
+        productCategories = await getProductCategories();
+        
+        // Atualizar seletor de categorias no formulário
+        updateProductCategorySelector();
+        
+        // Atualizar filtro de categorias
+        populateCategoryFilter();
+    } catch (error) {
+        console.error('Erro ao carregar categorias de produtos:', error);
+    }
+}
+
+// Migrar categorias padrão para o Firebase
+async function migrateDefaultProductCategories() {
+    const migrationKey = 'product_categories_migration_done';
+    if (localStorage.getItem(migrationKey) === 'true') {
+        return; // Migração já foi executada
+    }
+    
+    try {
+        // Categorias padrão que devem existir
+        const defaultCategories = ['Burguers', 'Hot-Dogs', 'Porções', 'Bebidas'];
+        
+        // Verificar quais categorias já existem
+        const existingCategoryNames = productCategories.map(cat => cat.name);
+        
+        // Criar categorias que não existem
+        let createdCount = 0;
+        for (const categoryName of defaultCategories) {
+            if (!existingCategoryNames.includes(categoryName)) {
+                try {
+                    await addProductCategory(categoryName);
+                    createdCount++;
+                    console.log(`✅ Categoria padrão criada: ${categoryName}`);
+                } catch (error) {
+                    console.error(`Erro ao criar categoria ${categoryName}:`, error);
+                }
+            }
+        }
+        
+        if (createdCount > 0) {
+            console.log(`Migração de categorias concluída: ${createdCount} categoria(s) criada(s).`);
+        }
+        
+        // Marcar migração como concluída
+        localStorage.setItem(migrationKey, 'true');
+    } catch (error) {
+        console.error('Erro na migração de categorias de produtos:', error);
+    }
+}
+
+// Configurar modal de categorias de produtos
+function setupProductCategoriesModal() {
+    const manageProductCategoriesBtn = document.getElementById('manage-product-categories-btn');
+    const productCategoriesModal = document.getElementById('product-categories-modal');
+    const productCategoriesModalClose = document.getElementById('product-categories-modal-close');
+    const closeProductCategoriesModalBtn = document.getElementById('close-product-categories-modal-btn');
+    let productCategoriesModalContent = null;
+    
+    if (productCategoriesModal) {
+        productCategoriesModalContent = productCategoriesModal.querySelector('.modal-content');
+    }
+    
+    // Abrir modal
+    if (manageProductCategoriesBtn && productCategoriesModal) {
+        manageProductCategoriesBtn.addEventListener('click', async () => {
+            await loadProductCategoriesList();
+            openModal(productCategoriesModal, productCategoriesModalContent);
+        });
+    }
+    
+    // Fechar modal
+    if (productCategoriesModalClose) {
+        productCategoriesModalClose.addEventListener('click', () => {
+            closeModal(productCategoriesModal, productCategoriesModalContent);
+        });
+    }
+    
+    if (closeProductCategoriesModalBtn) {
+        closeProductCategoriesModalBtn.addEventListener('click', () => {
+            closeModal(productCategoriesModal, productCategoriesModalContent);
+        });
+    }
+    
+    // Formulário de categoria
+    const productCategoryForm = document.getElementById('product-category-form');
+    if (productCategoryForm) {
+        productCategoryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await saveProductCategory();
+        });
+    }
+    
+    // Botão cancelar categoria
+    const cancelProductCategoryBtn = document.getElementById('cancel-product-category-btn');
+    if (cancelProductCategoryBtn) {
+        cancelProductCategoryBtn.addEventListener('click', () => {
+            resetProductCategoryForm();
+        });
+    }
+}
+
+// Carregar lista de categorias de produtos
+async function loadProductCategoriesList() {
+    const productCategoriesList = document.getElementById('product-categories-list');
+    const productCategoriesLoading = document.getElementById('product-categories-loading');
+    
+    if (!productCategoriesList) return;
+    
+    try {
+        if (productCategoriesLoading) productCategoriesLoading.style.display = 'block';
+        productCategoriesList.innerHTML = '';
+        
+        await loadProductCategories();
+        
+        if (productCategories.length === 0) {
+            productCategoriesList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Nenhuma categoria cadastrada ainda.</p>';
+        } else {
+            const sortedCategories = [...productCategories].sort((a, b) => a.name.localeCompare(b.name));
+            
+            sortedCategories.forEach(category => {
+                const categoryItem = document.createElement('div');
+                categoryItem.className = 'category-item';
+                categoryItem.innerHTML = `
+                    <span class="category-name">${escapeHtml(category.name)}</span>
+                    <div class="category-actions">
+                        <button class="btn-edit" onclick="editProductCategory('${category.id}')">✏️ Editar</button>
+                        <button class="btn-delete" onclick="deleteProductCategoryConfirm('${category.id}')">🗑️ Excluir</button>
+                    </div>
+                `;
+                productCategoriesList.appendChild(categoryItem);
+            });
+        }
+        
+        if (productCategoriesLoading) productCategoriesLoading.style.display = 'none';
+    } catch (error) {
+        console.error('Erro ao carregar categorias de produtos:', error);
+        showToast('Erro ao carregar categorias de produtos', 'error');
+        if (productCategoriesLoading) productCategoriesLoading.style.display = 'none';
+    }
+}
+
+// Salvar categoria de produto
+let editingProductCategoryId = null;
+async function saveProductCategory() {
+    const productCategoryNameInput = document.getElementById('product-category-name');
+    const productCategoryFormTitle = document.getElementById('product-category-form-title');
+    
+    if (!productCategoryNameInput) return;
+    
+    const categoryName = productCategoryNameInput.value.trim();
+    if (!categoryName) {
+        showToast('Nome da categoria é obrigatório', 'error');
+        return;
+    }
+    
+    try {
+        if (editingProductCategoryId) {
+            await updateProductCategory(editingProductCategoryId, categoryName);
+            showToast('Categoria atualizada com sucesso!', 'success');
+        } else {
+            await addProductCategory(categoryName);
+            showToast('Categoria adicionada com sucesso!', 'success');
+        }
+        
+        resetProductCategoryForm();
+        await loadProductCategoriesList();
+        await loadProductCategories(); // Recarregar categorias para atualizar seletor
+        updateProductCategorySelector();
+        populateCategoryFilter(); // Atualizar também o filtro de categoria
+    } catch (error) {
+        console.error('Erro ao salvar categoria de produto:', error);
+        
+        // Verificar se é erro de permissões
+        if (error.code === 'permission-denied' || error.message.includes('permission') || error.message.includes('insufficient permissions')) {
+            showToast('Erro de permissões: Atualize as regras do Firestore. Veja FIRESTORE_RULES.md', 'error');
+            console.error('\n🚨 ERRO DE PERMISSÕES DETECTADO');
+            console.error('========================================');
+            console.error('É necessário atualizar as regras do Firestore para permitir operações na collection "productCategories"');
+            console.error('\n📋 PASSO A PASSO:');
+            console.error('1. Acesse: https://console.firebase.google.com/project/temperoesabor-57382/firestore/rules');
+            console.error('2. Adicione as seguintes regras para productCategories:');
+            console.error(`
+    match /productCategories/{categoryId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }`);
+            console.error('3. Clique em "PUBLISH" (Publicar)');
+            console.error('4. Aguarde alguns segundos e tente novamente');
+            console.error('========================================\n');
+        } else {
+            showToast(error.message || 'Erro ao salvar categoria de produto', 'error');
+        }
+    }
+}
+
+// Editar categoria de produto
+window.editProductCategory = async (id) => {
+    const category = productCategories.find(c => c.id === id);
+    if (!category) return;
+    
+    editingProductCategoryId = id;
+    const productCategoryNameInput = document.getElementById('product-category-name');
+    const productCategoryIdInput = document.getElementById('product-category-id');
+    const productCategoryFormTitle = document.getElementById('product-category-form-title');
+    const cancelProductCategoryBtn = document.getElementById('cancel-product-category-btn');
+    
+    if (productCategoryNameInput) productCategoryNameInput.value = category.name;
+    if (productCategoryIdInput) productCategoryIdInput.value = id;
+    if (productCategoryFormTitle) productCategoryFormTitle.textContent = 'Editar Categoria';
+    if (cancelProductCategoryBtn) cancelProductCategoryBtn.style.display = 'inline-block';
+    
+    // Scroll para o formulário
+    const productCategoryFormContainer = document.querySelector('#product-categories-modal .category-form-container');
+    if (productCategoryFormContainer) {
+        productCategoryFormContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+};
+
+// Resetar formulário de categoria de produto
+function resetProductCategoryForm() {
+    editingProductCategoryId = null;
+    const productCategoryNameInput = document.getElementById('product-category-name');
+    const productCategoryIdInput = document.getElementById('product-category-id');
+    const productCategoryFormTitle = document.getElementById('product-category-form-title');
+    const cancelProductCategoryBtn = document.getElementById('cancel-product-category-btn');
+    
+    if (productCategoryNameInput) productCategoryNameInput.value = '';
+    if (productCategoryIdInput) productCategoryIdInput.value = '';
+    if (productCategoryFormTitle) productCategoryFormTitle.textContent = 'Adicionar Categoria';
+    if (cancelProductCategoryBtn) cancelProductCategoryBtn.style.display = 'none';
+}
+
+// Confirmar exclusão de categoria de produto
+window.deleteProductCategoryConfirm = async (id) => {
+    const category = productCategories.find(c => c.id === id);
+    if (!category) return;
+    
+    try {
+        // Verificar se há produtos usando esta categoria
+        const inUse = await hasProductsUsingCategory(category.name);
+        if (inUse) {
+            showToast('Não é possível excluir categoria que está sendo usada por produtos', 'error');
+            return;
+        }
+        
+        showConfirmModal(
+            'Confirmar Exclusão',
+            `Tem certeza que deseja excluir a categoria "${escapeHtml(category.name)}"?`,
+            async () => {
+                try {
+                    // Criar função wrapper que recebe ID e verifica por nome
+                    const checkProductsInUse = async (categoryId) => {
+                        const cat = productCategories.find(c => c.id === categoryId);
+                        if (!cat) return false;
+                        return await hasProductsUsingCategory(cat.name);
+                    };
+                    
+                    await deleteProductCategory(id, checkProductsInUse);
+                    showToast('Categoria excluída com sucesso!', 'success');
+                    await loadProductCategoriesList();
+                    await loadProductCategories(); // Recarregar categorias
+                    updateProductCategorySelector();
+                    populateCategoryFilter(); // Atualizar também o filtro de categoria
+                } catch (error) {
+                    console.error('Erro ao excluir categoria de produto:', error);
+                    showToast(error.message || 'Erro ao excluir categoria de produto', 'error');
+                }
+            }
+        );
+    } catch (error) {
+        console.error('Erro ao verificar categoria de produto:', error);
+        showToast('Erro ao verificar categoria de produto', 'error');
+    }
+};
+
+// Verificar se há produtos usando uma categoria
+async function hasProductsUsingCategory(categoryName) {
+    if (!categoryName) return false;
+    
+    try {
+        // Verificar se há produtos com esta categoria
+        const productsUsingCategory = allProducts.filter(p => p.category === categoryName);
+        return productsUsingCategory.length > 0;
+    } catch (error) {
+        console.error('Erro ao verificar uso de categoria:', error);
+        return false;
+    }
+}
+
+// Atualizar seletor de categorias no formulário de produtos
+function updateProductCategorySelector() {
+    const productCategorySelect = document.getElementById('product-category');
+    if (!productCategorySelect) return;
+    
+    // Salvar valor atual
+    const currentValue = productCategorySelect.value;
+    
+    // Limpar opções existentes
+    productCategorySelect.innerHTML = '';
+    
+    // Adicionar opção padrão
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Selecione uma categoria';
+    productCategorySelect.appendChild(defaultOption);
+    
+    // Adicionar categorias do Firebase
+    if (productCategories && productCategories.length > 0) {
+        const sortedCategories = [...productCategories].sort((a, b) => a.name.localeCompare(b.name));
+        sortedCategories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.name;
+            option.textContent = category.name;
+            productCategorySelect.appendChild(option);
+        });
+    }
+    
+    // Restaurar valor anterior se ainda existir
+    if (currentValue) {
+        productCategorySelect.value = currentValue;
+    }
 }
 

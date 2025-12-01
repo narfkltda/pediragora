@@ -1,6 +1,6 @@
 /**
- * Categories Service - Firebase Firestore Operations
- * Gerencia todas as operações CRUD de categorias de ingredientes
+ * Product Categories Service - Firebase Firestore Operations
+ * Gerencia todas as operações CRUD de categorias de produtos
  */
 
 import { 
@@ -18,16 +18,16 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import { db } from '../firebase-config.js';
 
-const CATEGORIES_COLLECTION = 'ingredientCategories';
+const PRODUCT_CATEGORIES_COLLECTION = 'productCategories';
 
 /**
- * Buscar todas as categorias
- * @returns {Promise<Array>} Array de categorias
+ * Buscar todas as categorias de produtos
+ * @returns {Promise<Array>} Array de categorias de produtos
  */
-export async function getCategories() {
+export async function getProductCategories() {
   try {
     const q = query(
-      collection(db, CATEGORIES_COLLECTION), 
+      collection(db, PRODUCT_CATEGORIES_COLLECTION), 
       orderBy('name', 'asc')
     );
     const snapshot = await getDocs(q);
@@ -36,43 +36,43 @@ export async function getCategories() {
       ...doc.data()
     }));
   } catch (error) {
-    console.error('Erro ao buscar categorias:', error);
+    console.error('Erro ao buscar categorias de produtos:', error);
     throw error;
   }
 }
 
 /**
- * Buscar categoria por ID
+ * Buscar categoria de produto por ID
  * @param {string} id - ID da categoria
  * @returns {Promise<Object|null>} Categoria ou null
  */
-export async function getCategoryById(id) {
+export async function getProductCategoryById(id) {
   try {
-    const docRef = doc(db, CATEGORIES_COLLECTION, id);
+    const docRef = doc(db, PRODUCT_CATEGORIES_COLLECTION, id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       return { id: docSnap.id, ...docSnap.data() };
     }
     return null;
   } catch (error) {
-    console.error('Erro ao buscar categoria:', error);
+    console.error('Erro ao buscar categoria de produto:', error);
     throw error;
   }
 }
 
 /**
- * Adicionar nova categoria
+ * Adicionar nova categoria de produto
  * @param {string} name - Nome da categoria
  * @returns {Promise<string>} ID da categoria criada
  */
-export async function addCategory(name) {
+export async function addProductCategory(name) {
   try {
     if (!name || !name.trim()) {
       throw new Error('Nome da categoria é obrigatório');
     }
 
     // Verificar se já existe categoria com o mesmo nome (case-insensitive)
-    const existingCategories = await getCategories();
+    const existingCategories = await getProductCategories();
     const normalizedName = name.trim().toLowerCase();
     const duplicate = existingCategories.find(
       cat => cat.name.toLowerCase() === normalizedName
@@ -88,28 +88,28 @@ export async function addCategory(name) {
       updatedAt: serverTimestamp()
     };
     
-    const docRef = await addDoc(collection(db, CATEGORIES_COLLECTION), categoryData);
-    console.log('Categoria adicionada com ID:', docRef.id);
+    const docRef = await addDoc(collection(db, PRODUCT_CATEGORIES_COLLECTION), categoryData);
+    console.log('Categoria de produto adicionada com ID:', docRef.id);
     return docRef.id;
   } catch (error) {
-    console.error('Erro ao adicionar categoria:', error);
+    console.error('Erro ao adicionar categoria de produto:', error);
     throw error;
   }
 }
 
 /**
- * Atualizar categoria existente
+ * Atualizar categoria de produto existente
  * @param {string} id - ID da categoria
  * @param {string} name - Novo nome da categoria
  */
-export async function updateCategory(id, name) {
+export async function updateProductCategory(id, name) {
   try {
     if (!name || !name.trim()) {
       throw new Error('Nome da categoria é obrigatório');
     }
 
     // Verificar se já existe outra categoria com o mesmo nome (case-insensitive)
-    const existingCategories = await getCategories();
+    const existingCategories = await getProductCategories();
     const normalizedName = name.trim().toLowerCase();
     const duplicate = existingCategories.find(
       cat => cat.id !== id && cat.name.toLowerCase() === normalizedName
@@ -119,66 +119,62 @@ export async function updateCategory(id, name) {
       throw new Error('Já existe uma categoria com este nome');
     }
 
-    const docRef = doc(db, CATEGORIES_COLLECTION, id);
+    const docRef = doc(db, PRODUCT_CATEGORIES_COLLECTION, id);
     const updateData = {
       name: name.trim(),
       updatedAt: serverTimestamp()
     };
     await updateDoc(docRef, updateData);
-    console.log('Categoria atualizada:', id);
+    console.log('Categoria de produto atualizada:', id);
   } catch (error) {
-    console.error('Erro ao atualizar categoria:', error);
+    console.error('Erro ao atualizar categoria de produto:', error);
     throw error;
   }
 }
 
 /**
- * Deletar categoria
+ * Deletar categoria de produto
  * @param {string} id - ID da categoria
- * @param {Function} checkIngredientsInUse - Função para verificar se há ingredientes usando a categoria
+ * @param {Function} checkProductsInUse - Função para verificar se há produtos usando a categoria
  */
-export async function deleteCategory(id, checkIngredientsInUse = null) {
+export async function deleteProductCategory(id, checkProductsInUse = null) {
   try {
-    // Verificar se há ingredientes usando esta categoria
-    if (checkIngredientsInUse) {
-      const inUse = await checkIngredientsInUse(id);
+    // Verificar se há produtos usando esta categoria
+    if (checkProductsInUse) {
+      const inUse = await checkProductsInUse(id);
       if (inUse) {
-        throw new Error('Não é possível excluir categoria que está sendo usada por ingredientes');
+        throw new Error('Não é possível excluir categoria que está sendo usada por produtos');
       }
     }
 
-    const docRef = doc(db, CATEGORIES_COLLECTION, id);
+    const docRef = doc(db, PRODUCT_CATEGORIES_COLLECTION, id);
     await deleteDoc(docRef);
-    console.log('Categoria deletada:', id);
+    console.log('Categoria de produto deletada:', id);
   } catch (error) {
-    console.error('Erro ao deletar categoria:', error);
+    console.error('Erro ao deletar categoria de produto:', error);
     throw error;
   }
 }
 
 /**
- * Buscar ou criar categoria padrão "Geral"
- * @returns {Promise<string>} ID da categoria "Geral"
+ * Buscar ou criar categoria padrão de produtos
+ * @returns {Promise<string>} ID da categoria padrão
  */
-export async function getOrCreateDefaultCategory() {
+export async function getOrCreateDefaultProductCategory() {
   try {
-    const categories = await getCategories();
+    const categories = await getProductCategories();
     const defaultCategory = categories.find(cat => cat.name.toLowerCase() === 'geral');
     
     if (defaultCategory) {
       return defaultCategory.id;
     }
     
-    // Criar categoria "Geral" se não existir
-    const categoryId = await addCategory('Geral');
+    // Criar categoria padrão se não existir
+    const categoryId = await addProductCategory('Geral');
     return categoryId;
   } catch (error) {
-    console.error('Erro ao buscar/criar categoria padrão:', error);
+    console.error('Erro ao buscar/criar categoria padrão de produtos:', error);
     throw error;
   }
 }
-
-
-
-
 
