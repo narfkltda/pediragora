@@ -11,8 +11,9 @@
  * - Firebase integration for products
  */
 
-// Import Firebase service
+// Import Firebase services
 import { getAvailableProducts } from './services/products-service.js';
+import { getRestaurantConfig } from './services/config-service.js';
 
 // Configuration
 const CONFIG = {
@@ -38,220 +39,6 @@ const TEST_MODE = {
     simulatedTime: '20:00' // Horário simulado para teste (formato HH:MM)
 };
 
-// Menu data (fallback estático)
-const MENU_DATA_STATIC = {
-    categories: ['Todos', 'Burguers', 'Hot-Dogs', 'Porções', 'Bebidas'],
-    items: [
-        {
-            id: '1',
-            name: 'VÓ MIMA',
-            description: 'Pão, hambúrguer de carne, queijo mussarela, bacon e molho mima',
-            price: 22.00,
-            category: 'Burguers',
-            image: '../assets/images/Burgers_01_voMima.png'
-        },
-        {
-            id: '2',
-            name: 'VÔ LELEU',
-            description: 'Pão, hambúrguer de carne, queijo mussarela, bacon, ovo, calabresa, alface, tomate e molho mima',
-            price: 28.00,
-            category: 'Burguers',
-            image: '../assets/images/Burgers_02_voLeleu.png'
-        },
-        {
-            id: '3',
-            name: 'VÓ ANA',
-            description: 'Pão, hambúrguer de carne, queijo mussarela, bacon, alface, tomate e molho de churrasco',
-            price: 24.00,
-            category: 'Burguers',
-            image: '../assets/images/Burgers_03_voAna.png'
-        },
-        {
-            id: '4',
-            name: 'TIA TÁ',
-            description: 'Pão, hambúrguer de carne, queijo mussarela, queijo cheddar, bacon, alface, tomate e molho de churrasco',
-            price: 27.00,
-            category: 'Burguers',
-            image: '../assets/images/Burgers_04_tiaTa.png'
-        },
-        {
-            id: '5',
-            name: 'TIO JE',
-            description: 'Pão, hambúrguer de frango, queijo cheddar, bacon, alface, tomate e molho mima',
-            price: 24.00,
-            category: 'Burguers',
-            image: '../assets/images/Burgers_05_tioJe.png'
-        },
-        {
-            id: '6',
-            name: 'TIO LAN',
-            description: 'Pão, hambúrguer de picanha, queijo cheddar, bacon e molho mima',
-            price: 38.00,
-            category: 'Burguers',
-            image: '../assets/images/Burgers_06_tioLan.png'
-        },
-        {
-            id: '7',
-            name: 'TIA PRI',
-            description: 'Pão, 3 hambúrgueres de carne, camadas de queijo mussarela, queijo cheddar, bacon e molho mima',
-            price: 43.00,
-            category: 'Burguers',
-            image: '../assets/images/Burgers_07_tiaPri.png'
-        },
-        {
-            id: '8',
-            name: 'TIA TAY',
-            description: 'Pão, hambúrguer de pernil, queijo mussarela, bacon, alface, tomate e molho de churrasco',
-            price: 25.00,
-            category: 'Burguers',
-            image: '../assets/images/Burgers_08_tiaTay.png'
-        },
-        {
-            id: '9',
-            name: 'VÔ LIÓ',
-            description: 'Pão, hambúrguer de carne, queijo mussarela, bacon, ovo, cebola caramelizada, alface, tomate e molho mima',
-            price: 28.00,
-            category: 'Burguers',
-            image: '../assets/images/Burgers_09_voLio.png'
-        },
-        {
-            id: '10',
-            name: 'NINI',
-            description: 'Pão brioche, hambúrguer de carne, queijo mussarela e molho mima',
-            price: 20.00,
-            category: 'Burguers',
-            image: '../assets/images/Burgers_10_voNini.png'
-        },
-        {
-            id: '11',
-            name: 'VÓ SOLIS',
-            description: 'Pão, hambúrguer de carne, queijo mussarela, tomate, alface, cebola roxa e molho mima',
-            price: 25.00,
-            category: 'Burguers',
-            image: '../assets/images/Burgers_11_voSolis.png'
-        },
-        {
-            id: '12',
-            name: 'VÔ NILTON',
-            description: 'Pão, hambúrguer de carne, queijo mussarela, alface, tomate, cebola roxa, picles e molho mima',
-            price: 27.00,
-            category: 'Burguers',
-            image: '../assets/images/Burgers_12_voNilton.png'
-        },
-        {
-            id: '13',
-            name: 'GÊMEAS LELA',
-            description: 'Pão, duplo hambúrguer de carne, duplo queijo mussarela, onion rings e molho barbecue',
-            price: 33.00,
-            category: 'Burguers',
-            image: '../assets/images/Burgers_13_gemeasLela.png'
-        },
-        {
-            id: '14',
-            name: 'HOT CHEDDAR',
-            description: 'Pão, duas salsichas, queijo mussarela, cheddar, bacon e molho de churrasco',
-            price: 22.00,
-            category: 'Hot-Dogs',
-            image: '../assets/images/HotDog_01_Cheddar.png'
-        },
-        {
-            id: '15',
-            name: 'HOT CATUPIRY',
-            description: 'Pão, duas salsichas, queijo mussarela, catupiry, bacon e molho de churrasco',
-            price: 22.00,
-            category: 'Hot-Dogs',
-            image: '../assets/images/HotDog_02_Catupiry.png'
-        },
-        {
-            id: '16',
-            name: 'BATATA FRITA 150 GRAMAS',
-            description: 'Batata frita crocante 150 gramas',
-            price: 17.00,
-            category: 'Porções',
-            image: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3EBatata Frita%3C/text%3E%3C/svg%3E'
-        },
-        {
-            id: '17',
-            name: 'BATATA FRITA 300 GRAMAS COM CHEDDAR OU MUSSARELA E BACON',
-            description: 'Batata frita 300 gramas com cheddar ou mussarela e bacon',
-            price: 37.00,
-            category: 'Porções',
-            image: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3EBatata Frita%3C/text%3E%3C/svg%3E'
-        },
-        {
-            id: '18',
-            name: 'BATATA FRITA 500 GRAMAS COM CHEDDAR OU MUSSARELA E BACON',
-            description: 'Batata frita 500 gramas com cheddar ou mussarela e bacon',
-            price: 45.00,
-            category: 'Porções',
-            image: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3EBatata Frita%3C/text%3E%3C/svg%3E'
-        },
-        {
-            id: '19',
-            name: 'ONION RINGS 10 UNIDADES',
-            description: 'Onion rings crocantes 10 unidades',
-            price: 15.00,
-            category: 'Porções',
-            image: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3EOnion Rings%3C/text%3E%3C/svg%3E'
-        },
-        {
-            id: '20',
-            name: 'LATA 310ML',
-            description: 'LATA 310ML',
-            price: 6.00,
-            category: 'Bebidas',
-            image: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 font-weight=%22bold%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3ELata 310ml%3C/text%3E%3C/svg%3E'
-        },
-        {
-            id: '21',
-            name: 'COCA 1L',
-            description: 'COCA 1L',
-            price: 10.00,
-            category: 'Bebidas',
-            image: '../assets/images/Bebida_01_Coca1L.png'
-        },
-        {
-            id: '22',
-            name: 'ANTÁRTICA 1L',
-            description: 'ANTÁRTICA 1L',
-            price: 8.00,
-            category: 'Bebidas',
-            image: '../assets/images/Bebida_02_Antartica1L.png'
-        },
-        {
-            id: '23',
-            name: 'FANTA 2L',
-            description: 'FANTA 2L',
-            price: 12.00,
-            category: 'Bebidas',
-            image: '../assets/images/Bebida_03_Fanta2L.png'
-        },
-        {
-            id: '24',
-            name: 'KUAT 2L',
-            description: 'KUAT 2L',
-            price: 12.00,
-            category: 'Bebidas',
-            image: '../assets/images/Bebida_04_Kuat2L.png'
-        },
-        {
-            id: '25',
-            name: 'COCA 2L',
-            description: 'COCA 2L',
-            price: 14.00,
-            category: 'Bebidas',
-            image: '../assets/images/Bebida_05_Coca2L.png'
-        },
-        {
-            id: '26',
-            name: 'COCA 2,5L',
-            description: 'COCA 2,5L',
-            price: 15.00,
-            category: 'Bebidas',
-            image: '../assets/images/Bebida_06_Coca2_5L.png'
-        }
-    ]
-};
 
 // Menu data dinâmico (será carregado do Firebase)
 let MENU_DATA = {
@@ -533,15 +320,32 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 // Carregar produtos do Firebase
 async function loadProductsFromFirebase() {
+    // Limpar dados anteriores primeiro
+    MENU_DATA.items = [];
+    MENU_DATA.categories = ['Todos'];
+    window.MENU_DATA = MENU_DATA;
+    
     try {
         console.log('🔄 Carregando produtos do Firebase...');
         const firebaseProducts = await getAvailableProducts();
         
-        console.log(`📦 Produtos recebidos do Firebase:`, firebaseProducts.length);
+        console.log(`📦 Produtos recebidos do Firebase (antes do filtro):`, firebaseProducts.length);
+        console.log('📦 Status dos produtos:', firebaseProducts.map(p => ({ name: p.name, available: p.available })));
         
         if (firebaseProducts && firebaseProducts.length > 0) {
             // Converter produtos do Firebase para o formato esperado
-            MENU_DATA.items = firebaseProducts.map(product => ({
+            // IMPORTANTE: Filtrar apenas produtos com available === true explicitamente
+            const filteredProducts = firebaseProducts.filter(product => {
+                const isAvailable = product.available === true;
+                if (!isAvailable) {
+                    console.log(`❌ Produto filtrado (não disponível): ${product.name} - available: ${product.available}`);
+                }
+                return isAvailable;
+            });
+            
+            console.log(`✅ Produtos após filtro (available === true):`, filteredProducts.length);
+            
+            MENU_DATA.items = filteredProducts.map(product => ({
                 id: product.id,
                 name: product.name,
                 description: product.description || '',
@@ -549,11 +353,8 @@ async function loadProductsFromFirebase() {
                 category: product.category,
                 image: product.image || '',
                 number: product.number || null, // Preservar número se existir
-                available: product.available !== false // Garantir que available seja true
+                available: true // Garantir que seja true
             }));
-            
-            // Filtrar apenas produtos disponíveis (dupla verificação)
-            MENU_DATA.items = MENU_DATA.items.filter(item => item.available !== false);
             
             // Ordenar produtos: por categoria, depois por número (quando disponível) ou nome
             MENU_DATA.items.sort((a, b) => {
@@ -599,23 +400,31 @@ async function loadProductsFromFirebase() {
             console.log('📋 Categorias:', MENU_DATA.categories);
             console.log('📦 Produtos:', MENU_DATA.items.map(p => `${p.name} (${p.available ? 'ativo' : 'inativo'})`));
         } else {
-            // Fallback para dados estáticos se Firebase estiver vazio
-            console.warn('⚠️ Firebase vazio ou sem produtos disponíveis, usando dados estáticos como fallback');
-            MENU_DATA = JSON.parse(JSON.stringify(MENU_DATA_STATIC)); // Deep copy
+            // Firebase vazio ou sem produtos disponíveis
+            console.warn('⚠️ Firebase vazio ou sem produtos disponíveis');
+            MENU_DATA.items = [];
+            MENU_DATA.categories = ['Todos'];
             window.MENU_DATA = MENU_DATA;
         }
     } catch (error) {
-        // Em caso de erro, usar dados estáticos
+        // Em caso de erro, definir como vazio
         console.error('❌ Erro ao carregar produtos do Firebase:', error);
         console.error('Detalhes do erro:', error.message, error.code);
         console.error('Stack:', error.stack);
-        console.warn('⚠️ Usando dados estáticos como fallback');
-        MENU_DATA = JSON.parse(JSON.stringify(MENU_DATA_STATIC)); // Deep copy
+        MENU_DATA.items = [];
+        MENU_DATA.categories = ['Todos'];
         window.MENU_DATA = MENU_DATA;
     }
     
     // Renderizar após carregar dados (garantir que seja assíncrono)
     setTimeout(() => {
+        // Se não houver produtos, não renderizar categorias
+        if (MENU_DATA.items.length === 0) {
+            renderItems(); // Isso chamará renderUnavailableState
+            renderCartUI();
+            return;
+        }
+        
         // Garantir que Burguers seja a categoria padrão
         if (MENU_DATA.categories.includes('Burguers')) {
             currentCategory = 'Burguers';
@@ -627,6 +436,82 @@ async function loadProductsFromFirebase() {
         renderItems();
         renderCartUI();
     }, 100);
+}
+
+/**
+ * Abrir WhatsApp para contato (sem mensagem pré-definida)
+ * @param {string} phoneNumber - Número do WhatsApp
+ */
+async function openWhatsAppContact(phoneNumber) {
+    if (!phoneNumber) {
+        console.error('Número do WhatsApp não fornecido');
+        return;
+    }
+    
+    // Formatar número (remover caracteres não numéricos)
+    let formattedPhone = phoneNumber.replace(/\D/g, '');
+    
+    // Se não começar com código do país, adicionar 55 (Brasil)
+    if (!formattedPhone.startsWith('55')) {
+        formattedPhone = '55' + formattedPhone;
+    }
+    
+    // Abrir WhatsApp sem mensagem pré-definida
+    const whatsappUrl = `https://wa.me/${formattedPhone}`;
+    window.open(whatsappUrl, '_blank');
+}
+
+/**
+ * Renderizar estado de indisponibilidade
+ */
+async function renderUnavailableState() {
+    itemsGrid.innerHTML = '';
+    
+    // Criar container do estado indisponível
+    const unavailableContainer = document.createElement('div');
+    unavailableContainer.className = 'unavailable-state';
+    unavailableContainer.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 60px 20px;';
+    
+    // Mensagem
+    const message = document.createElement('p');
+    message.className = 'unavailable-message';
+    message.textContent = 'Itens indisponíveis no momento';
+    message.style.cssText = 'font-size: 24px; font-weight: 600; color: #333; margin-bottom: 30px; opacity: 0; animation: fadeInUp 0.5s ease forwards;';
+    
+    // Botão WhatsApp
+    const whatsappBtn = document.createElement('button');
+    whatsappBtn.className = 'btn-whatsapp-contact';
+    whatsappBtn.textContent = 'Entrar em contato pelo WhatsApp';
+    whatsappBtn.style.cssText = 'padding: 15px 30px; font-size: 16px; font-weight: 600; background: #25D366; color: white; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; opacity: 0; animation: fadeInUp 0.5s ease 0.2s forwards;';
+    
+    // Adicionar hover effect
+    whatsappBtn.addEventListener('mouseenter', () => {
+        whatsappBtn.style.background = '#20BA5A';
+        whatsappBtn.style.transform = 'translateY(-2px)';
+        whatsappBtn.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.3)';
+    });
+    whatsappBtn.addEventListener('mouseleave', () => {
+        whatsappBtn.style.background = '#25D366';
+        whatsappBtn.style.transform = 'translateY(0)';
+        whatsappBtn.style.boxShadow = 'none';
+    });
+    
+    // Obter número do WhatsApp do Firebase ou usar padrão
+    whatsappBtn.addEventListener('click', async () => {
+        try {
+            const config = await getRestaurantConfig();
+            const phoneNumber = config.whatsappNumber || CONFIG.whatsappNumber;
+            openWhatsAppContact(phoneNumber);
+        } catch (error) {
+            console.error('Erro ao obter configuração:', error);
+            // Usar número padrão em caso de erro
+            openWhatsAppContact(CONFIG.whatsappNumber);
+        }
+    });
+    
+    unavailableContainer.appendChild(message);
+    unavailableContainer.appendChild(whatsappBtn);
+    itemsGrid.appendChild(unavailableContainer);
 }
 
 function renderCategories() {
@@ -648,6 +533,12 @@ function renderCategories() {
  * Render menu items dynamically with animations
  */
 function renderItems() {
+    // Verificar se há produtos disponíveis
+    if (MENU_DATA.items.length === 0) {
+        renderUnavailableState();
+        return;
+    }
+    
     // If there are existing items, fade them out first
     const existingItems = itemsGrid.querySelectorAll('.item-card');
     if (existingItems.length > 0) {

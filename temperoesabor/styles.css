@@ -3441,3 +3441,72 @@ html.hours-open {
     }
 }
 
+/* ============================================
+   Estado Indisponível
+   ============================================ */
+
+.unavailable-state {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 60px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+}
+
+.unavailable-message {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 30px;
+    opacity: 0;
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+.btn-whatsapp-contact {
+    padding: 15px 30px;
+    font-size: 16px;
+    font-weight: 600;
+    background: #25D366;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0;
+    animation: fadeInUp 0.5s ease 0.2s forwards;
+    box-shadow: 0 2px 8px rgba(37, 211, 102, 0.2);
+}
+
+.btn-whatsapp-contact:hover {
+    background: #20BA5A;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+
+.btn-whatsapp-contact:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(37, 211, 102, 0.2);
+}
+
+@media (max-width: 768px) {
+    .unavailable-state {
+        padding: 40px 20px;
+        min-height: 300px;
+    }
+    
+    .unavailable-message {
+        font-size: 20px;
+        margin-bottom: 25px;
+    }
+    
+    .btn-whatsapp-contact {
+        padding: 12px 24px;
+        font-size: 14px;
+        width: 100%;
+        max-width: 300px;
+    }
+}
+

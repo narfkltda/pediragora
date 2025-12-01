@@ -71,7 +71,7 @@ export async function getAvailableProducts() {
     // Fallback: buscar todos e filtrar
     const allProducts = await getProducts();
     const availableProducts = allProducts
-      .filter(p => p.available !== false && p.available !== undefined)
+      .filter(p => p.available === true) // Apenas produtos explicitamente disponíveis
       .sort((a, b) => {
         // Primeiro, ordenar por categoria
         if (a.category !== b.category) {
