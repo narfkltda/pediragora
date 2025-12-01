@@ -34,17 +34,42 @@
         <section id="products-section" class="admin-section active">
             <div class="section-header">
                 <h2>Gerenciar Produtos</h2>
-                <button id="add-product-btn" class="btn-primary">
-                    <span>+</span> Adicionar Produto
-                </button>
             </div>
 
             <div class="loading" id="products-loading" style="display: none;">
                 Carregando produtos...
             </div>
 
-            <!-- Controles de Seleção em Massa e Filtros -->
-            <div class="products-controls">
+            <!-- Barra de Filtros com Ícones -->
+            <div class="filters-toolbar">
+                <div class="filter-icon-btn" data-filter="search" title="Buscar">
+                    <span class="filter-icon">🔍</span>
+                    <span class="filter-label">Buscar</span>
+                </div>
+                <div class="filter-icon-btn" data-filter="select" title="Selecionar">
+                    <span class="filter-icon">☑️</span>
+                    <span class="filter-label">Selecionar</span>
+                </div>
+                <div class="filter-icon-btn" data-filter="status" title="Status">
+                    <span class="filter-icon">📊</span>
+                    <span class="filter-label">Status</span>
+                </div>
+                <div id="add-product-btn" class="filter-icon-btn" title="Adicionar Produto">
+                    <span class="filter-icon">+</span>
+                    <span class="filter-label">Produto</span>
+                </div>
+            </div>
+
+            <!-- Painel de Busca -->
+            <div class="filter-panel" id="product-search-panel" style="display: none;">
+                <div class="search-container">
+                    <input type="text" id="product-search-input" class="search-input" placeholder="Buscar produto...">
+                    <button id="clear-search-btn" class="clear-search-btn" style="display: none;">&times;</button>
+                </div>
+            </div>
+
+            <!-- Painel de Seleção -->
+            <div class="filter-panel" id="product-select-panel" style="display: none;">
                 <div class="bulk-actions">
                     <label class="select-all-label">
                         <input type="checkbox" id="select-all-checkbox">
@@ -63,15 +88,23 @@
                         </button>
                     </div>
                 </div>
-                <div class="products-filters">
-                    <select id="category-filter" class="category-select">
-                        <option value="all">Todas as Categorias</option>
-                    </select>
-                    <div class="search-container">
-                        <input type="text" id="product-search-input" class="search-input" placeholder="Buscar produto...">
-                        <button id="clear-search-btn" class="clear-search-btn" style="display: none;">&times;</button>
-                    </div>
+            </div>
+
+            <!-- Painel de Status -->
+            <div class="filter-panel" id="product-status-panel" style="display: none;">
+                <div class="status-filters">
+                    <button class="status-filter-btn active" data-status="all">Todos</button>
+                    <button class="status-filter-btn" data-status="active">Ativos</button>
+                    <button class="status-filter-btn" data-status="inactive">Inativos</button>
                 </div>
+            </div>
+
+            <!-- Seletor de Categorias -->
+            <div class="category-filter-bar">
+                <label class="category-filter-label">Categoria:</label>
+                <select id="category-filter" class="category-filter-select">
+                    <option value="all">Todas as Categorias</option>
+                </select>
             </div>
 
             <div class="products-grid" id="products-grid">

@@ -811,7 +811,8 @@ body {
     align-items: center;
 }
 
-.filters-toolbar #add-ingredient-btn {
+.filters-toolbar #add-ingredient-btn,
+.filters-toolbar #add-product-btn {
     margin-left: auto;
     background: #eeb534;
     border-color: #eeb534;
@@ -819,11 +820,14 @@ body {
 }
 
 .filters-toolbar #add-ingredient-btn .filter-icon,
-.filters-toolbar #add-ingredient-btn .filter-label {
+.filters-toolbar #add-ingredient-btn .filter-label,
+.filters-toolbar #add-product-btn .filter-icon,
+.filters-toolbar #add-product-btn .filter-label {
     color: white;
 }
 
-.filters-toolbar #add-ingredient-btn:hover {
+.filters-toolbar #add-ingredient-btn:hover,
+.filters-toolbar #add-product-btn:hover {
     background: #d4a02a;
     border-color: #d4a02a;
     transform: translateY(-2px);

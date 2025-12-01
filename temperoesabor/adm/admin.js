@@ -136,6 +136,7 @@ let confirmCallback = null;
 let selectedProducts = []; // Array de IDs selecionados
 let currentCategoryFilter = 'all';
 let currentSearchTerm = '';
+let currentProductStatusFilter = 'all'; // 'all', 'active', 'inactive'
 let allProducts = []; // Todos os produtos (sem filtros)
 let filteredProducts = []; // Produtos após aplicar filtros
 
@@ -693,6 +694,11 @@ function renderProducts() {
     });
     
     updateSelectionUI();
+    
+    // Atualizar visibilidade dos checkboxes baseado no estado do painel de seleção
+    const productSelectPanel = document.getElementById('product-select-panel');
+    const isSelectionPanelActive = productSelectPanel && productSelectPanel.style.display !== 'none';
+    updateProductCheckboxesVisibility(isSelectionPanelActive);
 }
 
 // Popular dropdown de categorias
@@ -722,7 +728,7 @@ function populateCategoryFilter() {
     });
 }
 
-// Aplicar filtros (categoria + busca)
+// Aplicar filtros (categoria + busca + status)
 function applyFilters() {
     filteredProducts = [...allProducts];
     
@@ -737,6 +743,13 @@ function applyFilters() {
         filteredProducts = filteredProducts.filter(p => 
             p.name.toLowerCase().includes(searchLower)
         );
+    }
+    
+    // Filtro por status
+    if (currentProductStatusFilter === 'active') {
+        filteredProducts = filteredProducts.filter(p => p.available !== false);
+    } else if (currentProductStatusFilter === 'inactive') {
+        filteredProducts = filteredProducts.filter(p => p.available === false);
     }
     
     // Remover seleções de produtos que não estão mais visíveis
@@ -799,11 +812,26 @@ function applyIngredientFilters() {
 
 // Toggle painel de filtro
 function toggleFilterPanel(filterType, button) {
-    const panelMap = {
-        'search': 'ingredient-search-panel',
-        'select': 'ingredient-select-panel',
-        'status': 'ingredient-status-panel'
-    };
+    // Determinar se estamos na seção de produtos ou ingredientes
+    const productsSection = document.getElementById('products-section');
+    const ingredientsSection = document.getElementById('ingredients-section');
+    const isProductsSection = productsSection && productsSection.classList.contains('active');
+    
+    // Mapeamento de painéis baseado na seção ativa
+    let panelMap;
+    if (isProductsSection) {
+        panelMap = {
+            'search': 'product-search-panel',
+            'select': 'product-select-panel',
+            'status': 'product-status-panel'
+        };
+    } else {
+        panelMap = {
+            'search': 'ingredient-search-panel',
+            'select': 'ingredient-select-panel',
+            'status': 'ingredient-status-panel'
+        };
+    }
     
     const panelId = panelMap[filterType];
     if (!panelId) return;
@@ -825,13 +853,29 @@ function toggleFilterPanel(filterType, button) {
     // Se for o painel de seleção, atualizar visibilidade dos checkboxes
     if (filterType === 'select') {
         const isSelectionActive = panel.style.display !== 'none';
-        updateIngredientCheckboxesVisibility(isSelectionActive);
+        if (isProductsSection) {
+            updateProductCheckboxesVisibility(isSelectionActive);
+        } else {
+            updateIngredientCheckboxesVisibility(isSelectionActive);
+        }
     }
 }
 
 // Atualizar visibilidade dos checkboxes dos cards de ingredientes
 function updateIngredientCheckboxesVisibility(show) {
     const checkboxContainers = document.querySelectorAll('.ingredients-category-grid .product-checkbox-container');
+    checkboxContainers.forEach(container => {
+        if (show) {
+            container.style.display = '';
+        } else {
+            container.style.display = 'none';
+        }
+    });
+}
+
+// Atualizar visibilidade dos checkboxes dos cards de produtos
+function updateProductCheckboxesVisibility(show) {
+    const checkboxContainers = document.querySelectorAll('#products-grid .product-checkbox-container');
     checkboxContainers.forEach(container => {
         if (show) {
             container.style.display = '';
@@ -3308,13 +3352,6 @@ function setupEventListeners() {
         });
     }
     
-    // Carregar ingredientes ao abrir modal de produto
-    if (addProductBtn) {
-        addProductBtn.addEventListener('click', async () => {
-            await loadProductIngredients();
-        });
-    }
-    
     // Fechar modais com tecla ESC
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' || e.key === 'Esc') {
@@ -3537,13 +3574,28 @@ function setupEventListeners() {
     const statusFilterBtns = document.querySelectorAll('.status-filter-btn');
     statusFilterBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            // Remover active de todos
-            statusFilterBtns.forEach(b => b.classList.remove('active'));
+            // Determinar se estamos na seção de produtos ou ingredientes
+            const productsSection = document.getElementById('products-section');
+            const isProductsSection = productsSection && productsSection.classList.contains('active');
+            
+            // Remover active de todos os botões na mesma seção
+            const panel = btn.closest('.filter-panel');
+            if (panel) {
+                const panelBtns = panel.querySelectorAll('.status-filter-btn');
+                panelBtns.forEach(b => b.classList.remove('active'));
+            }
+            
             // Adicionar active no clicado
             btn.classList.add('active');
             const status = btn.getAttribute('data-status');
-            currentIngredientStatusFilter = status;
-            applyIngredientFilters();
+            
+            if (isProductsSection) {
+                currentProductStatusFilter = status;
+                applyFilters();
+            } else {
+                currentIngredientStatusFilter = status;
+                applyIngredientFilters();
+            }
         });
     });
     

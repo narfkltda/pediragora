@@ -64,3 +64,6 @@ Isso garante que:
 
 As regras do Firestore são aplicadas imediatamente após a publicação, mas pode levar alguns segundos para serem propagadas. Se ainda houver erro após publicar, aguarde 10-15 segundos e tente novamente.
 
+
+
+
