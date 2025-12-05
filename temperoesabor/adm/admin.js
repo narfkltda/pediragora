@@ -41,6 +41,29 @@ import {
   saveRestaurantConfig 
 } from '../services/config-service.js';
 import { uploadProductImage } from '../services/storage-service.js';
+import { openModal, closeModal } from './utils/modals.js';
+import { showToast, showFeedbackModal, showConfirmModal, escapeHtml, getConfirmCallback } from './utils/ui.js';
+import { setupFormValidationMessages } from './utils/forms.js';
+import { 
+    showImagePreview, 
+    resetImagePreview, 
+    handleImageSelection, 
+    loadExistingImagePreview,
+    getCurrentImageFile,
+    setCurrentImageFile
+} from './utils/image-upload.js';
+import { initConfig } from './modules/config.js';
+import { 
+    initCategories, 
+    loadCategories, 
+    loadProductCategories,
+    updateCategorySelector,
+    updateCategoryEditSelector,
+    updateCategoryFilterSelector,
+    updateProductCategorySelector,
+    getDefaultCategoryId,
+    hasProductsUsingCategory
+} from './modules/categories.js';
 
 // Elementos DOM - Produtos
 const productsGrid = document.getElementById('products-grid');
@@ -109,7 +132,6 @@ const ingredientFormError = document.getElementById('ingredient-form-error');
 const logoutBtn = document.getElementById('logout-btn');
 const navButtons = document.querySelectorAll('.nav-btn');
 const adminSections = document.querySelectorAll('.admin-section');
-const configForm = document.getElementById('config-form');
 
 // Elementos DOM - Controles de Seleção e Filtros
 const selectAllCheckbox = document.getElementById('select-all-checkbox');
@@ -130,16 +152,20 @@ const deleteSelectedIngredientsBtn = document.getElementById('delete-selected-in
 const ingredientSearchInput = document.getElementById('ingredient-search-input');
 const clearIngredientSearchBtn = document.getElementById('clear-ingredient-search-btn');
 
-// Estado
-let products = [];
-let ingredients = [];
+// Estado global compartilhado (exportado para módulos)
+export const state = {
+    products: [],           // Compartilhado entre produtos e categorias
+    ingredients: [],        // Compartilhado entre ingredientes e produtos
+    categories: [],         // Compartilhado entre categorias e ingredientes/produtos
+    productCategories: []   // Compartilhado entre categorias e produtos
+};
+
+// Estado local (será movido para módulos)
 let editingProductId = null;
 let editingIngredientId = null;
-let currentImageFile = null;
 let defaultIngredientsOrder = [];
-let confirmCallback = null;
 
-// Estado para seleção e filtros
+// Estado para seleção e filtros (será movido para módulos)
 let selectedProducts = []; // Array de IDs selecionados
 let currentCategoryFilter = 'all';
 let currentSearchTerm = '';
@@ -147,7 +173,7 @@ let currentProductStatusFilter = 'all'; // 'all', 'active', 'inactive'
 let allProducts = []; // Todos os produtos (sem filtros)
 let filteredProducts = []; // Produtos após aplicar filtros
 
-// Estado para seleção e filtros de ingredientes
+// Estado para seleção e filtros de ingredientes (será movido para módulos)
 let selectedIngredients = []; // Array de IDs selecionados
 let currentIngredientSearchTerm = '';
 let currentIngredientStatusFilter = 'all'; // 'all', 'active', 'inactive'
@@ -155,15 +181,8 @@ let currentIngredientCategoryFilter = 'all'; // 'all' ou categoryId
 let allIngredients = []; // Todos os ingredientes (sem filtros)
 let filteredIngredients = []; // Ingredientes após aplicar filtros
 
-// Estado para categorias
-let categories = []; // Todas as categorias
-let defaultCategoryId = null; // ID da categoria padrão "Geral"
-
-// Estado para categorias de produtos
-let productCategories = []; // Todas as categorias de produtos
-
-// Estado para controle de scroll das modais (estilo sidebar)
-let modalScrollPosition = 0;
+// Estado para categorias (será movido para módulos)
+// defaultCategoryId agora está no módulo de categorias
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
@@ -203,10 +222,19 @@ document.addEventListener('DOMContentLoaded', () => {
     migrateExistingIngredients();
     
     // Configurar modal de categorias
-    setupCategoriesModal();
-    
-    // Configurar modal de categorias de produtos
-    setupProductCategoriesModal();
+    // Inicializar módulo de categorias
+    initCategories({
+        getAllProducts: () => allProducts,
+        onCategoriesUpdated: () => {
+            updateCategorySelector();
+            updateCategoryEditSelector();
+            updateCategoryFilterSelector(currentIngredientCategoryFilter);
+        },
+        onProductCategoriesUpdated: () => {
+            updateProductCategorySelector();
+            populateCategoryFilter();
+        }
+    });
 });
 
 // Verificar autenticação
@@ -217,7 +245,7 @@ function checkAuth() {
             loadProducts();
             loadIngredients();
             loadProductCategories();
-            loadConfig();
+            initConfig();
         } else {
             console.log('Usuário não autenticado');
             window.location.href = 'login.html';
@@ -371,62 +399,6 @@ function resetButtonProgress(button, text) {
     enableButton(button);
 }
 
-// ==================== FUNÇÕES DE MODAL (SIDEBAR ESTILO CARRINHO) ====================
-
-/**
- * Abrir modal como sidebar (estilo carrinho)
- * @param {HTMLElement} modalOverlay - Elemento overlay da modal
- * @param {HTMLElement} modalContent - Elemento content da modal
- */
-function openModal(modalOverlay, modalContent) {
-    if (!modalOverlay || !modalContent) return;
-    
-    // Salvar posição de scroll atual
-    modalScrollPosition = window.pageYOffset || document.documentElement.scrollTop || window.scrollY;
-    
-    // Adicionar classes para abrir
-    modalOverlay.classList.add('active');
-    modalContent.classList.add('open');
-    
-    // Bloquear scroll do body (igual carrinho)
-    document.body.classList.add('modal-open');
-    document.documentElement.classList.add('modal-open');
-    document.body.style.top = `-${modalScrollPosition}px`;
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-    document.body.style.height = '100%';
-    document.documentElement.style.overflow = 'hidden';
-    document.documentElement.style.height = '100%';
-}
-
-/**
- * Fechar modal sidebar
- * @param {HTMLElement} modalOverlay - Elemento overlay da modal
- * @param {HTMLElement} modalContent - Elemento content da modal
- */
-function closeModal(modalOverlay, modalContent) {
-    if (!modalOverlay || !modalContent) return;
-    
-    // Remover classes
-    modalOverlay.classList.remove('active');
-    modalContent.classList.remove('open');
-    
-    // Restaurar scroll do body
-    document.body.classList.remove('modal-open');
-    document.documentElement.classList.remove('modal-open');
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.width = '';
-    document.body.style.height = '';
-    document.body.style.top = '';
-    document.documentElement.style.overflow = '';
-    document.documentElement.style.height = '';
-    
-    // Restaurar posição de scroll
-    window.scrollTo(0, modalScrollPosition);
-}
-
 // Carregar produtos
 async function loadProducts() {
     try {
@@ -434,7 +406,7 @@ async function loadProducts() {
         productsGrid.innerHTML = '';
         
         allProducts = await getProducts();
-        products = allProducts;
+        state.products = allProducts;
         
         // Debug detalhado: verificar imagens dos produtos
         console.log('🔍 [DEBUG] Produtos carregados:', allProducts.length);
@@ -481,7 +453,7 @@ function renderProducts() {
     productsGrid.innerHTML = '';
     
     // Usar filteredProducts em vez de products
-    const productsToRender = filteredProducts.length > 0 ? filteredProducts : products;
+    const productsToRender = filteredProducts.length > 0 ? filteredProducts : state.products;
     
     if (productsToRender.length === 0) {
         productsGrid.innerHTML = `
@@ -732,9 +704,9 @@ function populateCategoryFilter() {
     }
     
     // Usar categorias do Firebase se disponíveis, senão usar categorias dos produtos
-    if (productCategories && productCategories.length > 0) {
+    if (state.productCategories && state.productCategories.length > 0) {
         // Ordenar por nome
-        const sortedCategories = [...productCategories].sort((a, b) => a.name.localeCompare(b.name));
+        const sortedCategories = [...state.productCategories].sort((a, b) => a.name.localeCompare(b.name));
         sortedCategories.forEach(category => {
             const option = document.createElement('option');
             option.value = category.name;
@@ -744,7 +716,7 @@ function populateCategoryFilter() {
     } else {
         // Fallback: obter categorias únicas dos produtos
         const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))].sort();
-        categories.forEach(category => {
+        state.categories.forEach(category => {
             const option = document.createElement('option');
             option.value = category;
             option.textContent = category;
@@ -1114,7 +1086,7 @@ async function deleteSelected() {
 if (addProductBtn) {
     addProductBtn.addEventListener('click', async () => {
         resetProductForm();
-        updateProductCategorySelector(); // Atualizar seletor de categorias
+        updateProductCategorySelector(); // Atualizar seletor de categorias (do módulo)
         await loadProductDefaultIngredients();
         await loadProductIngredients();
         updateDescriptionFromDefaultIngredients();
@@ -1128,6 +1100,7 @@ productForm.addEventListener('submit', async (e) => {
     
     // Validar se há imagem (exceto se estiver editando e já tiver imagem)
     const existingImageUrl = productImageUrl ? productImageUrl.value.trim() : '';
+    const currentImageFile = getCurrentImageFile();
     if (!currentImageFile && !existingImageUrl && !editingProductId) {
         showToast('Por favor, selecione uma imagem para o produto', 'error');
         return;
@@ -1228,7 +1201,7 @@ service firebase.storage {
     // Configurar botão para "Salvando..." se não houver upload
     const submitButton = document.querySelector('.modal-footer .btn-save[form="product-form"]') ||
                         productModal?.querySelector('.modal-footer .btn-save');
-    if (submitButton && !currentImageFile) {
+    if (submitButton && !getCurrentImageFile()) {
         setupButtonWithProgress(submitButton, 'Salvando...');
     }
     
@@ -1356,7 +1329,7 @@ service firebase.storage {
 
 // Editar produto
 window.editProduct = async (id) => {
-    const product = products.find(p => p.id === id);
+    const product = state.products.find(p => p.id === id);
     if (!product) return;
 
     editingProductId = id;
@@ -1417,9 +1390,9 @@ window.editProduct = async (id) => {
     
     // Carregar preview da imagem existente
     if (product.image) {
-        loadExistingImagePreview(product.image);
+        loadExistingImagePreview(product.image, previewOriginalImg, productImageUrl, imageUploadPlaceholder, imagePreviewContainer);
     } else {
-        resetImagePreview();
+        resetImagePreview(imageUploadPlaceholder, imagePreviewContainer, previewOriginalImg, productImageUrl, productImageInput);
     }
     
     // Carregar e marcar ingredientes padrão
@@ -1478,18 +1451,9 @@ window.editProduct = async (id) => {
 };
 
 // Função para exibir modal de confirmação
-function showConfirmModal(title, message, onConfirm) {
-    if (confirmModalTitle) confirmModalTitle.textContent = title;
-    if (confirmModalMessage) confirmModalMessage.textContent = message;
-    if (confirmModal) confirmModal.classList.add('active');
-    
-    // Armazenar callback
-    confirmCallback = onConfirm;
-}
-
 // Deletar produto
 window.deleteProductConfirm = async (id) => {
-    const product = products.find(p => p.id === id);
+    const product = state.products.find(p => p.id === id);
     if (!product) return;
     
     showConfirmModal(
@@ -1508,61 +1472,8 @@ window.deleteProductConfirm = async (id) => {
     );
 };
 
-// Carregar configurações
-async function loadConfig() {
-    try {
-        const config = await getRestaurantConfig();
-        
-        document.getElementById('config-name').value = config.restaurantName || '';
-        document.getElementById('config-whatsapp').value = config.whatsappNumber || '';
-        document.getElementById('config-latitude').value = config.restaurantLatitude || '';
-        document.getElementById('config-longitude').value = config.restaurantLongitude || '';
-    } catch (error) {
-        console.error('Erro ao carregar configurações:', error);
-    }
-}
-
-// Salvar configurações
-configForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const configData = {
-        restaurantName: document.getElementById('config-name').value.trim(),
-        whatsappNumber: document.getElementById('config-whatsapp').value.trim(),
-        restaurantLatitude: parseFloat(document.getElementById('config-latitude').value),
-        restaurantLongitude: parseFloat(document.getElementById('config-longitude').value)
-    };
-
-    try {
-        await saveRestaurantConfig(configData);
-        showToast('Configurações salvas com sucesso!', 'success');
-    } catch (error) {
-        console.error('Erro ao salvar configurações:', error);
-        showToast('Erro ao salvar configurações: ' + error.message, 'error');
-    }
-});
-
 // ==================== UPLOAD DE IMAGEM ====================
 
-/**
- * Exibir preview da imagem
- * @param {File|Blob} imageFile - Arquivo ou blob da imagem
- */
-function showImagePreview(imageFile) {
-    if (!previewOriginalImg) return;
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        if (previewOriginalImg) {
-            previewOriginalImg.src = e.target.result;
-        }
-    };
-    reader.readAsDataURL(imageFile);
-}
-
-/**
- * Resetar preview de imagem
- */
 // Resetar formulário de produto
 function resetProductForm() {
     editingProductId = null;
@@ -1578,8 +1489,8 @@ function resetProductForm() {
     document.getElementById('product-available').checked = true;
     document.getElementById('product-number').value = '';
     defaultIngredientsOrder = [];
-    resetImagePreview();
-    currentImageFile = null;
+    resetImagePreview(imageUploadPlaceholder, imagePreviewContainer, previewOriginalImg, productImageUrl, productImageInput);
+    setCurrentImageFile(null);
     
     // Desmarcar todos os checkboxes de ingredientes padrão
     if (productDefaultIngredientsList) {
@@ -1633,6 +1544,7 @@ function resetIngredientForm() {
     
     // Resetar campo de categoria para padrão
     const categorySelect = document.getElementById('ingredient-category');
+    const defaultCategoryId = getDefaultCategoryId();
     if (categorySelect && defaultCategoryId) {
         categorySelect.value = defaultCategoryId;
     }
@@ -1704,6 +1616,7 @@ function resetIngredientEditForm() {
     
     // Resetar campo de categoria para padrão
     const categoryEditSelect = document.getElementById('ingredient-edit-category');
+    const defaultCategoryId = getDefaultCategoryId();
     if (categoryEditSelect && defaultCategoryId) {
         categoryEditSelect.value = defaultCategoryId;
     }
@@ -1718,149 +1631,6 @@ function resetIngredientEditForm() {
     // Resetar e habilitar botão cancelar
     const cancelButton = document.getElementById('cancel-ingredient-edit-btn');
     enableButton(cancelButton);
-}
-
-// Atualizar seletor de categoria na modal de edição
-function updateCategoryEditSelector() {
-    const categoryEditSelect = document.getElementById('ingredient-edit-category');
-    if (!categoryEditSelect) return;
-    
-    categoryEditSelect.innerHTML = '';
-    
-    if (categories.length === 0) {
-        categoryEditSelect.innerHTML = '<option value="">Carregando categorias...</option>';
-        return;
-    }
-    
-    // Ordenar categorias alfabeticamente
-    const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
-    
-    sortedCategories.forEach(category => {
-        const option = document.createElement('option');
-        option.value = category.id;
-        option.textContent = category.name;
-        categoryEditSelect.appendChild(option);
-    });
-    
-    // Se houver categoria padrão, selecioná-la
-    if (defaultCategoryId) {
-        categoryEditSelect.value = defaultCategoryId;
-    }
-}
-
-function resetImagePreview() {
-    if (!imageUploadPlaceholder || !imagePreviewContainer) return;
-    
-    currentImageFile = null;
-    imageUploadPlaceholder.style.display = 'flex';
-    imagePreviewContainer.style.display = 'none';
-    if (previewOriginalImg) previewOriginalImg.src = '';
-    if (productImageUrl) productImageUrl.value = '';
-    if (productImageInput) {
-        productImageInput.value = '';
-    }
-}
-
-/**
- * Processar imagem selecionada
- */
-function handleImageSelection(file) {
-    if (!file || !imageUploadPlaceholder || !imagePreviewContainer) return;
-
-    currentImageFile = file;
-    
-    // Mostrar preview
-    showImagePreview(file);
-    imageUploadPlaceholder.style.display = 'none';
-    imagePreviewContainer.style.display = 'block';
-}
-
-/**
- * Carregar preview da imagem existente (para edição)
- * @param {string} imageUrl - URL da imagem
- */
-function loadExistingImagePreview(imageUrl) {
-    console.log('🖼️ [DEBUG] loadExistingImagePreview chamado');
-    console.log('   - URL recebida:', imageUrl);
-    console.log('   - Tipo:', typeof imageUrl);
-    console.log('   - É string vazia?', imageUrl === '');
-    console.log('   - Trim vazio?', !imageUrl || imageUrl.trim() === '');
-    
-    if (!imageUrl || !imageUrl.trim()) {
-        console.warn('⚠️ [DEBUG] URL vazia ou inválida, resetando preview');
-        resetImagePreview();
-        return;
-    }
-
-    if (!previewOriginalImg || !productImageUrl) {
-        console.error('❌ [DEBUG] Elementos de preview não disponíveis');
-        console.error('   - previewOriginalImg existe?', !!previewOriginalImg);
-        console.error('   - productImageUrl existe?', !!productImageUrl);
-        return;
-    }
-
-    // Normalizar URL: adicionar https:// se não tiver protocolo
-    let normalizedUrl = imageUrl.trim();
-    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://') && !normalizedUrl.startsWith('data:')) {
-        console.warn('⚠️ [DEBUG] URL sem protocolo detectada, adicionando https://');
-        normalizedUrl = 'https://' + normalizedUrl;
-    }
-
-    console.log('🖼️ [DEBUG] Carregando imagem existente no preview');
-    console.log('   - URL original:', imageUrl);
-    console.log('   - URL normalizada:', normalizedUrl);
-
-    // Carregar imagem diretamente (sem crossOrigin para evitar problemas de CORS)
-    // O Firebase Storage permite leitura pública, então não precisa de crossOrigin
-    // NÃO limpar src antes de definir nova URL (pode causar flicker)
-    
-    // Configurar handlers ANTES de definir src
-    previewOriginalImg.onload = () => {
-        console.log('✅ [DEBUG] Imagem carregada com sucesso no preview');
-        console.log('   - Dimensões:', previewOriginalImg.naturalWidth, 'x', previewOriginalImg.naturalHeight);
-        if (imageUploadPlaceholder) {
-            imageUploadPlaceholder.style.display = 'none';
-            console.log('   - Placeholder escondido');
-        }
-        if (imagePreviewContainer) {
-            imagePreviewContainer.style.display = 'block';
-            console.log('   - Container de preview mostrado');
-        }
-    };
-    
-    previewOriginalImg.onerror = () => {
-        console.error('❌ [DEBUG] Erro ao carregar imagem no preview');
-        console.error('   - URL tentada:', normalizedUrl);
-        console.error('   - this.src atual:', previewOriginalImg.src);
-        // Mostrar placeholder de erro
-        if (imageUploadPlaceholder) {
-            imageUploadPlaceholder.style.display = 'flex';
-            console.log('   - Placeholder mostrado (erro)');
-        }
-        if (imagePreviewContainer) {
-            imagePreviewContainer.style.display = 'none';
-            console.log('   - Container de preview escondido (erro)');
-        }
-    };
-    
-    // Definir src da imagem (sem limpar antes)
-    console.log('   - Definindo src:', normalizedUrl);
-    previewOriginalImg.src = normalizedUrl;
-    
-    // Atualizar campo de URL
-    if (productImageUrl) {
-        productImageUrl.value = normalizedUrl;
-        console.log('   - Campo de URL atualizado');
-    }
-    
-    // Mostrar container de preview imediatamente
-    if (imageUploadPlaceholder) {
-        imageUploadPlaceholder.style.display = 'none';
-    }
-    if (imagePreviewContainer) {
-        imagePreviewContainer.style.display = 'block';
-    }
-    console.log('   - UI atualizada para mostrar preview');
 }
 
 // ==================== INGREDIENTES ====================
@@ -1944,90 +1714,7 @@ function updateIngredientSelectionUI() {
 
 // Carregar ingredientes
 // Carregar categorias
-async function loadCategories() {
-    try {
-        categories = await getCategories();
-        
-        // Buscar ID da categoria padrão "Geral"
-        const defaultCategory = categories.find(cat => cat.name.toLowerCase() === 'geral');
-        if (defaultCategory) {
-            defaultCategoryId = defaultCategory.id;
-        } else {
-            // Criar categoria "Geral" se não existir
-            defaultCategoryId = await getOrCreateDefaultCategory();
-            categories = await getCategories(); // Recarregar após criar
-        }
-        
-        // Atualizar seletor de categoria na modal de ingrediente
-        updateCategorySelector();
-    } catch (error) {
-        console.error('Erro ao carregar categorias:', error);
-        showToast('Erro ao carregar categorias', 'error');
-    }
-}
-
-// Atualizar seletor de categoria na modal de ingrediente
-function updateCategorySelector() {
-    const categorySelect = document.getElementById('ingredient-category');
-    if (!categorySelect) return;
-    
-    categorySelect.innerHTML = '';
-    
-    if (categories.length === 0) {
-        categorySelect.innerHTML = '<option value="">Carregando categorias...</option>';
-        return;
-    }
-    
-    // Ordenar categorias alfabeticamente
-    const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
-    
-    sortedCategories.forEach(category => {
-        const option = document.createElement('option');
-        option.value = category.id;
-        option.textContent = category.name;
-        categorySelect.appendChild(option);
-    });
-    
-    // Se houver categoria padrão, selecioná-la
-    if (defaultCategoryId) {
-        categorySelect.value = defaultCategoryId;
-    }
-}
-
-// Atualizar seletor de categoria no filtro
-function updateCategoryFilterSelector() {
-    const categoryFilterSelect = document.getElementById('ingredient-category-filter');
-    if (!categoryFilterSelect) return;
-    
-    // Manter opção "Todas as Categorias"
-    const allOption = categoryFilterSelect.querySelector('option[value="all"]');
-    categoryFilterSelect.innerHTML = '';
-    if (allOption) {
-        categoryFilterSelect.appendChild(allOption);
-    } else {
-        const defaultOption = document.createElement('option');
-        defaultOption.value = 'all';
-        defaultOption.textContent = 'Todas as Categorias';
-        categoryFilterSelect.appendChild(defaultOption);
-    }
-    
-    if (categories.length === 0) {
-        return;
-    }
-    
-    // Ordenar categorias alfabeticamente
-    const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
-    
-    sortedCategories.forEach(category => {
-        const option = document.createElement('option');
-        option.value = category.id;
-        option.textContent = category.name;
-        categoryFilterSelect.appendChild(option);
-    });
-    
-    // Restaurar seleção atual
-    categoryFilterSelect.value = currentIngredientCategoryFilter;
-}
+// Funções de categorias movidas para modules/categories.js
 
 async function loadIngredients() {
     try {
@@ -2038,16 +1725,16 @@ async function loadIngredients() {
         await loadCategories();
         
         // Atualizar seletor de categoria no filtro
-        updateCategoryFilterSelector();
+        updateCategoryFilterSelector(currentIngredientCategoryFilter);
         
-        ingredients = await getIngredients();
-        allIngredients = [...ingredients];
-        filteredIngredients = [...ingredients];
+        state.ingredients = await getIngredients();
+        allIngredients = [...state.ingredients];
+        filteredIngredients = [...state.ingredients];
         renderIngredients();
         
         // Atualizar seletor de categoria no filtro novamente após carregar ingredientes
         // (caso novas categorias tenham sido criadas)
-        updateCategoryFilterSelector();
+        updateCategoryFilterSelector(currentIngredientCategoryFilter);
         
         if (ingredientsLoading) ingredientsLoading.style.display = 'none';
     } catch (error) {
@@ -2103,7 +1790,7 @@ function renderIngredients() {
     uncategorizedIngredients.sort((a, b) => a.name.localeCompare(b.name));
     
     // Obter categorias ordenadas alfabeticamente
-    const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+    const sortedCategories = [...state.categories].sort((a, b) => a.name.localeCompare(b.name));
     
     // Renderizar seções por categoria
     sortedCategories.forEach(category => {
@@ -2204,7 +1891,7 @@ function renderCategorySection(category, categoryIngredients) {
         const categoryBadge = document.createElement('span');
         categoryBadge.className = 'product-category-badge';
         // Buscar nome da categoria
-        const ingredientCategory = categories.find(cat => cat.id === ingredient.category);
+        const ingredientCategory = state.categories.find(cat => cat.id === ingredient.category);
         const categoryName = ingredientCategory ? ingredientCategory.name : 'Sem categoria';
         categoryBadge.textContent = escapeHtml(categoryName);
         
@@ -3020,7 +2707,7 @@ if (ingredientBatchForm) {
 // Editar ingrediente - Usa modal separada
 window.editIngredient = async (id) => {
     console.log('🔵 editIngredient chamado para ID:', id);
-    const ingredient = ingredients.find(i => i.id === id);
+    const ingredient = state.ingredients.find(i => i.id === id);
     if (!ingredient) {
         console.error('❌ Ingrediente não encontrado:', id);
         return;
@@ -3051,7 +2738,7 @@ window.editIngredient = async (id) => {
     if (ingredientEditActiveInput) ingredientEditActiveInput.checked = ingredient.active !== false;
     
     // Carregar categorias se ainda não foram carregadas
-    if (categories.length === 0) {
+    if (state.categories.length === 0) {
         await loadCategories();
     }
     
@@ -3096,7 +2783,7 @@ window.editIngredient = async (id) => {
 
 // Deletar ingrediente
 window.deleteIngredientConfirm = async (id) => {
-    const ingredient = ingredients.find(i => i.id === id);
+    const ingredient = state.ingredients.find(i => i.id === id);
     if (!ingredient) return;
     
     showConfirmModal(
@@ -3569,16 +3256,16 @@ function setupEventListeners() {
     if (confirmModalCancel) {
         confirmModalCancel.addEventListener('click', () => {
             confirmModal.classList.remove('active');
-            confirmCallback = null;
+            getConfirmCallback(); // Limpar callback
         });
     }
     
     if (confirmModalConfirm) {
         confirmModalConfirm.addEventListener('click', () => {
             confirmModal.classList.remove('active');
-            if (confirmCallback) {
-                confirmCallback();
-                confirmCallback = null;
+            const callback = getConfirmCallback();
+            if (callback) {
+                callback();
             }
         });
     }
@@ -3588,7 +3275,7 @@ function setupEventListeners() {
         productImageInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
-                handleImageSelection(file);
+                handleImageSelection(file, imageUploadPlaceholder, imagePreviewContainer, previewOriginalImg);
             }
         });
     }
@@ -3614,7 +3301,7 @@ function setupEventListeners() {
                     const dataTransfer = new DataTransfer();
                     dataTransfer.items.add(file);
                     productImageInput.files = dataTransfer.files;
-                    handleImageSelection(file);
+                    handleImageSelection(file, imageUploadPlaceholder, imagePreviewContainer, previewOriginalImg);
                 }
             }
         });
@@ -3632,7 +3319,7 @@ function setupEventListeners() {
     // Botão remover imagem
     if (removeImageBtn) {
         removeImageBtn.addEventListener('click', () => {
-            resetImagePreview();
+            resetImagePreview(imageUploadPlaceholder, imagePreviewContainer, previewOriginalImg, productImageUrl, productImageInput);
         });
     }
     
@@ -3816,70 +3503,6 @@ function formatProductName(product, index = null) {
     return product.name;
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast');
-    toast.textContent = message;
-    toast.className = `toast ${type}`;
-    toast.classList.add('show');
-    
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
-}
-
-// Exibir modal de feedback
-function showFeedbackModal(data) {
-    if (!feedbackModal || !feedbackModalBody) return;
-    
-    const {
-        title = 'Resultado da Criação',
-        created = [],
-        duplicates = [],
-        existing = [],
-        errors = []
-    } = data;
-    
-    feedbackModalTitle.textContent = title;
-    feedbackModalBody.innerHTML = '';
-    
-    // Seção: Ingredientes criados
-    if (created.length > 0) {
-        const section = createFeedbackSection('success', '✓ Ingredientes Criados', created);
-        feedbackModalBody.appendChild(section);
-    }
-    
-    // Seção: Duplicatas removidas
-    if (duplicates.length > 0) {
-        const section = createFeedbackSection('warning', '⚠ Duplicatas Removidas', duplicates);
-        feedbackModalBody.appendChild(section);
-    }
-    
-    // Seção: Já existentes
-    if (existing.length > 0) {
-        const section = createFeedbackSection('info', 'ℹ Já Existentes', existing);
-        feedbackModalBody.appendChild(section);
-    }
-    
-    // Seção: Erros
-    if (errors.length > 0) {
-        const section = createFeedbackSection('error', '✗ Erros', errors);
-        feedbackModalBody.appendChild(section);
-    }
-    
-    // Se não houver nenhuma informação, mostrar mensagem
-    if (created.length === 0 && duplicates.length === 0 && existing.length === 0 && errors.length === 0) {
-        feedbackModalBody.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Nenhuma informação disponível.</p>';
-    }
-    
-    feedbackModal.classList.add('active');
-}
-
 // Migração de ingredientes existentes para categoria padrão
 async function migrateExistingIngredients() {
     const migrationKey = 'ingredients_category_migration_done';
@@ -3890,7 +3513,7 @@ async function migrateExistingIngredients() {
     try {
         // Garantir que categoria "Geral" existe
         defaultCategoryId = await getOrCreateDefaultCategory();
-        categories = await getCategories();
+        state.categories = await getCategories();
         
         // Buscar todos os ingredientes
         const allIngredients = await getIngredients();
@@ -3920,746 +3543,5 @@ async function migrateExistingIngredients() {
     }
 }
 
-// Configurar mensagens de validação em português para campos obrigatórios
-function setupFormValidationMessages() {
-    // Mensagens para campos de produto
-    const productName = document.getElementById('product-name');
-    const productPrice = document.getElementById('product-price');
-    const productCategory = document.getElementById('product-category');
-    
-    if (productName) {
-        productName.addEventListener('invalid', function(e) {
-            if (e.target.validity.valueMissing) {
-                e.target.setCustomValidity('Por favor, informe o nome do produto.');
-            }
-        });
-        productName.addEventListener('input', function(e) {
-            e.target.setCustomValidity('');
-        });
-    }
-    
-    if (productPrice) {
-        productPrice.addEventListener('invalid', function(e) {
-            if (e.target.validity.valueMissing) {
-                e.target.setCustomValidity('Por favor, informe o preço do produto.');
-            } else if (e.target.validity.rangeUnderflow) {
-                e.target.setCustomValidity('O preço deve ser maior ou igual a zero.');
-            }
-        });
-        productPrice.addEventListener('input', function(e) {
-            e.target.setCustomValidity('');
-        });
-    }
-    
-    if (productCategory) {
-        productCategory.addEventListener('invalid', function(e) {
-            if (e.target.validity.valueMissing) {
-                e.target.setCustomValidity('Por favor, selecione uma categoria.');
-            }
-        });
-        productCategory.addEventListener('change', function(e) {
-            e.target.setCustomValidity('');
-        });
-    }
-    
-    // Mensagens para campos de ingrediente
-    const ingredientName = document.getElementById('ingredient-name');
-    const ingredientCategory = document.getElementById('ingredient-category');
-    const ingredientPrice = document.getElementById('ingredient-price');
-    
-    if (ingredientName) {
-        ingredientName.addEventListener('invalid', function(e) {
-            if (e.target.validity.valueMissing) {
-                e.target.setCustomValidity('Por favor, informe o nome do ingrediente.');
-            }
-        });
-        ingredientName.addEventListener('input', function(e) {
-            e.target.setCustomValidity('');
-        });
-    }
-    
-    if (ingredientCategory) {
-        ingredientCategory.addEventListener('invalid', function(e) {
-            if (e.target.validity.valueMissing) {
-                e.target.setCustomValidity('Por favor, selecione uma categoria.');
-            }
-        });
-        ingredientCategory.addEventListener('change', function(e) {
-            e.target.setCustomValidity('');
-        });
-    }
-    
-    if (ingredientPrice) {
-        ingredientPrice.addEventListener('invalid', function(e) {
-            if (e.target.validity.valueMissing) {
-                e.target.setCustomValidity('Por favor, informe o preço do ingrediente.');
-            } else if (e.target.validity.rangeUnderflow) {
-                e.target.setCustomValidity('O preço deve ser maior ou igual a zero.');
-            }
-        });
-        ingredientPrice.addEventListener('input', function(e) {
-            e.target.setCustomValidity('');
-        });
-    }
-    
-    // Mensagens para campos de ingrediente (edição)
-    const ingredientEditName = document.getElementById('ingredient-edit-name');
-    const ingredientEditCategory = document.getElementById('ingredient-edit-category');
-    const ingredientEditPrice = document.getElementById('ingredient-edit-price');
-    
-    if (ingredientEditName) {
-        ingredientEditName.addEventListener('invalid', function(e) {
-            if (e.target.validity.valueMissing) {
-                e.target.setCustomValidity('Por favor, informe o nome do ingrediente.');
-            }
-        });
-        ingredientEditName.addEventListener('input', function(e) {
-            e.target.setCustomValidity('');
-        });
-    }
-    
-    if (ingredientEditCategory) {
-        ingredientEditCategory.addEventListener('invalid', function(e) {
-            if (e.target.validity.valueMissing) {
-                e.target.setCustomValidity('Por favor, selecione uma categoria.');
-            }
-        });
-        ingredientEditCategory.addEventListener('change', function(e) {
-            e.target.setCustomValidity('');
-        });
-    }
-    
-    if (ingredientEditPrice) {
-        ingredientEditPrice.addEventListener('invalid', function(e) {
-            if (e.target.validity.valueMissing) {
-                e.target.setCustomValidity('Por favor, informe o preço do ingrediente.');
-            } else if (e.target.validity.rangeUnderflow) {
-                e.target.setCustomValidity('O preço deve ser maior ou igual a zero.');
-            }
-        });
-        ingredientEditPrice.addEventListener('input', function(e) {
-            e.target.setCustomValidity('');
-        });
-    }
-    
-    // Mensagens para campos de categoria
-    const categoryName = document.getElementById('category-name');
-    if (categoryName) {
-        categoryName.addEventListener('invalid', function(e) {
-            if (e.target.validity.valueMissing) {
-                e.target.setCustomValidity('Por favor, informe o nome da categoria.');
-            }
-        });
-        categoryName.addEventListener('input', function(e) {
-            e.target.setCustomValidity('');
-        });
-    }
-    
-    // Mensagens para campos de configuração
-    const configName = document.getElementById('config-name');
-    const configWhatsapp = document.getElementById('config-whatsapp');
-    
-    if (configName) {
-        configName.addEventListener('invalid', function(e) {
-            if (e.target.validity.valueMissing) {
-                e.target.setCustomValidity('Por favor, informe o nome do restaurante.');
-            }
-        });
-        configName.addEventListener('input', function(e) {
-            e.target.setCustomValidity('');
-        });
-    }
-    
-    if (configWhatsapp) {
-        configWhatsapp.addEventListener('invalid', function(e) {
-            if (e.target.validity.valueMissing) {
-                e.target.setCustomValidity('Por favor, informe o número do WhatsApp.');
-            }
-        });
-        configWhatsapp.addEventListener('input', function(e) {
-            e.target.setCustomValidity('');
-        });
-    }
-}
-
-// Configurar modal de categorias
-function setupCategoriesModal() {
-    const manageCategoriesBtn = document.getElementById('manage-categories-btn');
-    const categoriesModal = document.getElementById('categories-modal');
-    const categoriesModalClose = document.getElementById('categories-modal-close');
-    const closeCategoriesModalBtn = document.getElementById('close-categories-modal-btn');
-    let categoriesModalContent = null;
-    
-    if (categoriesModal) {
-        categoriesModalContent = categoriesModal.querySelector('.modal-content');
-    }
-    
-    // Abrir modal
-    if (manageCategoriesBtn && categoriesModal) {
-        manageCategoriesBtn.addEventListener('click', async () => {
-            await loadCategoriesList();
-            openModal(categoriesModal, categoriesModalContent);
-        });
-    }
-    
-    // Fechar modal
-    if (categoriesModalClose) {
-        categoriesModalClose.addEventListener('click', () => {
-            closeModal(categoriesModal, categoriesModalContent);
-        });
-    }
-    
-    if (closeCategoriesModalBtn) {
-        closeCategoriesModalBtn.addEventListener('click', () => {
-            closeModal(categoriesModal, categoriesModalContent);
-        });
-    }
-    
-    // Formulário de categoria
-    const categoryForm = document.getElementById('category-form');
-    if (categoryForm) {
-        categoryForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await saveCategory();
-        });
-    }
-    
-    // Botão cancelar categoria
-    const cancelCategoryBtn = document.getElementById('cancel-category-btn');
-    if (cancelCategoryBtn) {
-        cancelCategoryBtn.addEventListener('click', () => {
-            resetCategoryForm();
-        });
-    }
-}
-
-// Carregar lista de categorias
-async function loadCategoriesList() {
-    const categoriesList = document.getElementById('categories-list');
-    const categoriesLoading = document.getElementById('categories-loading');
-    
-    if (!categoriesList) return;
-    
-    try {
-        if (categoriesLoading) categoriesLoading.style.display = 'block';
-        categoriesList.innerHTML = '';
-        
-        await loadCategories();
-        
-        if (categories.length === 0) {
-            categoriesList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Nenhuma categoria cadastrada ainda.</p>';
-        } else {
-            const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
-            
-            sortedCategories.forEach(category => {
-                const categoryItem = document.createElement('div');
-                categoryItem.className = 'category-item';
-                categoryItem.innerHTML = `
-                    <span class="category-name">${escapeHtml(category.name)}</span>
-                    <div class="category-actions">
-                        <button class="btn-edit" onclick="editCategory('${category.id}')">✏️ Editar</button>
-                        <button class="btn-delete" onclick="deleteCategoryConfirm('${category.id}')">🗑️ Excluir</button>
-                    </div>
-                `;
-                categoriesList.appendChild(categoryItem);
-            });
-        }
-        
-        if (categoriesLoading) categoriesLoading.style.display = 'none';
-    } catch (error) {
-        console.error('Erro ao carregar categorias:', error);
-        showToast('Erro ao carregar categorias', 'error');
-        if (categoriesLoading) categoriesLoading.style.display = 'none';
-    }
-}
-
-// Salvar categoria
-let editingCategoryId = null;
-async function saveCategory() {
-    const categoryNameInput = document.getElementById('category-name');
-    const categoryFormTitle = document.getElementById('category-form-title');
-    
-    if (!categoryNameInput) return;
-    
-    const categoryName = categoryNameInput.value.trim();
-    if (!categoryName) {
-        showToast('Nome da categoria é obrigatório', 'error');
-        return;
-    }
-    
-    try {
-        if (editingCategoryId) {
-            await updateCategory(editingCategoryId, categoryName);
-            showToast('Categoria atualizada com sucesso!', 'success');
-        } else {
-            await addCategory(categoryName);
-            showToast('Categoria adicionada com sucesso!', 'success');
-        }
-        
-        resetCategoryForm();
-        await loadCategoriesList();
-        await loadCategories(); // Recarregar categorias para atualizar seletor
-        updateCategorySelector();
-        updateCategoryEditSelector(); // Atualizar também o seletor da modal de edição
-        updateCategoryFilterSelector(); // Atualizar também o filtro de categoria
-    } catch (error) {
-        console.error('Erro ao salvar categoria:', error);
-        
-        // Verificar se é erro de permissões
-        if (error.code === 'permission-denied' || error.message.includes('permission') || error.message.includes('insufficient permissions')) {
-            showToast('Erro de permissões: Atualize as regras do Firestore. Veja FIRESTORE_RULES.md', 'error');
-            console.error('\n🚨 ERRO DE PERMISSÕES DETECTADO');
-            console.error('========================================');
-            console.error('É necessário atualizar as regras do Firestore para permitir operações na collection "ingredientCategories"');
-            console.error('\n📋 PASSO A PASSO:');
-            console.error('1. Acesse: https://console.firebase.google.com/project/temperoesabor-57382/firestore/rules');
-            console.error('2. Adicione as seguintes regras para ingredientCategories:');
-            console.error(`
-    match /ingredientCategories/{categoryId} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }`);
-            console.error('3. Clique em "PUBLISH" (Publicar)');
-            console.error('4. Aguarde alguns segundos e tente novamente');
-            console.error('\n📄 Para mais detalhes, veja o arquivo: FIRESTORE_RULES.md');
-            console.error('========================================\n');
-        } else {
-            showToast(error.message || 'Erro ao salvar categoria', 'error');
-        }
-    }
-}
-
-// Editar categoria
-window.editCategory = async (id) => {
-    const category = categories.find(c => c.id === id);
-    if (!category) return;
-    
-    editingCategoryId = id;
-    const categoryNameInput = document.getElementById('category-name');
-    const categoryIdInput = document.getElementById('category-id');
-    const categoryFormTitle = document.getElementById('category-form-title');
-    const cancelCategoryBtn = document.getElementById('cancel-category-btn');
-    
-    if (categoryNameInput) categoryNameInput.value = category.name;
-    if (categoryIdInput) categoryIdInput.value = id;
-    if (categoryFormTitle) categoryFormTitle.textContent = 'Editar Categoria';
-    if (cancelCategoryBtn) cancelCategoryBtn.style.display = 'inline-block';
-    
-    // Scroll para o formulário
-    const categoryFormContainer = document.querySelector('.category-form-container');
-    if (categoryFormContainer) {
-        categoryFormContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-};
-
-// Resetar formulário de categoria
-function resetCategoryForm() {
-    editingCategoryId = null;
-    const categoryNameInput = document.getElementById('category-name');
-    const categoryIdInput = document.getElementById('category-id');
-    const categoryFormTitle = document.getElementById('category-form-title');
-    const cancelCategoryBtn = document.getElementById('cancel-category-btn');
-    
-    if (categoryNameInput) categoryNameInput.value = '';
-    if (categoryIdInput) categoryIdInput.value = '';
-    if (categoryFormTitle) categoryFormTitle.textContent = 'Adicionar Categoria';
-    if (cancelCategoryBtn) cancelCategoryBtn.style.display = 'none';
-}
-
-// Confirmar exclusão de categoria
-window.deleteCategoryConfirm = async (id) => {
-    const category = categories.find(c => c.id === id);
-    if (!category) return;
-    
-    try {
-        // Verificar se há ingredientes usando esta categoria
-        const inUse = await hasIngredientsUsingCategory(id);
-        if (inUse) {
-            showToast('Não é possível excluir categoria que está sendo usada por ingredientes', 'error');
-            return;
-        }
-        
-        showConfirmModal(
-            'Confirmar Exclusão',
-            `Tem certeza que deseja excluir a categoria "${escapeHtml(category.name)}"?`,
-            async () => {
-                try {
-                    await deleteCategory(id, hasIngredientsUsingCategory);
-                    showToast('Categoria excluída com sucesso!', 'success');
-                    await loadCategoriesList();
-                    await loadCategories(); // Recarregar categorias
-                    updateCategorySelector();
-                    updateCategoryEditSelector(); // Atualizar também o seletor da modal de edição
-                    updateCategoryFilterSelector(); // Atualizar também o filtro de categoria
-                } catch (error) {
-                    console.error('Erro ao excluir categoria:', error);
-                    showToast(error.message || 'Erro ao excluir categoria', 'error');
-                }
-            }
-        );
-    } catch (error) {
-        console.error('Erro ao verificar categoria:', error);
-        showToast('Erro ao verificar categoria', 'error');
-    }
-};
-
-// Criar seção de feedback
-function createFeedbackSection(type, title, items) {
-    const section = document.createElement('div');
-    section.className = `feedback-section ${type}`;
-    
-    const titleDiv = document.createElement('div');
-    titleDiv.className = 'feedback-section-title';
-    titleDiv.textContent = `${title} (${items.length})`;
-    
-    const list = document.createElement('ul');
-    list.className = 'feedback-list';
-    
-    items.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = escapeHtml(item);
-        list.appendChild(li);
-    });
-    
-    section.appendChild(titleDiv);
-    section.appendChild(list);
-    
-    return section;
-}
-
-// ==================== GERENCIAMENTO DE CATEGORIAS DE PRODUTOS ====================
-
-// Carregar categorias de produtos do Firebase
-async function loadProductCategories() {
-    try {
-        productCategories = await getProductCategories();
-        console.log('✅ Categorias de produtos carregadas:', productCategories.length);
-        
-        // Migrar categorias padrão se necessário
-        await migrateDefaultProductCategories();
-        
-        // Recarregar categorias após migração
-        productCategories = await getProductCategories();
-        
-        // Atualizar seletor de categorias no formulário
-        updateProductCategorySelector();
-        
-        // Atualizar filtro de categorias
-        populateCategoryFilter();
-    } catch (error) {
-        console.error('Erro ao carregar categorias de produtos:', error);
-    }
-}
-
-// Migrar categorias padrão para o Firebase
-async function migrateDefaultProductCategories() {
-    const migrationKey = 'product_categories_migration_done';
-    if (localStorage.getItem(migrationKey) === 'true') {
-        return; // Migração já foi executada
-    }
-    
-    try {
-        // Categorias padrão que devem existir
-        const defaultCategories = ['Burguers', 'Hot-Dogs', 'Porções', 'Bebidas'];
-        
-        // Verificar quais categorias já existem
-        const existingCategoryNames = productCategories.map(cat => cat.name);
-        
-        // Criar categorias que não existem
-        let createdCount = 0;
-        for (const categoryName of defaultCategories) {
-            if (!existingCategoryNames.includes(categoryName)) {
-                try {
-                    await addProductCategory(categoryName);
-                    createdCount++;
-                    console.log(`✅ Categoria padrão criada: ${categoryName}`);
-                } catch (error) {
-                    console.error(`Erro ao criar categoria ${categoryName}:`, error);
-                }
-            }
-        }
-        
-        if (createdCount > 0) {
-            console.log(`Migração de categorias concluída: ${createdCount} categoria(s) criada(s).`);
-        }
-        
-        // Marcar migração como concluída
-        localStorage.setItem(migrationKey, 'true');
-    } catch (error) {
-        console.error('Erro na migração de categorias de produtos:', error);
-    }
-}
-
-// Configurar modal de categorias de produtos
-function setupProductCategoriesModal() {
-    const manageProductCategoriesBtn = document.getElementById('manage-product-categories-btn');
-    const productCategoriesModal = document.getElementById('product-categories-modal');
-    const productCategoriesModalClose = document.getElementById('product-categories-modal-close');
-    const closeProductCategoriesModalBtn = document.getElementById('close-product-categories-modal-btn');
-    let productCategoriesModalContent = null;
-    
-    if (productCategoriesModal) {
-        productCategoriesModalContent = productCategoriesModal.querySelector('.modal-content');
-    }
-    
-    // Abrir modal
-    if (manageProductCategoriesBtn && productCategoriesModal) {
-        manageProductCategoriesBtn.addEventListener('click', async () => {
-            await loadProductCategoriesList();
-            openModal(productCategoriesModal, productCategoriesModalContent);
-        });
-    }
-    
-    // Fechar modal
-    if (productCategoriesModalClose) {
-        productCategoriesModalClose.addEventListener('click', () => {
-            closeModal(productCategoriesModal, productCategoriesModalContent);
-        });
-    }
-    
-    if (closeProductCategoriesModalBtn) {
-        closeProductCategoriesModalBtn.addEventListener('click', () => {
-            closeModal(productCategoriesModal, productCategoriesModalContent);
-        });
-    }
-    
-    // Formulário de categoria
-    const productCategoryForm = document.getElementById('product-category-form');
-    if (productCategoryForm) {
-        productCategoryForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await saveProductCategory();
-        });
-    }
-    
-    // Botão cancelar categoria
-    const cancelProductCategoryBtn = document.getElementById('cancel-product-category-btn');
-    if (cancelProductCategoryBtn) {
-        cancelProductCategoryBtn.addEventListener('click', () => {
-            resetProductCategoryForm();
-        });
-    }
-}
-
-// Carregar lista de categorias de produtos
-async function loadProductCategoriesList() {
-    const productCategoriesList = document.getElementById('product-categories-list');
-    const productCategoriesLoading = document.getElementById('product-categories-loading');
-    
-    if (!productCategoriesList) return;
-    
-    try {
-        if (productCategoriesLoading) productCategoriesLoading.style.display = 'block';
-        productCategoriesList.innerHTML = '';
-        
-        await loadProductCategories();
-        
-        if (productCategories.length === 0) {
-            productCategoriesList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Nenhuma categoria cadastrada ainda.</p>';
-        } else {
-            const sortedCategories = [...productCategories].sort((a, b) => a.name.localeCompare(b.name));
-            
-            sortedCategories.forEach(category => {
-                const categoryItem = document.createElement('div');
-                categoryItem.className = 'category-item';
-                categoryItem.innerHTML = `
-                    <span class="category-name">${escapeHtml(category.name)}</span>
-                    <div class="category-actions">
-                        <button class="btn-edit" onclick="editProductCategory('${category.id}')">✏️ Editar</button>
-                        <button class="btn-delete" onclick="deleteProductCategoryConfirm('${category.id}')">🗑️ Excluir</button>
-                    </div>
-                `;
-                productCategoriesList.appendChild(categoryItem);
-            });
-        }
-        
-        if (productCategoriesLoading) productCategoriesLoading.style.display = 'none';
-    } catch (error) {
-        console.error('Erro ao carregar categorias de produtos:', error);
-        showToast('Erro ao carregar categorias de produtos', 'error');
-        if (productCategoriesLoading) productCategoriesLoading.style.display = 'none';
-    }
-}
-
-// Salvar categoria de produto
-let editingProductCategoryId = null;
-async function saveProductCategory() {
-    const productCategoryNameInput = document.getElementById('product-category-name');
-    const productCategoryFormTitle = document.getElementById('product-category-form-title');
-    
-    if (!productCategoryNameInput) return;
-    
-    const categoryName = productCategoryNameInput.value.trim();
-    if (!categoryName) {
-        showToast('Nome da categoria é obrigatório', 'error');
-        return;
-    }
-    
-    try {
-        if (editingProductCategoryId) {
-            await updateProductCategory(editingProductCategoryId, categoryName);
-            showToast('Categoria atualizada com sucesso!', 'success');
-        } else {
-            await addProductCategory(categoryName);
-            showToast('Categoria adicionada com sucesso!', 'success');
-        }
-        
-        resetProductCategoryForm();
-        await loadProductCategoriesList();
-        await loadProductCategories(); // Recarregar categorias para atualizar seletor
-        updateProductCategorySelector();
-        populateCategoryFilter(); // Atualizar também o filtro de categoria
-    } catch (error) {
-        console.error('Erro ao salvar categoria de produto:', error);
-        
-        // Verificar se é erro de permissões
-        if (error.code === 'permission-denied' || error.message.includes('permission') || error.message.includes('insufficient permissions')) {
-            showToast('Erro de permissões: Atualize as regras do Firestore. Veja FIRESTORE_RULES.md', 'error');
-            console.error('\n🚨 ERRO DE PERMISSÕES DETECTADO');
-            console.error('========================================');
-            console.error('É necessário atualizar as regras do Firestore para permitir operações na collection "productCategories"');
-            console.error('\n📋 PASSO A PASSO:');
-            console.error('1. Acesse: https://console.firebase.google.com/project/temperoesabor-57382/firestore/rules');
-            console.error('2. Adicione as seguintes regras para productCategories:');
-            console.error(`
-    match /productCategories/{categoryId} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }`);
-            console.error('3. Clique em "PUBLISH" (Publicar)');
-            console.error('4. Aguarde alguns segundos e tente novamente');
-            console.error('========================================\n');
-        } else {
-            showToast(error.message || 'Erro ao salvar categoria de produto', 'error');
-        }
-    }
-}
-
-// Editar categoria de produto
-window.editProductCategory = async (id) => {
-    const category = productCategories.find(c => c.id === id);
-    if (!category) return;
-    
-    editingProductCategoryId = id;
-    const productCategoryNameInput = document.getElementById('product-category-name');
-    const productCategoryIdInput = document.getElementById('product-category-id');
-    const productCategoryFormTitle = document.getElementById('product-category-form-title');
-    const cancelProductCategoryBtn = document.getElementById('cancel-product-category-btn');
-    
-    if (productCategoryNameInput) productCategoryNameInput.value = category.name;
-    if (productCategoryIdInput) productCategoryIdInput.value = id;
-    if (productCategoryFormTitle) productCategoryFormTitle.textContent = 'Editar Categoria';
-    if (cancelProductCategoryBtn) cancelProductCategoryBtn.style.display = 'inline-block';
-    
-    // Scroll para o formulário
-    const productCategoryFormContainer = document.querySelector('#product-categories-modal .category-form-container');
-    if (productCategoryFormContainer) {
-        productCategoryFormContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-};
-
-// Resetar formulário de categoria de produto
-function resetProductCategoryForm() {
-    editingProductCategoryId = null;
-    const productCategoryNameInput = document.getElementById('product-category-name');
-    const productCategoryIdInput = document.getElementById('product-category-id');
-    const productCategoryFormTitle = document.getElementById('product-category-form-title');
-    const cancelProductCategoryBtn = document.getElementById('cancel-product-category-btn');
-    
-    if (productCategoryNameInput) productCategoryNameInput.value = '';
-    if (productCategoryIdInput) productCategoryIdInput.value = '';
-    if (productCategoryFormTitle) productCategoryFormTitle.textContent = 'Adicionar Categoria';
-    if (cancelProductCategoryBtn) cancelProductCategoryBtn.style.display = 'none';
-}
-
-// Confirmar exclusão de categoria de produto
-window.deleteProductCategoryConfirm = async (id) => {
-    const category = productCategories.find(c => c.id === id);
-    if (!category) return;
-    
-    try {
-        // Verificar se há produtos usando esta categoria
-        const inUse = await hasProductsUsingCategory(category.name);
-        if (inUse) {
-            showToast('Não é possível excluir categoria que está sendo usada por produtos', 'error');
-            return;
-        }
-        
-        showConfirmModal(
-            'Confirmar Exclusão',
-            `Tem certeza que deseja excluir a categoria "${escapeHtml(category.name)}"?`,
-            async () => {
-                try {
-                    // Criar função wrapper que recebe ID e verifica por nome
-                    const checkProductsInUse = async (categoryId) => {
-                        const cat = productCategories.find(c => c.id === categoryId);
-                        if (!cat) return false;
-                        return await hasProductsUsingCategory(cat.name);
-                    };
-                    
-                    await deleteProductCategory(id, checkProductsInUse);
-                    showToast('Categoria excluída com sucesso!', 'success');
-                    await loadProductCategoriesList();
-                    await loadProductCategories(); // Recarregar categorias
-                    updateProductCategorySelector();
-                    populateCategoryFilter(); // Atualizar também o filtro de categoria
-                } catch (error) {
-                    console.error('Erro ao excluir categoria de produto:', error);
-                    showToast(error.message || 'Erro ao excluir categoria de produto', 'error');
-                }
-            }
-        );
-    } catch (error) {
-        console.error('Erro ao verificar categoria de produto:', error);
-        showToast('Erro ao verificar categoria de produto', 'error');
-    }
-};
-
-// Verificar se há produtos usando uma categoria
-async function hasProductsUsingCategory(categoryName) {
-    if (!categoryName) return false;
-    
-    try {
-        // Verificar se há produtos com esta categoria
-        const productsUsingCategory = allProducts.filter(p => p.category === categoryName);
-        return productsUsingCategory.length > 0;
-    } catch (error) {
-        console.error('Erro ao verificar uso de categoria:', error);
-        return false;
-    }
-}
-
-// Atualizar seletor de categorias no formulário de produtos
-function updateProductCategorySelector() {
-    const productCategorySelect = document.getElementById('product-category');
-    if (!productCategorySelect) return;
-    
-    // Salvar valor atual
-    const currentValue = productCategorySelect.value;
-    
-    // Limpar opções existentes
-    productCategorySelect.innerHTML = '';
-    
-    // Adicionar opção padrão
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.textContent = 'Selecione uma categoria';
-    productCategorySelect.appendChild(defaultOption);
-    
-    // Adicionar categorias do Firebase
-    if (productCategories && productCategories.length > 0) {
-        const sortedCategories = [...productCategories].sort((a, b) => a.name.localeCompare(b.name));
-        sortedCategories.forEach(category => {
-            const option = document.createElement('option');
-            option.value = category.name;
-            option.textContent = category.name;
-            productCategorySelect.appendChild(option);
-        });
-    }
-    
-    // Restaurar valor anterior se ainda existir
-    if (currentValue) {
-        productCategorySelect.value = currentValue;
-    }
-}
+// Funções de categorias movidas para modules/categories.js
 
