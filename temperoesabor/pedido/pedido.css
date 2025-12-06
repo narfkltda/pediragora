@@ -327,3 +327,124 @@ body {
     }
 }
 
+/* Estilos para Modal de Escolha de Impressão */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10001;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-content h2 {
+    color: #df4c2d;
+    margin-bottom: 10px;
+    font-size: 24px;
+}
+
+.modal-content p {
+    color: #666;
+    margin-bottom: 25px;
+    font-size: 16px;
+}
+
+.modal-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.modal-buttons .btn {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.modal-buttons .btn-primary {
+    background: #df4c2d;
+    color: white;
+}
+
+.modal-buttons .btn-primary:hover {
+    background: #c43d20;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(223, 76, 45, 0.3);
+}
+
+.modal-buttons .btn-secondary {
+    background: #eeb534;
+    color: white;
+}
+
+.modal-buttons .btn-secondary:hover {
+    background: #d9a028;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(238, 181, 52, 0.3);
+}
+
+.modal-buttons .btn-cancel {
+    background: #e0e0e0;
+    color: #666;
+}
+
+.modal-buttons .btn-cancel:hover {
+    background: #d0d0d0;
+}
+
+@media (max-width: 768px) {
+    .modal-content {
+        padding: 20px;
+        margin: 20px;
+    }
+    
+    .modal-content h2 {
+        font-size: 20px;
+    }
+    
+    .modal-content p {
+        font-size: 14px;
+    }
+}
+

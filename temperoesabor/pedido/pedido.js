@@ -52,22 +52,44 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelector('.button-group').style.display = 'flex';
     });
 
-    // Botão imprimir - oferece duas opções
+    // Elementos da modal
+    const printModal = document.getElementById('print-modal');
+    const modalThermalBtn = document.getElementById('modal-thermal-btn');
+    const modalBrowserBtn = document.getElementById('modal-browser-btn');
+    const modalCancelBtn = document.getElementById('modal-cancel-btn');
+
+    // Botão imprimir - oferece duas opções via modal
     printBtn.addEventListener('click', function() {
         if (!currentOrderData) {
             showToast('Nenhum pedido formatado. Formate o pedido primeiro.', 'error');
             return;
         }
         
-        // Perguntar ao usuário qual tipo de impressão
-        const choice = confirm('Escolha o tipo de impressão:\n\nOK = Enviar para Impressora Térmica\nCancelar = Imprimir no Navegador');
-        
-        if (choice) {
-            // Enviar para impressora térmica
-            sendToThermalPrinter(currentOrderData);
-        } else {
-            // Imprimir no navegador
-            window.print();
+        // Mostrar modal de escolha
+        printModal.style.display = 'flex';
+    });
+
+    // Botão Impressora Térmica na modal
+    modalThermalBtn.addEventListener('click', function() {
+        printModal.style.display = 'none';
+        sendToThermalPrinter(currentOrderData);
+    });
+
+    // Botão Navegador na modal
+    modalBrowserBtn.addEventListener('click', function() {
+        printModal.style.display = 'none';
+        window.print();
+    });
+
+    // Botão Cancelar na modal
+    modalCancelBtn.addEventListener('click', function() {
+        printModal.style.display = 'none';
+    });
+
+    // Fechar modal ao clicar fora
+    printModal.addEventListener('click', function(e) {
+        if (e.target === printModal) {
+            printModal.style.display = 'none';
         }
     });
 
