@@ -1,0 +1,40 @@
+═══════════════════════════════════════════════════════════════
+  RESUMO RÁPIDO - O QUE FAZER AGORA
+═══════════════════════════════════════════════════════════════
+
+✅ JÁ FEITO AUTOMATICAMENTE:
+  - Bridge Server rodando (porta 3002)
+  - ngrok instalado
+  - Dependências instaladas
+  - Código pronto
+
+📋 FAZER AGORA (MANUAL):
+
+1. CONFIGURAR NGROK (5 min)
+   → https://dashboard.ngrok.com/signup
+   → Obter authtoken
+   → ngrok config add-authtoken SEU_TOKEN
+   → ngrok http 3002
+   → Copiar URL gerada
+
+2. LOGIN FIREBASE (2 min)
+   → firebase login
+   → Autenticar no navegador
+
+3. DEPLOY (5 min)
+   → firebase deploy --only functions
+   → Copiar URL da Cloud Function
+
+4. CONFIGURAR FIRESTORE (10 min)
+   → Criar bridgeConfig/default (com URL ngrok)
+   → Criar functionConfig/default (com URL Cloud Function)
+
+5. CONFIGURAR ADMIN (2 min)
+   → Acessar admin panel
+   → Configurar IP, Máscara, Gateway da impressora
+
+═══════════════════════════════════════════════════════════════
+  API KEY: 0027e08d63165c4024667b4eb89196baf6af5bd9fb93b4ad5ace435267871bb0
+═══════════════════════════════════════════════════════════════
+
+📚 Ver PASSO_A_PASSO_MANUAL.md para detalhes completos

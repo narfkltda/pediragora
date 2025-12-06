@@ -274,13 +274,105 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
-     * Envia pedido para impressora térmica via servidor local
+     * Envia pedido para impressora térmica via Cloud Function ou servidor local
      */
     async function sendToThermalPrinter(orderData) {
-        const PRINT_SERVER_URL = 'http://localhost:3002/print';
-        
         // Mostrar toast de carregamento
         showToast('Enviando para impressora...', 'info');
+        
+        try {
+            // Tentar usar Cloud Function primeiro
+            const functionConfig = await getCloudFunctionUrl();
+            
+            if (functionConfig && functionConfig.enabled && functionConfig.url) {
+                // Verificar se a URL não é do emulador local
+                if (functionConfig.url.includes('localhost') || functionConfig.url.includes('127.0.0.1')) {
+                    console.warn('⚠️ URL do emulador detectada. Verifique se functionConfig está configurado corretamente no Firestore.');
+                    console.log('📡 Usando servidor local (fallback)');
+                    await sendToLocalServer(orderData);
+                } else {
+                    // Usar Cloud Function de produção
+                    console.log('📡 Usando Cloud Function:', functionConfig.url);
+                    await sendToCloudFunction(orderData, functionConfig.url);
+                }
+            } else {
+                // Fallback para servidor local (desenvolvimento)
+                console.log('📡 Usando servidor local (fallback)');
+                if (!functionConfig) {
+                    console.warn('⚠️ functionConfig não encontrado no Firestore. Configure em: functionConfig/default');
+                } else if (!functionConfig.enabled) {
+                    console.warn('⚠️ Cloud Function está desabilitada no Firestore');
+                } else if (!functionConfig.url) {
+                    console.warn('⚠️ URL da Cloud Function não configurada no Firestore');
+                }
+                await sendToLocalServer(orderData);
+            }
+        } catch (error) {
+            console.error('Erro ao enviar para impressora:', error);
+            showToast(error.message || 'Erro ao enviar para impressora', 'error');
+        }
+    }
+    
+    /**
+     * Busca URL da Cloud Function do Firestore
+     */
+    async function getCloudFunctionUrl() {
+        try {
+            // Importar dinamicamente para evitar erro se não estiver disponível
+            const { getFunctionConfig } = await import('../services/printer-config-service.js');
+            const config = await getFunctionConfig('default');
+            return config;
+        } catch (error) {
+            console.warn('⚠️ Erro ao buscar function config:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Envia para Cloud Function
+     */
+    async function sendToCloudFunction(orderData, functionUrl) {
+        try {
+            // Garantir que a URL não termina com barra
+            const cleanUrl = functionUrl.replace(/\/$/, '');
+            
+            console.log('📡 Enviando para:', cleanUrl);
+            
+            const response = await fetch(cleanUrl, {
+                method: 'POST',
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(orderData)
+            });
+            
+            // Verificar se a resposta é JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Resposta não é JSON:', text.substring(0, 200));
+                throw new Error('Cloud Function retornou resposta inválida');
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showToast(result.message || 'Pedido enviado para impressora com sucesso!', 'success');
+            } else {
+                throw new Error(result.error || 'Erro ao enviar para impressora');
+            }
+        } catch (error) {
+            console.error('Erro ao chamar Cloud Function:', error);
+            throw new Error(`Erro na Cloud Function: ${error.message}`);
+        }
+    }
+    
+    /**
+     * Envia para servidor local (fallback para desenvolvimento)
+     */
+    async function sendToLocalServer(orderData) {
+        const PRINT_SERVER_URL = 'http://localhost:3002/print';
         
         try {
             const response = await fetch(PRINT_SERVER_URL, {
@@ -298,11 +390,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Resposta não é JSON:', text.substring(0, 200));
                 
                 if (response.status === 404) {
-                    showToast('Servidor de impressão não encontrado. Verifique se o servidor está rodando na porta 3001.', 'error');
+                    throw new Error('Servidor local não encontrado. Verifique se está rodando na porta 3002.');
                 } else {
-                    showToast('Servidor retornou resposta inválida. Verifique se o servidor está rodando corretamente.', 'error');
+                    throw new Error('Servidor retornou resposta inválida');
                 }
-                return;
             }
             
             const result = await response.json();
@@ -310,21 +401,16 @@ document.addEventListener('DOMContentLoaded', function() {
             if (result.success) {
                 showToast(result.message || 'Pedido enviado para impressora com sucesso!', 'success');
             } else {
-                showToast(result.error || 'Erro ao enviar para impressora', 'error');
+                throw new Error(result.error || 'Erro ao enviar para impressora');
             }
         } catch (error) {
-            console.error('Erro ao enviar para impressora:', error);
+            console.error('Erro ao chamar servidor local:', error);
             
-            let errorMessage = 'Erro ao conectar com servidor de impressão.';
-            if (error.message.includes('Failed to fetch') || error.message.includes('Unexpected token')) {
-                errorMessage = 'Servidor de impressão não está rodando ou não está acessível. Inicie o servidor na porta 3002.';
-            } else if (error.message.includes('JSON')) {
-                errorMessage = 'Servidor retornou resposta inválida. Verifique se o servidor está rodando corretamente.';
+            if (error.message.includes('Failed to fetch')) {
+                throw new Error('Servidor local não está rodando. Inicie o servidor na porta 3002 ou configure a Cloud Function.');
             } else {
-                errorMessage = `Erro: ${error.message}`;
+                throw error;
             }
-            
-            showToast(errorMessage, 'error');
         }
     }
     

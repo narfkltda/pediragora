@@ -470,3 +470,4 @@ Após validar o Passo 8, podemos prosseguir com:
 - Funções `window.editCategory` e `window.deleteCategoryConfirm` são exportadas globalmente pelo módulo
 
 
+

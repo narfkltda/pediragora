@@ -53,6 +53,7 @@ import {
     setCurrentImageFile
 } from './utils/image-upload.js';
 import { initConfig } from './modules/config.js';
+import { initPrintConfig } from './print-config.js';
 import { 
     initCategories, 
     loadCategories, 
@@ -217,6 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     setupNavigation();
     setupFormValidationMessages();
+    initPrintConfig();
     
     // Executar migração de ingredientes (apenas uma vez)
     migrateExistingIngredients();

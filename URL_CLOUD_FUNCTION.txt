@@ -1,0 +1,8 @@
+URL DA CLOUD FUNCTION:
+https://printorder-xyaibsfnra-uc.a.run.app
+
+Configurar no Firestore:
+- Coleção: functionConfig
+- Documento: default
+- Campo url: https://printorder-xyaibsfnra-uc.a.run.app
+- Campo enabled: true

@@ -1,0 +1,34 @@
+═══════════════════════════════════════════════════════════════
+  CONFIGURAR FIRESTORE - URL DO NGROK
+═══════════════════════════════════════════════════════════════
+
+✅ URL DO NGROK:
+   https://nondeceptive-sickeningly-marylyn.ngrok-free.dev
+
+📋 FAZER AGORA:
+
+1. CONFIGURAR bridgeConfig no Firestore:
+   → https://console.firebase.google.com/project/temperoesabor-57382/firestore/data
+   → Criar coleção: bridgeConfig
+   → Documento: default
+   → Campos:
+     * url: https://nondeceptive-sickeningly-marylyn.ngrok-free.dev
+     * apiKey: 0027e08d63165c4024667b4eb89196baf6af5bd9fb93b4ad5ace435267871bb0
+     * enabled: true
+
+2. LOGIN FIREBASE:
+   → cd pediragora
+   → firebase login
+
+3. DEPLOY:
+   → firebase deploy --only functions
+   → Copiar URL da Cloud Function
+
+4. CONFIGURAR functionConfig:
+   → Criar coleção: functionConfig
+   → Documento: default
+   → Campos:
+     * url: (URL da Cloud Function do passo 3)
+     * enabled: true
+
+═══════════════════════════════════════════════════════════════

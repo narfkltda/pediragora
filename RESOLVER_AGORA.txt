@@ -1,0 +1,31 @@
+═══════════════════════════════════════════════════════════════
+  RESOLVER PERMISSÃO - PASSO A PASSO
+═══════════════════════════════════════════════════════════════
+
+❌ PROBLEMA:
+   Build service account sem permissões
+
+✅ SOLUÇÃO (5 minutos):
+
+1. ACESSAR IAM:
+   → https://console.cloud.google.com/iam-admin/iam?project=temperoesabor-57382
+
+2. PROCURAR SERVICE ACCOUNT:
+   → Procure por: 827430491530-compute@developer.gserviceaccount.com
+   → Ou qualquer conta com @cloudbuild
+
+3. ADICIONAR PERMISSÕES:
+   → Clique na service account
+   → "EDITAR" ou "GRANT ACCESS"
+   → Adicione estas Roles:
+     * Cloud Functions Developer
+     * Service Account User
+     * Artifact Registry Writer
+     * Cloud Build Service Account
+
+4. SALVAR e tentar deploy novamente:
+   → firebase deploy --only functions
+
+═══════════════════════════════════════════════════════════════
+📚 Detalhes: RESOLVER_PERMISSAO_AGORA.md
+═══════════════════════════════════════════════════════════════

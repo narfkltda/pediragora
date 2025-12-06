@@ -1,32 +1,63 @@
 /**
- * Servidor local para impressão direta de pedidos via TCP/IP
+ * Bridge Server Local para impressão direta de pedidos via TCP/IP
  * Conecta diretamente com impressora térmica Bematech MP-4200 HS
+ * Exposto via túnel (ngrok) para acesso da Cloud Function
  */
 
+require('dotenv').config();
 const express = require('express');
 const net = require('net');
 const { generateESCPOS } = require('./escpos-generator');
 
 const app = express();
-const PORT = 3002; // Mudado para 3002 para evitar conflito com bridge server
+const PORT = process.env.PORT || 3002;
 
-// Configuração da impressora (hardcoded para teste local)
-const PRINTER_IP = '192.168.68.101';
-const PRINTER_PORT = 9100;
+// Configuração da impressora (pode vir do .env ou Firestore)
+const PRINTER_IP = process.env.PRINTER_IP || '192.168.68.101';
+const PRINTER_PORT = parseInt(process.env.PRINTER_PORT || '9100');
 const CONNECTION_TIMEOUT = 5000; // 5 segundos
+
+// API Key para autenticação (obrigatória)
+const API_KEY = process.env.API_KEY || 'default_api_key_change_me';
 
 // Middleware para parsing JSON
 app.use(express.json());
 
-// CORS - permitir requisições do localhost
+// CORS - permitir requisições da Cloud Function e frontend
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    res.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, X-API-Key');
     
     if (req.method === 'OPTIONS') {
         return res.sendStatus(200);
     }
+    next();
+});
+
+// Middleware de autenticação via API Key
+app.use((req, res, next) => {
+    // Endpoint /health não requer autenticação
+    if (req.path === '/health') {
+        return next();
+    }
+    
+    const providedKey = req.headers['x-api-key'];
+    
+    if (!providedKey) {
+        return res.status(401).json({
+            success: false,
+            error: 'API Key não fornecida. Use o header X-API-Key'
+        });
+    }
+    
+    if (providedKey !== API_KEY) {
+        return res.status(401).json({
+            success: false,
+            error: 'API Key inválida'
+        });
+    }
+    
     next();
 });
 
@@ -206,16 +237,17 @@ app.post('/print', async (req, res) => {
 
 /**
  * Endpoint GET /health
- * Verifica se o servidor está rodando
+ * Verifica se o servidor está rodando (não requer autenticação)
  */
 app.get('/health', (req, res) => {
     res.json({
         status: 'ok',
-        message: 'Servidor de impressão está rodando',
+        message: 'Bridge server está rodando',
         printer: {
             ip: PRINTER_IP,
             port: PRINTER_PORT
-        }
+        },
+        timestamp: new Date().toISOString()
     });
 });
 
@@ -238,10 +270,13 @@ app.use((req, res) => {
 
 // Iniciar servidor
 app.listen(PORT, () => {
-    console.log('🚀 Servidor de impressão iniciado');
+    console.log('🚀 Bridge Server iniciado');
     console.log(`📡 Servidor rodando em http://localhost:${PORT}`);
+    console.log(`🔐 Autenticação: API Key configurada`);
     console.log(`🖨️  Impressora configurada: ${PRINTER_IP}:${PRINTER_PORT}`);
-    console.log(`📋 Endpoint: POST http://localhost:${PORT}/print`);
+    console.log(`📋 Endpoint: POST http://localhost:${PORT}/print (requer X-API-Key header)`);
     console.log(`💚 Health check: GET http://localhost:${PORT}/health`);
-    console.log(`\n⚠️  NOTA: Porta ${PORT} configurada para evitar conflito com bridge server na porta 3001`);
+    console.log(`\n💡 Para expor via ngrok: ngrok http ${PORT}`);
+    console.log(`⚠️  IMPORTANTE: Configure a URL do ngrok no Firestore (bridgeConfig)`);
 });
+
