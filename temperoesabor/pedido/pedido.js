@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Verificar se a modal existe antes de mostrar
         if (!printModal) {
-            console.error('❌ Modal não encontrada!');
+            console.error('❌ Modal não encontrada! Verifique se o HTML da modal está presente.');
             // Fallback para confirm se modal não existir
             const choice = confirm('Escolha o tipo de impressão:\n\nOK = Enviar para Impressora Térmica\nCancelar = Imprimir no Navegador');
             if (choice) {
@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        console.log('✅ Modal encontrada, exibindo...');
         // Mostrar modal de escolha
         printModal.style.display = 'flex';
     });
