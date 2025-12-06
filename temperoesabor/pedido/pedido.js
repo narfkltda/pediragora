@@ -12,6 +12,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewSection = document.getElementById('preview-section');
     const orderPreview = document.getElementById('order-preview');
     
+    // Elementos da modal - buscar dentro do DOMContentLoaded
+    const printModal = document.getElementById('print-modal');
+    const modalThermalBtn = document.getElementById('modal-thermal-btn');
+    const modalBrowserBtn = document.getElementById('modal-browser-btn');
+    const modalCancelBtn = document.getElementById('modal-cancel-btn');
+    
+    // Verificar se os elementos da modal existem
+    if (!printModal || !modalThermalBtn || !modalBrowserBtn || !modalCancelBtn) {
+        console.error('❌ Elementos da modal não encontrados!', {
+            printModal: !!printModal,
+            modalThermalBtn: !!modalThermalBtn,
+            modalBrowserBtn: !!modalBrowserBtn,
+            modalCancelBtn: !!modalCancelBtn
+        });
+    }
+    
     // Armazenar dados do pedido parseado
     let currentOrderData = null;
 
@@ -52,16 +68,23 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelector('.button-group').style.display = 'flex';
     });
 
-    // Elementos da modal
-    const printModal = document.getElementById('print-modal');
-    const modalThermalBtn = document.getElementById('modal-thermal-btn');
-    const modalBrowserBtn = document.getElementById('modal-browser-btn');
-    const modalCancelBtn = document.getElementById('modal-cancel-btn');
-
     // Botão imprimir - oferece duas opções via modal
     printBtn.addEventListener('click', function() {
         if (!currentOrderData) {
             showToast('Nenhum pedido formatado. Formate o pedido primeiro.', 'error');
+            return;
+        }
+        
+        // Verificar se a modal existe antes de mostrar
+        if (!printModal) {
+            console.error('❌ Modal não encontrada!');
+            // Fallback para confirm se modal não existir
+            const choice = confirm('Escolha o tipo de impressão:\n\nOK = Enviar para Impressora Térmica\nCancelar = Imprimir no Navegador');
+            if (choice) {
+                sendToThermalPrinter(currentOrderData);
+            } else {
+                window.print();
+            }
             return;
         }
         
@@ -70,28 +93,36 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Botão Impressora Térmica na modal
-    modalThermalBtn.addEventListener('click', function() {
-        printModal.style.display = 'none';
-        sendToThermalPrinter(currentOrderData);
-    });
+    if (modalThermalBtn) {
+        modalThermalBtn.addEventListener('click', function() {
+            if (printModal) printModal.style.display = 'none';
+            sendToThermalPrinter(currentOrderData);
+        });
+    }
 
     // Botão Navegador na modal
-    modalBrowserBtn.addEventListener('click', function() {
-        printModal.style.display = 'none';
-        window.print();
-    });
+    if (modalBrowserBtn) {
+        modalBrowserBtn.addEventListener('click', function() {
+            if (printModal) printModal.style.display = 'none';
+            window.print();
+        });
+    }
 
     // Botão Cancelar na modal
-    modalCancelBtn.addEventListener('click', function() {
-        printModal.style.display = 'none';
-    });
+    if (modalCancelBtn) {
+        modalCancelBtn.addEventListener('click', function() {
+            if (printModal) printModal.style.display = 'none';
+        });
+    }
 
     // Fechar modal ao clicar fora
-    printModal.addEventListener('click', function(e) {
-        if (e.target === printModal) {
-            printModal.style.display = 'none';
-        }
-    });
+    if (printModal) {
+        printModal.addEventListener('click', function(e) {
+            if (e.target === printModal) {
+                printModal.style.display = 'none';
+            }
+        });
+    }
 
     /**
      * Parse do pedido do WhatsApp
