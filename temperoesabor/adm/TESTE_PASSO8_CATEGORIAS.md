@@ -469,3 +469,4 @@ Após validar o Passo 8, podemos prosseguir com:
 - Função `renderCategorySection()` permanece no `admin.js` (parte da renderização de ingredientes)
 - Funções `window.editCategory` e `window.deleteCategoryConfirm` são exportadas globalmente pelo módulo
 
+

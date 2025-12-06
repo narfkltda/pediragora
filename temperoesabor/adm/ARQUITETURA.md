@@ -74,3 +74,4 @@ adm/
 - [ ] `init*()` exportada e chamada?
 - [ ] Arquivo dentro do limite de linhas?
 
+
